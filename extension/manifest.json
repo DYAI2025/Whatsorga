@@ -8,7 +8,10 @@
     "storage"
   ],
   "host_permissions": [
-    "https://web.whatsapp.com/*"
+    "https://web.whatsapp.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://*/*"
   ],
   "content_scripts": [
     {
@@ -23,6 +26,10 @@
   },
   "action": {
     "default_title": "Beziehungs-Radar",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": "logo.png"
+  },
+  "icons": {
+    "128": "logo.png"
   }
 }

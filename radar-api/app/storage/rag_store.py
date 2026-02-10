@@ -79,7 +79,7 @@ class RAGStore:
                         "metadatas": [metadata],
                     },
                 )
-                if resp.status_code != 200:
+                if resp.status_code not in (200, 201):
                     logger.warning(f"ChromaDB add: {resp.status_code} {resp.text[:200]}")
         except Exception as e:
             logger.warning(f"ChromaDB add error: {e}")
@@ -96,11 +96,12 @@ class RAGStore:
                     f"{self.base_url}/api/v1/collections/{self._collection_id}/query",
                     json={
                         "query_texts": [text],
-                        "n_results": n_results,
+                        "n_results": min(n_results, 10),
                         "include": ["documents", "metadatas", "distances"],
                     },
                 )
-                if resp.status_code != 200:
+                if resp.status_code not in (200, 201):
+                    logger.warning(f"ChromaDB query: {resp.status_code} {resp.text[:300]}")
                     return []
 
                 data = resp.json()

@@ -6,7 +6,7 @@ PostgreSQL threads table for persistence.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy import select, and_
@@ -99,7 +99,7 @@ async def _update_threads(
         arc.append(sentiment_score)
         best_thread.emotional_arc = arc
 
-        best_thread.updated_at = datetime.utcnow()
+        best_thread.updated_at = datetime.now(timezone.utc)
 
         # Check for dormancy
         if len(msg_ids) >= MIN_THREAD_MESSAGES:
@@ -118,7 +118,7 @@ async def _update_threads(
         session.add(new_thread)
 
     # Mark old threads as dormant
-    cutoff = datetime.utcnow() - timedelta(hours=THREAD_TIMEOUT_HOURS)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=THREAD_TIMEOUT_HOURS)
     for thread in active_threads:
         if thread.updated_at and thread.updated_at < cutoff:
             thread.status = "ruhend"

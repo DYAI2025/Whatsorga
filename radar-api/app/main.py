@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 from app.storage.database import init_db
 from app.ingestion.router import router as ingestion_router
@@ -36,6 +36,11 @@ if STATIC_DIR.exists():
 @app.on_event("startup")
 async def startup():
     await init_db()
+
+
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/dashboard")
 
 
 @app.get("/health")

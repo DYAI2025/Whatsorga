@@ -83,15 +83,40 @@ class RadarTracker {
   // --- Chat info extraction ---
 
   getCurrentChatInfo() {
-    // Strategy 1: header title
+    // Strategy 1: conversation-info-header chat title (2025+ DOM)
+    const chatTitle = document.querySelector('span[data-testid="conversation-info-header-chat-title"]');
+    if (chatTitle?.textContent?.trim()) {
+      const name = chatTitle.textContent.trim();
+      return { id: name, name };
+    }
+    // Strategy 2: header with title attribute
     const headerTitle = document.querySelector('#main header span[title]');
     if (headerTitle) {
-      return { id: headerTitle.getAttribute('title'), name: headerTitle.getAttribute('title') };
+      const name = headerTitle.getAttribute('title');
+      return { id: name, name };
     }
-    // Strategy 2: conversation panel header
+    // Strategy 3: conversation-header testid
     const convHeader = document.querySelector('[data-testid="conversation-header"] span[title]');
     if (convHeader) {
-      return { id: convHeader.getAttribute('title'), name: convHeader.getAttribute('title') };
+      const name = convHeader.getAttribute('title');
+      return { id: name, name };
+    }
+    // Strategy 4: span with dir="auto" in #main header (2026 WhatsApp Web)
+    const headerArea = document.querySelector('#main header');
+    if (headerArea) {
+      const autoSpan = headerArea.querySelector('span[dir="auto"]');
+      if (autoSpan?.textContent?.trim()) {
+        const name = autoSpan.textContent.trim();
+        if (name.length > 1 && name.length < 100) {
+          return { id: name, name };
+        }
+      }
+    }
+    // Strategy 5: aria-label on header
+    const headerEl = document.querySelector('#main header [role="button"][aria-label]');
+    if (headerEl) {
+      const name = headerEl.getAttribute('aria-label');
+      if (name) return { id: name, name };
     }
     return { id: 'unknown', name: 'Unknown' };
   }
@@ -105,9 +130,10 @@ class RadarTracker {
   // --- Message scanning (adapted from What's That!?) ---
 
   scanMessages() {
-    if (!this.enabled) return;
+    if (!this.enabled) { console.log('[Radar] Scan skipped: disabled'); return; }
 
     this.currentChat = this.getCurrentChatInfo();
+    console.log('[Radar] Current chat:', this.currentChat.name, '| Whitelisted:', this.isChatWhitelisted());
     if (!this.isChatWhitelisted()) return;
 
     // Multi-strategy message detection (from What's That!?)
