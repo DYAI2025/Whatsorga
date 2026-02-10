@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Beziehungs-Radar",
+  "version": "0.1.0",
+  "description": "Captures WhatsApp messages from whitelisted contacts and forwards them for semantic analysis",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://web.whatsapp.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Beziehungs-Radar",
+    "default_popup": "popup.html"
+  }
+}

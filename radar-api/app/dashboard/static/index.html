@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beziehungs-Radar Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e4e4e7;
+      --text-dim: #8b8d97;
+      --accent: #6366f1;
+      --accent-dim: #4f46e5;
+      --positive: #22c55e;
+      --negative: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-controls input,
+    .header-controls select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .header-controls button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .header-controls button:hover { background: var(--accent-dim); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      padding: 20px 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .card h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .card-wide { grid-column: 1 / -1; }
+
+    /* Overview stats */
+    .stats-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+      padding: 12px;
+      background: var(--bg);
+      border-radius: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .stat-positive .stat-value { color: var(--positive); }
+    .stat-negative .stat-value { color: var(--negative); }
+    .stat-accent .stat-value { color: var(--accent); }
+    .stat-warning .stat-value { color: var(--warning); }
+
+    /* Chart containers */
+    .chart-container {
+      position: relative;
+      height: 260px;
+    }
+
+    /* Thread list */
+    .thread-list { list-style: none; max-height: 300px; overflow-y: auto; }
+    .thread-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .thread-item:last-child { border-bottom: none; }
+    .thread-theme { font-size: 14px; font-weight: 500; }
+    .thread-meta { font-size: 12px; color: var(--text-dim); }
+    .thread-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .thread-status.active { background: #22c55e22; color: var(--positive); }
+    .thread-status.dormant { background: #f59e0b22; color: var(--warning); }
+    .thread-status.resolved { background: #6366f122; color: var(--accent); }
+
+    /* Termine list */
+    .termin-list { list-style: none; max-height: 300px; overflow-y: auto; }
+    .termin-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .termin-item:last-child { border-bottom: none; }
+    .termin-title { font-size: 14px; font-weight: 500; }
+    .termin-datetime { font-size: 12px; color: var(--accent); margin-top: 2px; }
+    .termin-participants { font-size: 12px; color: var(--text-dim); }
+    .termin-synced {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 8px;
+      background: #22c55e22;
+      color: var(--positive);
+      margin-left: 6px;
+    }
+
+    /* Search */
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .search-bar input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .search-bar button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .search-results { list-style: none; max-height: 300px; overflow-y: auto; }
+    .search-result-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-text { font-size: 13px; line-height: 1.4; }
+    .search-meta { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+    /* Heatmap */
+    .heatmap-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow-x: auto;
+    }
+    .heatmap-row {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .heatmap-label {
+      width: 80px;
+      font-size: 11px;
+      color: var(--text-dim);
+      text-align: right;
+      padding-right: 6px;
+      flex-shrink: 0;
+    }
+    .heatmap-cell {
+      width: 28px;
+      height: 20px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .heatmap-date-labels {
+      display: flex;
+      gap: 2px;
+      margin-left: 86px;
+    }
+    .heatmap-date {
+      width: 28px;
+      font-size: 9px;
+      color: var(--text-dim);
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-dim);
+      padding: 40px 20px;
+      font-size: 14px;
+    }
+
+    /* Auth */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      width: 340px;
+    }
+    .auth-box h2 { margin-bottom: 16px; font-size: 18px; color: var(--text); }
+    .auth-box input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .auth-box button {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .auth-error { color: var(--negative); font-size: 13px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<!-- Auth screen -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <h2>Beziehungs-Radar</h2>
+    <input type="password" id="authKey" placeholder="API-Key eingeben">
+    <input type="text" id="authChatId" placeholder="Chat-ID (z.B. Marike Stucke)">
+    <button onclick="authenticate()">Verbinden</button>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<!-- Main dashboard -->
+<header>
+  <h1>Beziehungs-Radar</h1>
+  <div class="header-controls">
+    <span id="chatLabel" style="font-size:13px;color:var(--text-dim)"></span>
+    <select id="driftDays" onchange="loadDrift()">
+      <option value="7">7 Tage</option>
+      <option value="14">14 Tage</option>
+      <option value="30" selected>30 Tage</option>
+      <option value="90">90 Tage</option>
+    </select>
+    <button onclick="refreshAll()">Aktualisieren</button>
+  </div>
+</header>
+
+<div class="grid">
+  <!-- Overview stats -->
+  <div class="card card-wide" id="overviewCard">
+    <h2>Zusammenfassung</h2>
+    <div class="stats-row" id="statsRow">
+      <div class="stat stat-accent">
+        <div class="stat-value" id="statMessages">-</div>
+        <div class="stat-label">Nachrichten</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statSentiment">-</div>
+        <div class="stat-label">Stimmung (7d)</div>
+      </div>
+      <div class="stat stat-accent">
+        <div class="stat-value" id="statThreads">-</div>
+        <div class="stat-label">Aktive Themen</div>
+      </div>
+      <div class="stat stat-warning">
+        <div class="stat-value" id="statTermine">-</div>
+        <div class="stat-label">Anstehende Termine</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drift chart -->
+  <div class="card card-wide">
+    <h2>Stimmungsverlauf</h2>
+    <div class="chart-container">
+      <canvas id="driftChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Marker heatmap -->
+  <div class="card card-wide">
+    <h2>Marker-Heatmap</h2>
+    <div id="heatmapContainer"></div>
+  </div>
+
+  <!-- Threads -->
+  <div class="card">
+    <h2>Semantische Themen</h2>
+    <ul class="thread-list" id="threadList">
+      <li class="empty-state">Lade...</li>
+    </ul>
+  </div>
+
+  <!-- Termine -->
+  <div class="card">
+    <h2>Anstehende Termine</h2>
+    <ul class="termin-list" id="terminList">
+      <li class="empty-state">Lade...</li>
+    </ul>
+  </div>
+
+  <!-- Search -->
+  <div class="card card-wide">
+    <h2>Semantische Suche</h2>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Nachrichten durchsuchen..."
+             onkeydown="if(event.key==='Enter')doSearch()">
+      <button onclick="doSearch()">Suchen</button>
+    </div>
+    <ul class="search-results" id="searchResults">
+      <li class="empty-state">Suchbegriff eingeben und Enter drucken</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+let API_KEY = '';
+let CHAT_ID = '';
+let driftChart = null;
+
+const MARKER_COLORS = {
+  waerme: '#22c55e', distanz: '#3b82f6', stress: '#ef4444',
+  konflikt: '#f97316', freude: '#fbbf24', trauer: '#8b5cf6',
+  fuersorge: '#ec4899', planung: '#06b6d4', dankbarkeit: '#10b981',
+  unsicherheit: '#6b7280',
+};
+
+function headers() {
+  return { Authorization: 'Bearer ' + API_KEY, 'Content-Type': 'application/json' };
+}
+
+async function apiFetch(path) {
+  const resp = await fetch(path, { headers: headers() });
+  if (!resp.ok) throw new Error(`API error ${resp.status}`);
+  return resp.json();
+}
+
+function authenticate() {
+  API_KEY = document.getElementById('authKey').value.trim();
+  CHAT_ID = document.getElementById('authChatId').value.trim();
+  if (!API_KEY || !CHAT_ID) {
+    document.getElementById('authError').textContent = 'Bitte beide Felder ausfuellen';
+    return;
+  }
+  // Test auth
+  apiFetch(`/api/overview/${encodeURIComponent(CHAT_ID)}`)
+    .then(() => {
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('chatLabel').textContent = CHAT_ID;
+      localStorage.setItem('radar_key', API_KEY);
+      localStorage.setItem('radar_chat', CHAT_ID);
+      refreshAll();
+    })
+    .catch(err => {
+      document.getElementById('authError').textContent = 'Verbindung fehlgeschlagen: ' + err.message;
+    });
+}
+
+function refreshAll() {
+  loadOverview();
+  loadDrift();
+  loadMarkers();
+  loadThreads();
+  loadTermine();
+}
+
+async function loadOverview() {
+  try {
+    const data = await apiFetch(`/api/overview/${encodeURIComponent(CHAT_ID)}`);
+    document.getElementById('statMessages').textContent = data.total_messages;
+    const sent = data.avg_sentiment_7d;
+    const sentEl = document.getElementById('statSentiment');
+    sentEl.textContent = sent > 0 ? `+${sent}` : sent;
+    sentEl.parentElement.className = `stat ${sent > 0 ? 'stat-positive' : sent < 0 ? 'stat-negative' : ''}`;
+    document.getElementById('statThreads').textContent = data.active_threads;
+    document.getElementById('statTermine').textContent = data.upcoming_termine;
+  } catch (e) {
+    console.error('Overview error:', e);
+  }
+}
+
+async function loadDrift() {
+  const days = document.getElementById('driftDays').value;
+  try {
+    const data = await apiFetch(`/api/drift/${encodeURIComponent(CHAT_ID)}?days=${days}`);
+    renderDriftChart(data.data);
+  } catch (e) {
+    console.error('Drift error:', e);
+  }
+}
+
+function renderDriftChart(points) {
+  const ctx = document.getElementById('driftChart').getContext('2d');
+  if (driftChart) driftChart.destroy();
+
+  const labels = points.map(p => p.date);
+  const sentiments = points.map(p => p.avg_sentiment);
+  const counts = points.map(p => p.message_count);
+
+  driftChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Stimmung',
+          data: sentiments,
+          borderColor: '#6366f1',
+          backgroundColor: '#6366f133',
+          fill: true,
+          tension: 0.3,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Nachrichten',
+          data: counts,
+          borderColor: '#8b8d9744',
+          backgroundColor: '#8b8d9711',
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'y1',
+          borderDash: [4, 4],
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      scales: {
+        x: {
+          ticks: { color: '#8b8d97', maxTicksLimit: 10 },
+          grid: { color: '#2a2d3a' },
+        },
+        y: {
+          position: 'left',
+          min: -1, max: 1,
+          ticks: { color: '#6366f1' },
+          grid: { color: '#2a2d3a' },
+          title: { display: true, text: 'Stimmung', color: '#6366f1' },
+        },
+        y1: {
+          position: 'right',
+          ticks: { color: '#8b8d97' },
+          grid: { display: false },
+          title: { display: true, text: 'Nachrichten', color: '#8b8d97' },
+        },
+      },
+      plugins: {
+        legend: { labels: { color: '#e4e4e7' } },
+      },
+    },
+  });
+}
+
+async function loadMarkers() {
+  try {
+    const data = await apiFetch(`/api/markers/${encodeURIComponent(CHAT_ID)}?days=7`);
+    renderHeatmap(data.data);
+  } catch (e) {
+    console.error('Markers error:', e);
+  }
+}
+
+function renderHeatmap(dayData) {
+  const container = document.getElementById('heatmapContainer');
+  if (!dayData.length) {
+    container.innerHTML = '<div class="empty-state">Keine Marker-Daten vorhanden</div>';
+    return;
+  }
+
+  // Get all unique markers
+  const allMarkers = new Set();
+  dayData.forEach(d => Object.keys(d.markers).forEach(m => allMarkers.add(m)));
+  const markers = Array.from(allMarkers).sort();
+  const dates = dayData.map(d => d.date);
+
+  // Find max for color scaling
+  let maxVal = 1;
+  dayData.forEach(d => Object.values(d.markers).forEach(v => { if (v > maxVal) maxVal = v; }));
+
+  let html = '<div class="heatmap-grid">';
+
+  // Date labels
+  html += '<div class="heatmap-date-labels">';
+  dates.forEach(d => {
+    const short = d.slice(5); // MM-DD
+    html += `<div class="heatmap-date">${short}</div>`;
+  });
+  html += '</div>';
+
+  // Rows per marker
+  markers.forEach(marker => {
+    html += '<div class="heatmap-row">';
+    html += `<div class="heatmap-label">${marker}</div>`;
+    dates.forEach(d => {
+      const dayObj = dayData.find(dd => dd.date === d);
+      const val = dayObj ? (dayObj.markers[marker] || 0) : 0;
+      const intensity = Math.min(val / maxVal, 1);
+      const baseColor = MARKER_COLORS[marker] || '#6366f1';
+      const bg = intensity === 0 ? '#1a1d27' : hexToRgba(baseColor, 0.2 + intensity * 0.8);
+      html += `<div class="heatmap-cell" style="background:${bg}" title="${marker}: ${val} (${d})"></div>`;
+    });
+    html += '</div>';
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+async function loadThreads() {
+  try {
+    const data = await apiFetch(`/api/threads/${encodeURIComponent(CHAT_ID)}`);
+    const list = document.getElementById('threadList');
+    if (!data.threads.length) {
+      list.innerHTML = '<li class="empty-state">Keine Themen erkannt</li>';
+      return;
+    }
+    list.innerHTML = data.threads.map(t => `
+      <li class="thread-item">
+        <div>
+          <div class="thread-theme">${esc(t.theme)}</div>
+          <div class="thread-meta">${t.message_count} Nachrichten${t.updated_at ? ' &middot; ' + formatDate(t.updated_at) : ''}</div>
+        </div>
+        <span class="thread-status ${t.status}">${t.status}</span>
+      </li>
+    `).join('');
+  } catch (e) {
+    console.error('Threads error:', e);
+  }
+}
+
+async function loadTermine() {
+  try {
+    const data = await apiFetch(`/api/termine/${encodeURIComponent(CHAT_ID)}`);
+    const list = document.getElementById('terminList');
+    if (!data.termine.length) {
+      list.innerHTML = '<li class="empty-state">Keine anstehenden Termine</li>';
+      return;
+    }
+    list.innerHTML = data.termine.map(t => `
+      <li class="termin-item">
+        <div class="termin-title">${esc(t.title)}${t.caldav_synced ? '<span class="termin-synced">Kalender</span>' : ''}</div>
+        <div class="termin-datetime">${t.datetime ? formatDate(t.datetime) : '-'}</div>
+        <div class="termin-participants">${(t.participants || []).join(', ')}</div>
+      </li>
+    `).join('');
+  } catch (e) {
+    console.error('Termine error:', e);
+  }
+}
+
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  const list = document.getElementById('searchResults');
+  list.innerHTML = '<li class="empty-state">Suche...</li>';
+  try {
+    const data = await apiFetch(`/api/search?q=${encodeURIComponent(q)}&chat_id=${encodeURIComponent(CHAT_ID)}`);
+    if (!data.results.length) {
+      list.innerHTML = '<li class="empty-state">Keine Ergebnisse</li>';
+      return;
+    }
+    list.innerHTML = data.results.map(r => `
+      <li class="search-result-item">
+        <div class="search-text">${esc(r.text)}</div>
+        <div class="search-meta">${esc(r.sender)} &middot; ${r.timestamp || '-'} &middot; Relevanz: ${(1 - r.distance).toFixed(1)}</div>
+      </li>
+    `).join('');
+  } catch (e) {
+    list.innerHTML = `<li class="empty-state">Fehler: ${e.message}</li>`;
+  }
+}
+
+function formatDate(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+  } catch { return iso; }
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// Auto-login from localStorage
+(function init() {
+  const saved_key = localStorage.getItem('radar_key');
+  const saved_chat = localStorage.getItem('radar_chat');
+  if (saved_key && saved_chat) {
+    document.getElementById('authKey').value = saved_key;
+    document.getElementById('authChatId').value = saved_chat;
+    authenticate();
+  }
+})();
+</script>
+</body>
+</html>
