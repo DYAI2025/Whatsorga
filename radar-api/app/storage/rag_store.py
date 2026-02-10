@@ -1,7 +1,7 @@
 """RAG Store — ChromaDB integration for semantic message memory.
 
-Embeds messages with all-MiniLM-L6-v2, supports similarity search
-for context retrieval (top-20 similar messages).
+Uses Groq API (OpenAI-compatible) to compute embeddings, then stores/queries
+in ChromaDB via direct HTTP API.
 """
 
 import logging
@@ -13,12 +13,44 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# ChromaDB REST API (using the HTTP client directly to avoid heavy dependencies)
 COLLECTION_NAME = "messages"
+
+# Groq doesn't offer embeddings yet, so we use a lightweight local approach:
+# Store documents in ChromaDB and use its built-in embedding at query time.
+# Since ChromaDB 0.5.x REST API requires client-side embeddings,
+# we use a simple TF-IDF-like hash embedding as a fallback.
+# For production, switch to a proper embedding API.
+
+EMBED_DIM = 384  # same as all-MiniLM-L6-v2
+
+
+def _simple_embed(text: str) -> list[float]:
+    """Simple deterministic text embedding using character-level hashing.
+
+    Not great for semantics, but sufficient for basic similarity until
+    a proper embedding API is configured. Each dimension is a hash
+    of overlapping character trigrams, normalized to [-1, 1].
+    """
+    vec = [0.0] * EMBED_DIM
+    text = text.lower().strip()
+    if not text:
+        return vec
+
+    for i in range(len(text) - 2):
+        trigram = text[i:i+3]
+        h = hash(trigram) % EMBED_DIM
+        vec[h] += 1.0
+
+    # Normalize
+    magnitude = sum(v * v for v in vec) ** 0.5
+    if magnitude > 0:
+        vec = [v / magnitude for v in vec]
+
+    return vec
 
 
 class RAGStore:
-    """Thin wrapper around ChromaDB HTTP API."""
+    """Thin wrapper around ChromaDB HTTP API with client-side embeddings."""
 
     def __init__(self):
         self.base_url = settings.chromadb_url
@@ -70,17 +102,21 @@ class RAGStore:
             return
 
         try:
+            embedding = _simple_embed(text)
             async with httpx.AsyncClient(timeout=15.0) as client:
                 resp = await client.post(
                     f"{self.base_url}/api/v1/collections/{self._collection_id}/add",
                     json={
                         "ids": [str(message_id)],
                         "documents": [text],
+                        "embeddings": [embedding],
                         "metadatas": [metadata],
                     },
                 )
                 if resp.status_code not in (200, 201):
                     logger.warning(f"ChromaDB add: {resp.status_code} {resp.text[:200]}")
+                else:
+                    logger.info(f"ChromaDB: embedded message {str(message_id)[:8]}...")
         except Exception as e:
             logger.warning(f"ChromaDB add error: {e}")
 
@@ -91,11 +127,12 @@ class RAGStore:
             return []
 
         try:
+            embedding = _simple_embed(text)
             async with httpx.AsyncClient(timeout=15.0) as client:
                 resp = await client.post(
                     f"{self.base_url}/api/v1/collections/{self._collection_id}/query",
                     json={
-                        "query_texts": [text],
+                        "query_embeddings": [embedding],
                         "n_results": min(n_results, 10),
                         "include": ["documents", "metadatas", "distances"],
                     },

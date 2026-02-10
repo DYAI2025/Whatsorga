@@ -9,6 +9,7 @@ class RadarTracker {
     this.enabled = false;
     this.currentChat = { id: 'unknown', name: 'Unknown' };
     this._scanTimer = null;
+    this._audioBlobCache = new Map();
     this.init();
   }
 
@@ -70,6 +71,53 @@ class RadarTracker {
     });
 
     observer.observe(mainContainer, { childList: true, subtree: true });
+    this.setupAudioObserver();
+  }
+
+  setupAudioObserver() {
+    const mainContainer = document.querySelector('#main');
+    if (!mainContainer) return;
+
+    const observer = new MutationObserver((mutations) => {
+      if (!chrome?.runtime?.id) { observer.disconnect(); return; }
+
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (!(node instanceof HTMLElement)) continue;
+          // Check if the added node is an <audio> or contains one
+          const audioEls = node.tagName === 'AUDIO' ? [node] : node.querySelectorAll?.('audio') || [];
+          for (const audioEl of audioEls) {
+            if (audioEl.src) {
+              this._captureBlobImmediately(audioEl);
+            }
+          }
+        }
+      }
+    });
+
+    observer.observe(mainContainer, { childList: true, subtree: true });
+  }
+
+  async _captureBlobImmediately(audioEl) {
+    const src = audioEl.src;
+    if (!src || this._audioBlobCache.has(src)) return;
+
+    try {
+      const response = await fetch(src);
+      if (!response.ok) return;
+      const blob = await response.blob();
+      const buffer = await blob.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64 = btoa(binary);
+      this._audioBlobCache.set(src, base64);
+      console.log(`[Radar] Audio blob captured: ${bytes.length} bytes`);
+    } catch (e) {
+      console.log(`[Radar] Audio blob capture failed: ${e.message}`);
+    }
   }
 
   scheduleScan() {
@@ -129,7 +177,7 @@ class RadarTracker {
 
   // --- Message scanning (adapted from What's That!?) ---
 
-  scanMessages() {
+  async scanMessages() {
     if (!this.enabled) { console.log('[Radar] Scan skipped: disabled'); return; }
 
     this.currentChat = this.getCurrentChatInfo();
@@ -153,19 +201,19 @@ class RadarTracker {
 
     const newMessages = [];
 
-    messages.forEach(msg => {
+    for (const msg of messages) {
       const prePlainText = msg.getAttribute('data-pre-plain-text') || '';
       const messageId = this.generateMessageId(msg, prePlainText);
 
-      if (this.sentMessageIds.has(messageId)) return;
+      if (this.sentMessageIds.has(messageId)) continue;
 
       const sender = this.extractSenderName(msg, prePlainText);
       const text = this.extractMessageText(msg);
       const timestamp = this.extractMessageTimestamp(msg, prePlainText);
       const replyTo = this.extractReplyTo(msg, sender);
-      const audioInfo = this.extractAudioInfo(msg);
+      const audioInfo = await this.extractAudioInfo(msg);
 
-      if (!text && !audioInfo) return;
+      if (!text && !audioInfo) continue;
 
       newMessages.push({
         messageId,
@@ -178,7 +226,7 @@ class RadarTracker {
         hasAudio: !!audioInfo,
         audioBlob: audioInfo?.blob || null
       });
-    });
+    }
 
     if (newMessages.length > 0) {
       newMessages.forEach(m => this.sentMessageIds.add(m.messageId));
@@ -273,7 +321,7 @@ class RadarTracker {
 
   // --- Audio extraction (NEW) ---
 
-  extractAudioInfo(element) {
+  async extractAudioInfo(element) {
     const row = element.closest('[role="row"]') || element;
 
     // Look for audio play button or audio element
@@ -285,10 +333,24 @@ class RadarTracker {
     // Try to find the audio source URL
     const audioEl = row.querySelector('audio');
     if (audioEl?.src) {
-      return { blob: audioEl.src, type: 'audio_url' };
+      // Check cache first (blob captured before it expired)
+      const cached = this._audioBlobCache.get(audioEl.src);
+      if (cached) {
+        return { blob: cached, type: 'audio_base64' };
+      }
+
+      // Try live fetch — await so the cache gets populated
+      await this._captureBlobImmediately(audioEl);
+      const justCached = this._audioBlobCache.get(audioEl.src);
+      if (justCached) {
+        return { blob: justCached, type: 'audio_base64' };
+      }
+
+      return { blob: null, type: 'audio_url_expired' };
     }
 
     // Mark as audio even without extractable blob (server can log it)
+    console.log('[Radar] Audio detected but no <audio> element yet (needs play tap)');
     return { blob: null, type: 'audio_detected' };
   }
 }

@@ -16,7 +16,13 @@ GROQ_WHISPER_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
 
 async def transcribe_audio(audio_base64: str) -> str | None:
     """Transcribe audio from base64. Try Groq first, then Ollama."""
-    audio_bytes = base64.b64decode(audio_base64)
+    try:
+        audio_bytes = base64.b64decode(audio_base64)
+    except Exception as e:
+        logger.error(f"Failed to decode audio base64 ({len(audio_base64)} chars): {e}")
+        return None
+
+    logger.info(f"Transcribing audio: {len(audio_bytes)} bytes")
 
     # Try Groq Whisper first
     if settings.groq_api_key:
@@ -24,13 +30,15 @@ async def transcribe_audio(audio_base64: str) -> str | None:
         if result:
             return result
         logger.warning("Groq transcription failed, trying Ollama fallback")
+    else:
+        logger.warning("No Groq API key configured, skipping Groq transcription")
 
     # Fallback to Ollama
     result = await _transcribe_ollama(audio_bytes)
     if result:
         return result
 
-    logger.error("All transcription methods failed")
+    logger.error(f"All transcription methods failed for {len(audio_bytes)} byte audio")
     return None
 
 
@@ -59,13 +67,19 @@ async def _transcribe_groq(audio_bytes: bytes) -> str | None:
         if response.status_code == 200:
             text = response.text.strip()
             if text:
-                logger.info(f"Groq transcription: {len(text)} chars")
+                logger.info(f"Groq transcription OK: {len(text)} chars — '{text[:80]}...'")
                 return text
+            else:
+                logger.warning("Groq returned 200 but empty transcript")
         else:
-            logger.warning(f"Groq API error: {response.status_code} {response.text[:200]}")
+            logger.warning(
+                f"Groq API error: {response.status_code} — {response.text[:300]}"
+            )
 
+    except httpx.TimeoutException:
+        logger.warning("Groq transcription timed out (30s)")
     except Exception as e:
-        logger.warning(f"Groq transcription error: {e}")
+        logger.warning(f"Groq transcription error: {type(e).__name__}: {e}")
 
     return None
 

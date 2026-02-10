@@ -13,7 +13,10 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
     groq_whisper_model: str = "whisper-large-v3-turbo"
 
-    # Ollama (fallback whisper + LLM)
+    # Gemini (fallback LLM enrichment)
+    gemini_api_key: str = ""
+
+    # Ollama (legacy, unused)
     ollama_url: str = "http://ollama:11434"
     ollama_model: str = "llama3.1:8b"
 

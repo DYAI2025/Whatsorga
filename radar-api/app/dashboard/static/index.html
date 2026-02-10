@@ -260,6 +260,37 @@
       font-size: 14px;
     }
 
+    /* Service status */
+    .service-grid {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .service-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: var(--bg);
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .service-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .service-dot.ok { background: var(--positive); }
+    .service-dot.error { background: var(--negative); }
+    .service-dot.off { background: var(--text-dim); }
+    .service-dot.idle { background: var(--warning); }
+    .service-detail {
+      color: var(--text-dim);
+      font-weight: 400;
+    }
+
     /* Auth */
     .auth-overlay {
       position: fixed;
@@ -350,6 +381,14 @@
         <div class="stat-value" id="statTermine">-</div>
         <div class="stat-label">Anstehende Termine</div>
       </div>
+    </div>
+  </div>
+
+  <!-- Service status -->
+  <div class="card card-wide" id="statusCard">
+    <h2>Service-Status</h2>
+    <div class="service-grid" id="serviceGrid">
+      <div class="service-pill"><span class="service-dot off"></span>Lade...</div>
     </div>
   </div>
 
@@ -446,6 +485,7 @@ function refreshAll() {
   loadMarkers();
   loadThreads();
   loadTermine();
+  loadStatus();
 }
 
 async function loadOverview() {
@@ -638,6 +678,22 @@ async function loadTermine() {
     `).join('');
   } catch (e) {
     console.error('Termine error:', e);
+  }
+}
+
+async function loadStatus() {
+  try {
+    const data = await apiFetch('/api/status');
+    const grid = document.getElementById('serviceGrid');
+    grid.innerHTML = data.services.map(s => `
+      <div class="service-pill">
+        <span class="service-dot ${s.status}"></span>
+        ${esc(s.name)}
+        <span class="service-detail">${esc(s.detail)}</span>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error('Status error:', e);
   }
 }
 

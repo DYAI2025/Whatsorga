@@ -1,14 +1,18 @@
 """CalDAV Sync — creates calendar events in Apple iCloud Calendar.
 
-Uses VCALENDAR format with VALARM reminders at 5d, 2d, 1d, 2h before event.
+Uses the caldav library for proper CalDAV discovery (PROPFIND),
+which is required for iCloud (numeric user IDs + calendar GUIDs).
+VALARM reminders at 5d, 2d, 1d, 2h before event.
 Only creates events for termine with confidence >= 0.7.
 """
 
+import asyncio
 import logging
 import uuid
 from datetime import datetime, timedelta
+from functools import lru_cache
 
-import httpx
+import caldav
 
 from app.config import settings
 
@@ -16,9 +20,10 @@ logger = logging.getLogger(__name__)
 
 MIN_CONFIDENCE = 0.7
 
-VCALENDAR_TEMPLATE = """BEGIN:VCALENDAR
+VCALENDAR_TEMPLATE = """\
+BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Beziehungs-Radar//DE
+PRODID:-//Beziehungs-Radar//WhatsOrga//DE
 BEGIN:VEVENT
 UID:{uid}
 DTSTART:{dtstart}
@@ -49,6 +54,64 @@ END:VEVENT
 END:VCALENDAR"""
 
 
+def _get_calendar():
+    """Discover and return the target CalDAV calendar (synchronous).
+
+    Uses PROPFIND to discover the actual calendar URL on iCloud,
+    which uses numeric user IDs and GUIDs internally.
+    """
+    client = caldav.DAVClient(
+        url=settings.caldav_url,
+        username=settings.caldav_username,
+        password=settings.caldav_password,
+    )
+    principal = client.principal()
+    calendars = principal.calendars()
+
+    target_name = settings.caldav_calendar.strip()
+    for cal in calendars:
+        if cal.name and cal.name.strip() == target_name:
+            logger.info(f"Found CalDAV calendar '{target_name}' at {cal.url}")
+            return cal
+
+    # If exact name not found, list available and raise
+    names = [c.name for c in calendars]
+    raise ValueError(
+        f"Calendar '{target_name}' not found. Available: {names}"
+    )
+
+
+def _create_event_sync(
+    title: str,
+    dt: datetime,
+    participants: list[str],
+    source_text: str,
+) -> str:
+    """Create a CalDAV event (synchronous, runs in thread)."""
+    cal = _get_calendar()
+
+    uid = f"radar-{uuid.uuid4()}@whatsorga"
+    dtstart = dt.strftime("%Y%m%dT%H%M%S")
+    dtend = (dt + timedelta(hours=1)).strftime("%Y%m%dT%H%M%S")
+
+    description = f"Erkannt aus WhatsApp\\nTeilnehmer: {', '.join(participants)}"
+    if source_text:
+        safe_text = source_text[:200].replace("\n", "\\n").replace(",", "\\,")
+        description += f"\\nOriginal: {safe_text}"
+
+    vcal = VCALENDAR_TEMPLATE.format(
+        uid=uid,
+        dtstart=dtstart,
+        dtend=dtend,
+        summary=title,
+        description=description,
+    )
+
+    cal.save_event(vcal)
+    logger.info(f"CalDAV event created: '{title}' at {dt}")
+    return uid
+
+
 async def sync_termin_to_calendar(
     title: str,
     dt: datetime,
@@ -65,43 +128,17 @@ async def sync_termin_to_calendar(
         logger.warning("CalDAV not configured, skipping sync")
         return None
 
-    uid = f"radar-{uuid.uuid4()}@beziehungs-radar"
-    dtstart = dt.strftime("%Y%m%dT%H%M%S")
-    dtend = (dt + timedelta(hours=1)).strftime("%Y%m%dT%H%M%S")
-    description = f"Erkannt aus WhatsApp\\nTeilnehmer: {', '.join(participants)}"
-    if source_text:
-        # Escape for VCALENDAR
-        safe_text = source_text[:200].replace("\n", "\\n").replace(",", "\\,")
-        description += f"\\nOriginal: {safe_text}"
-
-    vcal = VCALENDAR_TEMPLATE.format(
-        uid=uid,
-        dtstart=dtstart,
-        dtend=dtend,
-        summary=title,
-        description=description,
-    )
-
-    # PUT to CalDAV server
-    calendar_path = f"/calendars/{settings.caldav_username}/{settings.caldav_calendar}/{uid}.ics"
-    url = f"{settings.caldav_url.rstrip('/')}{calendar_path}"
-
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.put(
-                url,
-                content=vcal,
-                headers={"Content-Type": "text/calendar; charset=utf-8"},
-                auth=(settings.caldav_username, settings.caldav_password),
-            )
-
-            if resp.status_code in (200, 201, 204):
-                logger.info(f"CalDAV event created: {title} at {dt}")
-                return uid
-            else:
-                logger.warning(f"CalDAV PUT failed: {resp.status_code} {resp.text[:200]}")
-                return None
-
+        loop = asyncio.get_event_loop()
+        uid = await loop.run_in_executor(
+            None,
+            _create_event_sync,
+            title,
+            dt,
+            participants,
+            source_text,
+        )
+        return uid
     except Exception as e:
         logger.error(f"CalDAV sync error: {e}")
         return None

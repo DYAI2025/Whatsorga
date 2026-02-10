@@ -3,6 +3,7 @@
 import logging
 from datetime import datetime, timedelta
 
+import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -239,3 +240,100 @@ async def get_overview(
         "active_threads": active_threads,
         "upcoming_termine": upcoming_termine,
     }
+
+
+@router.get("/status")
+async def get_service_status(
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Check health of all pipeline services: Whisper, Groq LLM, Gemini, ChromaDB, CalDAV, Termine."""
+
+    async def _check(name: str, coro):
+        try:
+            return await coro
+        except Exception as e:
+            return {"name": name, "status": "error", "detail": str(e)}
+
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        services = []
+
+        # 1. Groq Whisper
+        if settings.groq_api_key:
+            try:
+                r = await client.get(
+                    "https://api.groq.com/openai/v1/models",
+                    headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+                )
+                services.append({
+                    "name": "Whisper (Groq)",
+                    "status": "ok" if r.status_code == 200 else "error",
+                    "detail": settings.groq_whisper_model,
+                })
+            except Exception as e:
+                services.append({"name": "Whisper (Groq)", "status": "error", "detail": str(e)})
+        else:
+            services.append({"name": "Whisper (Groq)", "status": "off", "detail": "Kein API-Key"})
+
+        # 2. Groq LLM
+        if settings.groq_api_key:
+            services.append({
+                "name": "LLM (Groq)",
+                "status": "ok",
+                "detail": "llama-3.3-70b-versatile",
+            })
+        else:
+            services.append({"name": "LLM (Groq)", "status": "off", "detail": "Kein API-Key"})
+
+        # 3. Gemini
+        if settings.gemini_api_key:
+            try:
+                r = await client.get(
+                    f"https://generativelanguage.googleapis.com/v1beta/models?key={settings.gemini_api_key}",
+                )
+                services.append({
+                    "name": "LLM (Gemini)",
+                    "status": "ok" if r.status_code == 200 else "error",
+                    "detail": "gemini-2.5-flash (Fallback)",
+                })
+            except Exception as e:
+                services.append({"name": "LLM (Gemini)", "status": "error", "detail": str(e)})
+        else:
+            services.append({"name": "LLM (Gemini)", "status": "off", "detail": "Kein API-Key"})
+
+        # 4. ChromaDB
+        try:
+            r = await client.get(f"{settings.chromadb_url}/api/v1/heartbeat")
+            services.append({
+                "name": "ChromaDB",
+                "status": "ok" if r.status_code == 200 else "error",
+                "detail": "RAG-Speicher",
+            })
+        except Exception as e:
+            services.append({"name": "ChromaDB", "status": "error", "detail": str(e)})
+
+        # 5. CalDAV
+        if settings.caldav_url and settings.caldav_password:
+            services.append({
+                "name": "CalDAV",
+                "status": "ok",
+                "detail": settings.caldav_calendar,
+            })
+        else:
+            services.append({"name": "CalDAV", "status": "off", "detail": "Nicht konfiguriert"})
+
+    # 6. Termine count (recent)
+    try:
+        count = await session.execute(
+            select(func.count(Termin.id)).where(Termin.datetime_ >= datetime.utcnow())
+        )
+        termin_total = count.scalar() or 0
+        services.append({
+            "name": "Termine",
+            "status": "ok" if termin_total > 0 else "idle",
+            "detail": f"{termin_total} anstehend",
+        })
+    except Exception:
+        services.append({"name": "Termine", "status": "error", "detail": "DB-Fehler"})
+
+    return {"services": services}

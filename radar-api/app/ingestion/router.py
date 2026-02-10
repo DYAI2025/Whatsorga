@@ -1,9 +1,10 @@
 """Ingestion endpoint — receives messages from the Chrome extension."""
 
+import base64
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +15,7 @@ from app.analysis.marker_engine import analyze_markers
 from app.analysis.sentiment_tracker import score_sentiment
 from app.analysis.weaver import process_message_context
 from app.analysis.termin_extractor import extract_termine
+from app.analysis.semantic_transcriber import enrich_transcript
 from app.outputs.caldav_sync import sync_termin_to_calendar
 from app.storage.database import Termin
 
@@ -173,3 +175,45 @@ def _parse_timestamp(ts_str: str | None) -> datetime:
 
     # Fallback
     return datetime.utcnow()
+
+
+@router.post("/transcribe")
+async def transcribe_endpoint(
+    audio: UploadFile = File(...),
+    chat_id: str = Form("unknown"),
+    sender: str = Form("Unknown"),
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Standalone transcription + semantic enrichment endpoint.
+
+    Accepts an audio file upload, transcribes via Groq Whisper,
+    enriches with conversation context, and returns the full result.
+
+    Usage:
+        curl -X POST http://localhost:8900/api/transcribe \
+          -H "Authorization: Bearer $KEY" \
+          -F "audio=@test.ogg" -F "chat_id=test" -F "sender=Ben"
+    """
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Empty audio file")
+
+    audio_b64 = base64.b64encode(audio_bytes).decode()
+
+    # Step 1: Transcribe
+    raw_transcript = await transcribe_audio(audio_b64)
+    if not raw_transcript:
+        raise HTTPException(status_code=422, detail="Transcription failed")
+
+    # Step 2: Semantic enrichment
+    ts = datetime.utcnow()
+    enriched = await enrich_transcript(session, raw_transcript, chat_id, sender, ts)
+
+    return {
+        "raw_transcript": enriched.raw,
+        "enriched_transcript": enriched.enriched,
+        "summary": enriched.summary,
+        "topics": enriched.topics,
+        "confidence": enriched.confidence,
+    }
