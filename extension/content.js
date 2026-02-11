@@ -372,6 +372,12 @@ class RadarTracker {
     for (const msg of messages) {
       const id = this.messageQueue.enqueue(msg);
       queueIds.push(id);
+
+      // Notify background for heartbeat tracking
+      chrome.runtime.sendMessage({
+        type: 'MESSAGE_CAPTURED',
+        chatId: msg.chatId
+      }).catch(err => console.log('[Radar] Background notification failed:', err.message));
     }
 
     console.log(`[Radar] Enqueued ${messages.length} messages`);
