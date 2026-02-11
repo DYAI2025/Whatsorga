@@ -451,3 +451,91 @@ async def get_communication_pattern(
         "hours": list(range(24)),
         "total_messages": sum(sum(row) for row in heatmap),
     }
+
+
+@router.get("/response-times/{chat_id}")
+async def get_response_times(
+    chat_id: str,
+    days: int = Query(default=30, ge=1, le=365),
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Calculate average response times per sender.
+
+    Analyzes the time gaps between consecutive messages to determine
+    how quickly each participant responds in the conversation.
+
+    Returns:
+    - Per-sender average response time in seconds
+    - Message count per sender
+    - Overall conversation response metrics
+    """
+    since = datetime.utcnow() - timedelta(days=days)
+
+    # Query all messages for the chat, ordered by timestamp
+    result = await session.execute(
+        select(Message.sender, Message.timestamp)
+        .where(and_(Message.chat_id == chat_id, Message.timestamp >= since))
+        .order_by(Message.timestamp)
+    )
+    messages = result.all()
+
+    if len(messages) < 2:
+        return {
+            "chat_id": chat_id,
+            "days": days,
+            "response_times": [],
+            "total_messages": len(messages),
+            "error": "Not enough messages to calculate response times",
+        }
+
+    # Calculate response times per sender
+    sender_response_times = {}  # sender -> list of response times in seconds
+    sender_message_counts = {}  # sender -> total messages sent
+
+    # Track previous message to calculate gaps
+    prev_sender = None
+    prev_timestamp = None
+
+    for sender, timestamp in messages:
+        # Count messages per sender
+        sender_message_counts[sender] = sender_message_counts.get(sender, 0) + 1
+
+        # Calculate response time (only when sender changes)
+        if prev_sender is not None and prev_sender != sender:
+            # This is a response from a different person
+            response_time_seconds = (timestamp - prev_timestamp).total_seconds()
+
+            # Only count reasonable response times (< 24 hours)
+            if 0 < response_time_seconds < 86400:
+                if sender not in sender_response_times:
+                    sender_response_times[sender] = []
+                sender_response_times[sender].append(response_time_seconds)
+
+        prev_sender = sender
+        prev_timestamp = timestamp
+
+    # Calculate averages per sender
+    response_times = []
+    for sender in sender_message_counts.keys():
+        times = sender_response_times.get(sender, [])
+        avg_response = sum(times) / len(times) if times else None
+
+        response_times.append({
+            "sender": sender,
+            "avg_response_seconds": round(avg_response, 2) if avg_response else None,
+            "avg_response_minutes": round(avg_response / 60, 2) if avg_response else None,
+            "response_count": len(times),
+            "message_count": sender_message_counts[sender],
+        })
+
+    # Sort by average response time (fastest first)
+    response_times.sort(key=lambda x: x["avg_response_seconds"] if x["avg_response_seconds"] else float('inf'))
+
+    return {
+        "chat_id": chat_id,
+        "days": days,
+        "response_times": response_times,
+        "total_messages": len(messages),
+        "total_participants": len(sender_message_counts),
+    }
