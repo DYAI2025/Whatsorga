@@ -4,8 +4,8 @@ class MessageQueue {
     this.storageKey = 'radar_message_queue';
   }
 
-  async enqueue(message) {
-    const queue = await this._getQueue();
+  enqueue(message) {
+    const queue = this._getQueue();
     const queueItem = {
       id: `${message.messageId}_${Date.now()}`,
       message: message,
@@ -15,28 +15,28 @@ class MessageQueue {
       enqueuedAt: new Date().toISOString()
     };
     queue.push(queueItem);
-    await this._saveQueue(queue);
+    this._saveQueue(queue);
     return queueItem.id;
   }
 
-  async markConfirmed(id) {
-    const queue = await this._getQueue();
+  markConfirmed(id) {
+    const queue = this._getQueue();
     const index = queue.findIndex(item => item.id === id);
     if (index !== -1) {
       queue.splice(index, 1); // Remove confirmed messages
-      await this._saveQueue(queue);
+      this._saveQueue(queue);
       return true;
     }
     return false;
   }
 
-  async getPending() {
-    const queue = await this._getQueue();
+  getPending() {
+    const queue = this._getQueue();
     return queue.filter(item => item.status === 'pending');
   }
 
-  async incrementRetry(id) {
-    const queue = await this._getQueue();
+  incrementRetry(id) {
+    const queue = this._getQueue();
     const item = queue.find(item => item.id === id);
     if (item) {
       item.retryCount++;
@@ -49,34 +49,43 @@ class MessageQueue {
         queue.splice(index, 1);
       }
 
-      await this._saveQueue(queue);
+      this._saveQueue(queue);
       return item.retryCount;
     }
     return 0;
   }
 
-  async getQueueSize() {
-    const queue = await this._getQueue();
+  getQueueSize() {
+    const queue = this._getQueue();
     return queue.length;
   }
 
-  async cleanup() {
+  cleanup() {
     // Remove old confirmed messages (> 100 in queue)
-    const queue = await this._getQueue();
+    const queue = this._getQueue();
     if (queue.length > 100) {
       console.log('[Radar Queue] Cleaning up old messages');
       queue.splice(0, queue.length - 100);
-      await this._saveQueue(queue);
+      this._saveQueue(queue);
     }
   }
 
-  async _getQueue() {
-    const result = await chrome.storage.local.get(this.storageKey);
-    return result[this.storageKey] || [];
+  _getQueue() {
+    try {
+      const data = localStorage.getItem(this.storageKey);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('[Radar Queue] Error reading queue from localStorage:', error);
+      return [];
+    }
   }
 
-  async _saveQueue(queue) {
-    await chrome.storage.local.set({ [this.storageKey]: queue });
+  _saveQueue(queue) {
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(queue));
+    } catch (error) {
+      console.error('[Radar Queue] Error saving queue to localStorage:', error);
+    }
   }
 }
 
