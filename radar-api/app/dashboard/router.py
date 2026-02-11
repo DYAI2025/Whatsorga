@@ -407,3 +407,47 @@ async def get_capture_stats(
             for s in stats
         ],
     }
+
+
+@router.get("/communication-pattern/{chat_id}")
+async def get_communication_pattern(
+    chat_id: str,
+    days: int = Query(default=30, ge=1, le=365),
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Get communication pattern heatmap: weekday x hour of message frequency.
+
+    Returns a 7x24 matrix where:
+    - Rows represent weekdays (0=Monday, 6=Sunday)
+    - Columns represent hours (0-23)
+    - Values represent message counts for that weekday-hour combination
+
+    This enables visualizing when conversations are most active.
+    """
+    since = datetime.utcnow() - timedelta(days=days)
+
+    # Query all messages for the chat within the time window
+    result = await session.execute(
+        select(Message.timestamp)
+        .where(and_(Message.chat_id == chat_id, Message.timestamp >= since))
+    )
+    messages = result.scalars().all()
+
+    # Initialize 7x24 heatmap matrix (weekday x hour)
+    heatmap = [[0 for _ in range(24)] for _ in range(7)]
+
+    # Populate heatmap
+    for timestamp in messages:
+        weekday = timestamp.weekday()  # 0=Monday, 6=Sunday
+        hour = timestamp.hour
+        heatmap[weekday][hour] += 1
+
+    return {
+        "chat_id": chat_id,
+        "days": days,
+        "heatmap": heatmap,
+        "weekdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+        "hours": list(range(24)),
+        "total_messages": sum(sum(row) for row in heatmap),
+    }
