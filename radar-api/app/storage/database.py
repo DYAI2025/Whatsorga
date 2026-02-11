@@ -79,6 +79,18 @@ class Termin(Base):
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 
+class CaptureStats(Base):
+    __tablename__ = "capture_stats"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    chat_id = Column(String, nullable=False, index=True, unique=True)
+    last_heartbeat = Column(DateTime(timezone=True), nullable=True)
+    messages_captured_24h = Column(Integer, default=0)
+    error_count_24h = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

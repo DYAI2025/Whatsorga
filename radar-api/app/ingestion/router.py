@@ -9,8 +9,9 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.storage.database import get_session, Message, Analysis
+from app.storage.database import get_session, Message, Analysis, CaptureStats
 from app.ingestion.audio_handler import transcribe_audio
+from sqlalchemy import select
 from app.analysis.marker_engine import analyze_markers
 from app.analysis.sentiment_tracker import score_sentiment
 from app.analysis.weaver import process_message_context
@@ -217,3 +218,43 @@ async def transcribe_endpoint(
         "topics": enriched.topics,
         "confidence": enriched.confidence,
     }
+
+
+class HeartbeatPayload(BaseModel):
+    chatId: str
+    messageCount: int
+    queueSize: int
+    timestamp: str
+
+
+@router.post("/heartbeat")
+async def receive_heartbeat(
+    payload: HeartbeatPayload,
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Receive heartbeat from extension with capture stats."""
+
+    # Upsert capture_stats
+    result = await session.execute(
+        select(CaptureStats).where(CaptureStats.chat_id == payload.chatId)
+    )
+    stats = result.scalar_one_or_none()
+
+    if stats:
+        stats.last_heartbeat = datetime.utcnow()
+        stats.messages_captured_24h += payload.messageCount
+        stats.updated_at = datetime.utcnow()
+    else:
+        stats = CaptureStats(
+            chat_id=payload.chatId,
+            last_heartbeat=datetime.utcnow(),
+            messages_captured_24h=payload.messageCount,
+            error_count_24h=0,
+        )
+        session.add(stats)
+
+    await session.commit()
+
+    logger.info(f"Heartbeat received for {payload.chatId}: +{payload.messageCount} messages")
+    return {"status": "ok"}

@@ -10,8 +10,18 @@ let apiKey = '';
 let retryQueue = [];
 let retryTimer = null;
 
+// Heartbeat tracking
+let heartbeatState = {
+  chatCounts: {}, // { chatId: messageCount }
+  lastBeat: null,
+  timer: null
+};
+
 // Load config on startup
 loadServerConfig();
+
+// Initialize heartbeat on extension load
+startHeartbeat();
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   switch (msg.type) {
@@ -42,6 +52,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     case 'CLEAR_QUEUE':
       retryQueue = [];
+      sendResponse({ ok: true });
+      break;
+
+    case 'MESSAGE_CAPTURED':
+      // Track messages for heartbeat
+      const { chatId } = msg;
+      heartbeatState.chatCounts[chatId] = (heartbeatState.chatCounts[chatId] || 0) + 1;
       sendResponse({ ok: true });
       break;
   }
@@ -153,5 +170,44 @@ async function processRetryQueue() {
 
   if (retryQueue.length > 0) {
     scheduleRetry();
+  }
+}
+
+function startHeartbeat() {
+  // Send heartbeat every 60 seconds
+  heartbeatState.timer = setInterval(async () => {
+    await sendHeartbeat();
+  }, 60000);
+}
+
+async function sendHeartbeat() {
+  if (!serverUrl || !apiKey) return;
+
+  try {
+    // Send heartbeat for each tracked chat
+    for (const [chatId, count] of Object.entries(heartbeatState.chatCounts)) {
+      if (count === 0) continue;
+
+      await fetch(`${serverUrl}/api/heartbeat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          chatId,
+          messageCount: count,
+          queueSize: retryQueue.length,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      console.log(`[Radar Heartbeat] Sent for ${chatId}: ${count} messages`);
+      heartbeatState.chatCounts[chatId] = 0; // Reset counter
+    }
+
+    heartbeatState.lastBeat = new Date().toISOString();
+  } catch (error) {
+    console.error('[Radar Heartbeat] Error:', error);
   }
 }

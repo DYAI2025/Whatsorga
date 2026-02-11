@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring - Beziehungs-Radar</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e4e4e7;
+      --text-dim: #8b8d97;
+      --accent: #6366f1;
+      --accent-dim: #4f46e5;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .refresh-info {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .header-controls button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+
+    .header-controls button:hover {
+      background: var(--accent-dim);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .summary-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .summary-label {
+      font-size: 13px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .summary-card.green .summary-value { color: var(--green); }
+    .summary-card.yellow .summary-value { color: var(--yellow); }
+    .summary-card.red .summary-value { color: var(--red); }
+
+    .chat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .chat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      transition: all 0.2s;
+    }
+
+    .chat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .chat-card.green { border-left-color: var(--green); }
+    .chat-card.yellow { border-left-color: var(--yellow); }
+    .chat-card.red { border-left-color: var(--red); }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .chat-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-left: 12px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .status-indicator.green {
+      background: var(--green);
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+    }
+    .status-indicator.yellow {
+      background: var(--yellow);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+    }
+    .status-indicator.red {
+      background: var(--red);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .chat-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-item {
+      background: var(--bg);
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .chat-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .chat-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .chat-info-icon {
+      width: 14px;
+      height: 14px;
+      opacity: 0.6;
+    }
+
+    .heartbeat-time {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .heartbeat-time.stale {
+      color: var(--yellow);
+    }
+
+    .heartbeat-time.dead {
+      color: var(--red);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-dim);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      width: 340px;
+    }
+
+    .auth-box h2 {
+      margin-bottom: 16px;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .auth-box input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .auth-box button {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    .auth-box button:hover {
+      background: var(--accent-dim);
+    }
+
+    .auth-error {
+      color: var(--red);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-dim);
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Auth screen -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <h2>Monitoring - Beziehungs-Radar</h2>
+    <input type="password" id="authKey" placeholder="API-Key eingeben">
+    <button onclick="authenticate()">Anmelden</button>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<!-- Main monitoring view -->
+<header>
+  <h1>Chat Monitoring</h1>
+  <div class="header-controls">
+    <span class="refresh-info" id="refreshInfo">Auto-Refresh: 30s</span>
+    <button onclick="loadData()">Jetzt aktualisieren</button>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Summary stats -->
+  <div class="summary" id="summary">
+    <div class="summary-card">
+      <div class="summary-value" id="totalChats">-</div>
+      <div class="summary-label">Chats</div>
+    </div>
+    <div class="summary-card green">
+      <div class="summary-value" id="greenCount">-</div>
+      <div class="summary-label">Gesund</div>
+    </div>
+    <div class="summary-card yellow">
+      <div class="summary-value" id="yellowCount">-</div>
+      <div class="summary-label">Warnung</div>
+    </div>
+    <div class="summary-card red">
+      <div class="summary-value" id="redCount">-</div>
+      <div class="summary-label">Kritisch</div>
+    </div>
+  </div>
+
+  <!-- Chat cards -->
+  <div id="chatContainer">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <div>Lade Daten...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let API_KEY = '';
+let refreshTimer = null;
+const REFRESH_INTERVAL = 30000; // 30 seconds
+
+function headers() {
+  return {
+    'Authorization': 'Bearer ' + API_KEY,
+    'Content-Type': 'application/json'
+  };
+}
+
+async function apiFetch(path) {
+  const resp = await fetch(path, { headers: headers() });
+  if (!resp.ok) throw new Error(`API error ${resp.status}`);
+  return resp.json();
+}
+
+function authenticate() {
+  API_KEY = document.getElementById('authKey').value.trim();
+  if (!API_KEY) {
+    document.getElementById('authError').textContent = 'Bitte API-Key eingeben';
+    return;
+  }
+
+  // Test auth by fetching data
+  apiFetch('/api/capture-stats')
+    .then(() => {
+      document.getElementById('authOverlay').style.display = 'none';
+      localStorage.setItem('monitoring_api_key', API_KEY);
+      loadData();
+      startAutoRefresh();
+    })
+    .catch(err => {
+      document.getElementById('authError').textContent = 'Authentifizierung fehlgeschlagen: ' + err.message;
+    });
+}
+
+async function loadData() {
+  try {
+    const data = await apiFetch('/api/capture-stats');
+    renderSummary(data.chats);
+    renderChats(data.chats);
+  } catch (e) {
+    console.error('Load error:', e);
+    document.getElementById('chatContainer').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">⚠</div>
+        <div>Fehler beim Laden der Daten: ${e.message}</div>
+      </div>
+    `;
+  }
+}
+
+function renderSummary(chats) {
+  const greenCount = chats.filter(c => c.status === 'green').length;
+  const yellowCount = chats.filter(c => c.status === 'yellow').length;
+  const redCount = chats.filter(c => c.status === 'red').length;
+
+  document.getElementById('totalChats').textContent = chats.length;
+  document.getElementById('greenCount').textContent = greenCount;
+  document.getElementById('yellowCount').textContent = yellowCount;
+  document.getElementById('redCount').textContent = redCount;
+}
+
+function renderChats(chats) {
+  const container = document.getElementById('chatContainer');
+
+  if (!chats.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <div>Keine Chats gefunden</div>
+      </div>
+    `;
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'chat-grid';
+
+  chats.forEach(chat => {
+    const card = document.createElement('div');
+    card.className = `chat-card ${chat.status}`;
+
+    const heartbeatAge = getHeartbeatAge(chat.last_heartbeat);
+    const heartbeatClass = getHeartbeatClass(heartbeatAge);
+
+    card.innerHTML = `
+      <div class="chat-header">
+        <div class="chat-name" title="${esc(chat.chat_id)}">${esc(chat.chat_id)}</div>
+        <div class="status-indicator ${chat.status}"></div>
+      </div>
+
+      <div class="chat-stats">
+        <div class="stat-item">
+          <div class="stat-value">${chat.messages_captured_24h}</div>
+          <div class="stat-label">Nachrichten (24h)</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">${chat.error_count_24h}</div>
+          <div class="stat-label">Fehler (24h)</div>
+        </div>
+      </div>
+
+      <div class="chat-footer">
+        <div class="chat-info">
+          <svg class="chat-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Letzter Heartbeat: <span class="heartbeat-time ${heartbeatClass}">${heartbeatAge}</span></span>
+        </div>
+        <div class="chat-info">
+          <svg class="chat-info-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Status: ${getStatusText(chat.status)}</span>
+        </div>
+      </div>
+    `;
+
+    grid.appendChild(card);
+  });
+
+  container.innerHTML = '';
+  container.appendChild(grid);
+}
+
+function getHeartbeatAge(lastHeartbeat) {
+  if (!lastHeartbeat) return 'Nie';
+
+  const now = new Date();
+  const heartbeat = new Date(lastHeartbeat);
+  const diffMs = now - heartbeat;
+  const diffMin = Math.floor(diffMs / 60000);
+
+  if (diffMin < 1) return 'Gerade eben';
+  if (diffMin < 60) return `vor ${diffMin}m`;
+
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `vor ${diffHours}h`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `vor ${diffDays}d`;
+}
+
+function getHeartbeatClass(ageText) {
+  if (ageText === 'Nie') return 'dead';
+  if (ageText.includes('d') || ageText.includes('h')) return 'stale';
+  return '';
+}
+
+function getStatusText(status) {
+  switch(status) {
+    case 'green': return 'Gesund';
+    case 'yellow': return 'Warnung';
+    case 'red': return 'Kritisch';
+    default: return 'Unbekannt';
+  }
+}
+
+function esc(s) {
+  const div = document.createElement('div');
+  div.textContent = s || '';
+  return div.innerHTML;
+}
+
+function startAutoRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+
+  let countdown = REFRESH_INTERVAL / 1000;
+  refreshTimer = setInterval(() => {
+    countdown--;
+    if (countdown <= 0) {
+      loadData();
+      countdown = REFRESH_INTERVAL / 1000;
+    }
+    document.getElementById('refreshInfo').textContent = `Auto-Refresh: ${countdown}s`;
+  }, 1000);
+}
+
+// Auto-login from localStorage
+(function init() {
+  const saved_key = localStorage.getItem('monitoring_api_key');
+  if (saved_key) {
+    document.getElementById('authKey').value = saved_key;
+    authenticate();
+  }
+})();
+</script>
+</body>
+</html>

@@ -10,12 +10,20 @@ class RadarTracker {
     this.currentChat = { id: 'unknown', name: 'Unknown' };
     this._scanTimer = null;
     this._audioBlobCache = new Map();
+    this.messageQueue = new MessageQueue(); // NEW
+    this._retryTimer = null; // NEW
     this.init();
   }
 
   async init() {
     await this.loadConfig();
     this.waitForWhatsApp();
+
+    // Start retry scheduler (every 10 seconds)
+    this._retryTimer = setInterval(() => {
+      this.processPendingQueue();
+      this.messageQueue.cleanup();
+    }, 10000);
 
     // Listen for config changes from popup
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -230,7 +238,7 @@ class RadarTracker {
 
     if (newMessages.length > 0) {
       newMessages.forEach(m => this.sentMessageIds.add(m.messageId));
-      chrome.runtime.sendMessage({ type: 'NEW_MESSAGES', data: newMessages });
+      this.sendToAPI(newMessages);
     }
   }
 
@@ -352,6 +360,81 @@ class RadarTracker {
     // Mark as audio even without extractable blob (server can log it)
     console.log('[Radar] Audio detected but no <audio> element yet (needs play tap)');
     return { blob: null, type: 'audio_detected' };
+  }
+
+  // --- Queue-based sending with retry logic ---
+
+  sendToAPI(messages) {
+    if (!messages || messages.length === 0) return;
+
+    // Enqueue all messages first (synchronous - no await)
+    const queueIds = [];
+    for (const msg of messages) {
+      const id = this.messageQueue.enqueue(msg);
+      queueIds.push(id);
+
+      // Notify background for heartbeat tracking
+      chrome.runtime.sendMessage({
+        type: 'MESSAGE_CAPTURED',
+        chatId: msg.chatId
+      }).catch(err => console.log('[Radar] Background notification failed:', err.message));
+    }
+
+    console.log(`[Radar] Enqueued ${messages.length} messages`);
+
+    // Attempt to send immediately
+    this.processPendingQueue();
+  }
+
+  async processPendingQueue() {
+    const pending = this.messageQueue.getPending();
+    if (pending.length === 0) return;
+
+    // Batch send (max 10 at a time)
+    const batch = pending.slice(0, 10);
+    const messages = batch.map(item => item.message);
+
+    try {
+      const config = await chrome.storage.local.get(['serverUrl', 'apiKey']);
+      const apiUrl = config.serverUrl || 'http://localhost:8900';
+      const apiKey = config.apiKey || 'changeme';
+
+      const response = await fetch(`${apiUrl}/api/ingest`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({ messages })
+      });
+
+      if (response.ok) {
+        // Mark all as confirmed (synchronous - no await)
+        for (const item of batch) {
+          this.messageQueue.markConfirmed(item.id);
+        }
+        console.log(`[Radar] Confirmed ${batch.length} messages`);
+      } else if (response.status === 401 || response.status === 403) {
+        // Auth error - stop retrying: remove messages from queue
+        for (const item of batch) {
+          this.messageQueue.markConfirmed(item.id);
+        }
+        console.error('[Radar] Auth error - check API key; dropping current batch from queue');
+        return;
+      } else {
+        // Server error - increment retry (synchronous - no await)
+        for (const item of batch) {
+          this.messageQueue.incrementRetry(item.id);
+        }
+        console.warn(`[Radar] Server error ${response.status}, will retry`);
+      }
+    } catch (error) {
+      // Network error - increment retry (synchronous - no await)
+      for (const item of batch) {
+        this.messageQueue.incrementRetry(item.id);
+      }
+      console.warn('[Radar] Network error, will retry:', error.message);
+    }
   }
 }
 
