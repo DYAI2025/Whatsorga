@@ -9,7 +9,7 @@ from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.storage.database import get_session, Message, Analysis, DriftSnapshot, Thread, Termin
+from app.storage.database import get_session, Message, Analysis, DriftSnapshot, Thread, Termin, CaptureStats
 from app.storage.rag_store import rag_store
 
 logger = logging.getLogger(__name__)
@@ -337,3 +337,205 @@ async def get_service_status(
         services.append({"name": "Termine", "status": "error", "detail": "DB-Fehler"})
 
     return {"services": services}
+
+
+def _compute_status(last_heartbeat: datetime | None, error_count_24h: int) -> str:
+    """Compute health status based on heartbeat age and error rate.
+
+    Logic:
+    - GREEN: heartbeat < 5 minutes ago, error_count_24h < 10
+    - YELLOW: heartbeat 5-15 minutes ago OR error_count_24h 10-50
+    - RED: heartbeat > 15 minutes ago OR error_count_24h > 50
+    """
+    now = datetime.utcnow()
+
+    # Check heartbeat age
+    if not last_heartbeat:
+        return "red"
+
+    age_minutes = (now - last_heartbeat).total_seconds() / 60
+
+    # Determine status based on age
+    if age_minutes > 15:
+        status_from_age = "red"
+    elif age_minutes > 5:
+        status_from_age = "yellow"
+    else:
+        status_from_age = "green"
+
+    # Determine status based on error rate
+    if error_count_24h > 50:
+        status_from_errors = "red"
+    elif error_count_24h > 10:
+        status_from_errors = "yellow"
+    else:
+        status_from_errors = "green"
+
+    # Return worst status (red > yellow > green)
+    if status_from_age == "red" or status_from_errors == "red":
+        return "red"
+    elif status_from_age == "yellow" or status_from_errors == "yellow":
+        return "yellow"
+    else:
+        return "green"
+
+
+@router.get("/capture-stats")
+async def get_capture_stats(
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Get capture statistics for all monitored chats with computed health status.
+
+    Returns stats from the capture_stats table with green/yellow/red status
+    computed based on last heartbeat age and error count.
+    """
+    result = await session.execute(select(CaptureStats).order_by(desc(CaptureStats.last_heartbeat)))
+    stats = result.scalars().all()
+
+    return {
+        "chats": [
+            {
+                "chat_id": s.chat_id,
+                "last_heartbeat": s.last_heartbeat.isoformat() if s.last_heartbeat else None,
+                "messages_captured_24h": s.messages_captured_24h,
+                "error_count_24h": s.error_count_24h,
+                "status": _compute_status(s.last_heartbeat, s.error_count_24h),
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+            }
+            for s in stats
+        ],
+    }
+
+
+@router.get("/communication-pattern/{chat_id}")
+async def get_communication_pattern(
+    chat_id: str,
+    days: int = Query(default=30, ge=1, le=365),
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Get communication pattern heatmap: weekday x hour of message frequency.
+
+    Returns a 7x24 matrix where:
+    - Rows represent weekdays (0=Monday, 6=Sunday)
+    - Columns represent hours (0-23)
+    - Values represent message counts for that weekday-hour combination
+
+    This enables visualizing when conversations are most active.
+    """
+    since = datetime.utcnow() - timedelta(days=days)
+
+    # Query all messages for the chat within the time window
+    result = await session.execute(
+        select(Message.timestamp)
+        .where(and_(Message.chat_id == chat_id, Message.timestamp >= since))
+    )
+    messages = result.scalars().all()
+
+    # Initialize 7x24 heatmap matrix (weekday x hour)
+    heatmap = [[0 for _ in range(24)] for _ in range(7)]
+
+    # Populate heatmap
+    for timestamp in messages:
+        weekday = timestamp.weekday()  # 0=Monday, 6=Sunday
+        hour = timestamp.hour
+        heatmap[weekday][hour] += 1
+
+    return {
+        "chat_id": chat_id,
+        "days": days,
+        "heatmap": heatmap,
+        "weekdays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+        "hours": list(range(24)),
+        "total_messages": sum(sum(row) for row in heatmap),
+    }
+
+
+@router.get("/response-times/{chat_id}")
+async def get_response_times(
+    chat_id: str,
+    days: int = Query(default=30, ge=1, le=365),
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Calculate average response times per sender.
+
+    Analyzes the time gaps between consecutive messages to determine
+    how quickly each participant responds in the conversation.
+
+    Returns:
+    - Per-sender average response time in seconds
+    - Message count per sender
+    - Overall conversation response metrics
+    """
+    since = datetime.utcnow() - timedelta(days=days)
+
+    # Query all messages for the chat, ordered by timestamp
+    result = await session.execute(
+        select(Message.sender, Message.timestamp)
+        .where(and_(Message.chat_id == chat_id, Message.timestamp >= since))
+        .order_by(Message.timestamp)
+    )
+    messages = result.all()
+
+    if len(messages) < 2:
+        return {
+            "chat_id": chat_id,
+            "days": days,
+            "response_times": [],
+            "total_messages": len(messages),
+            "error": "Not enough messages to calculate response times",
+        }
+
+    # Calculate response times per sender
+    sender_response_times = {}  # sender -> list of response times in seconds
+    sender_message_counts = {}  # sender -> total messages sent
+
+    # Track previous message to calculate gaps
+    prev_sender = None
+    prev_timestamp = None
+
+    for sender, timestamp in messages:
+        # Count messages per sender
+        sender_message_counts[sender] = sender_message_counts.get(sender, 0) + 1
+
+        # Calculate response time (only when sender changes)
+        if prev_sender is not None and prev_sender != sender:
+            # This is a response from a different person
+            response_time_seconds = (timestamp - prev_timestamp).total_seconds()
+
+            # Only count reasonable response times (< 24 hours)
+            if 0 < response_time_seconds < 86400:
+                if sender not in sender_response_times:
+                    sender_response_times[sender] = []
+                sender_response_times[sender].append(response_time_seconds)
+
+        prev_sender = sender
+        prev_timestamp = timestamp
+
+    # Calculate averages per sender
+    response_times = []
+    for sender in sender_message_counts.keys():
+        times = sender_response_times.get(sender, [])
+        avg_response = sum(times) / len(times) if times else None
+
+        response_times.append({
+            "sender": sender,
+            "avg_response_seconds": round(avg_response, 2) if avg_response else None,
+            "avg_response_minutes": round(avg_response / 60, 2) if avg_response else None,
+            "response_count": len(times),
+            "message_count": sender_message_counts[sender],
+        })
+
+    # Sort by average response time (fastest first)
+    response_times.sort(key=lambda x: x["avg_response_seconds"] if x["avg_response_seconds"] else float('inf'))
+
+    return {
+        "chat_id": chat_id,
+        "days": days,
+        "response_times": response_times,
+        "total_messages": len(messages),
+        "total_participants": len(sender_message_counts),
+    }

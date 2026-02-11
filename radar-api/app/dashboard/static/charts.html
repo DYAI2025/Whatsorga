@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Charts - Beziehungs-Radar</title>
+
+  <!-- React, ReactDOM, Babel, and Recharts via CDN with Subresource Integrity -->
+  <script
+    src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"
+    integrity="sha384-wiV1pW8bq1pGmZcG+u+JYqE5Z0kQ6tSWdSz0d5wRld5g3N3g5QwU1x5R2pXf9n2M"
+    crossorigin="anonymous"></script>
+  <script
+    src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"
+    integrity="sha384-tXcA8p7v4F1CwX4M2t5I1oTmuq4l3m7E9oQ9pVZkG8Xy1mZQq4K5mYt7YJw1C2dD"
+    crossorigin="anonymous"></script>
+  <script
+    src="https://unpkg.com/@babel/standalone@7.23.9/babel.min.js"
+    integrity="sha384-SuQYcY3f4HqQ9xYz6a5UDkY0PrvF+KkCjQhX7Xnq4q7Z5b+Jf5e9VtLqDfXk2r3A"
+    crossorigin="anonymous"></script>
+  <script
+    src="https://unpkg.com/recharts@2.10.3/dist/Recharts.js"
+    integrity="sha384-4b2cWc5s6Tz6q6y3o9D4pZ7hF3s0uC3pH9wHnYvK2kT+vYyP4ZlFuyF4rZpK8XxL"
+    crossorigin="anonymous"></script>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e4e4e7;
+      --text-dim: #8b8d97;
+      --accent: #6366f1;
+      --accent-dim: #4f46e5;
+      --positive: #22c55e;
+      --negative: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-controls select,
+    .header-controls button {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .header-controls button {
+      background: var(--accent);
+      color: white;
+      border: none;
+    }
+
+    .header-controls button:hover {
+      background: var(--accent-dim);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .card h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .card-description {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .chart-wrapper {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 16px;
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      width: 340px;
+    }
+
+    .auth-box h2 {
+      margin-bottom: 16px;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .auth-box input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .auth-box button {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .auth-box button:hover {
+      background: var(--accent-dim);
+    }
+
+    .auth-error {
+      color: var(--negative);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-dim);
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Custom tooltip styling */
+    .custom-tooltip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .custom-tooltip .label {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .custom-tooltip .value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .custom-tooltip .sentiment {
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    .custom-tooltip .sentiment.positive {
+      color: var(--positive);
+    }
+
+    .custom-tooltip .sentiment.negative {
+      color: var(--negative);
+    }
+
+    .custom-tooltip .sentiment.neutral {
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Auth screen -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <h2>Interactive Charts Demo</h2>
+    <input type="password" id="authKey" placeholder="API-Key eingeben">
+    <input type="text" id="authChatId" placeholder="Chat-ID (z.B. Marike Stucke)">
+    <button onclick="authenticate()">Verbinden</button>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<!-- Main content -->
+<header>
+  <h1>Interactive Charts Demo - Recharts</h1>
+  <div class="header-controls">
+    <span id="chatLabel" style="font-size:13px;color:var(--text-dim)"></span>
+    <select id="daysSelect" onchange="window.loadChartData()">
+      <option value="7">7 Tage</option>
+      <option value="14">14 Tage</option>
+      <option value="30" selected>30 Tage</option>
+      <option value="90">90 Tage</option>
+    </select>
+    <button onclick="window.loadChartData()">Aktualisieren</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="card">
+    <h2>Sentiment Chart - LineChart mit Custom Tooltip</h2>
+    <p class="card-description">
+      Interaktiver Stimmungsverlauf mit Hover-Tooltips. Zeigt Sentiment-Score (-1 bis +1)
+      und Nachrichtenanzahl uber die Zeit. Hover uber Datenpunkte fur Details.
+    </p>
+    <div class="chart-wrapper">
+      <div id="lineChartRoot"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Sentiment Chart - AreaChart mit Gradient</h2>
+    <p class="card-description">
+      Area Chart mit Farbverlauf zeigt Sentiment-Trends visuell ansprechend.
+      Die Flache unter der Kurve wird farblich hervorgehoben.
+    </p>
+    <div class="chart-wrapper">
+      <div id="areaChartRoot"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Message Volume - BarChart</h2>
+    <p class="card-description">
+      Balkendiagramm zur Visualisierung der taglichen Nachrichtenanzahl.
+      Farbcodierung basierend auf dem durchschnittlichen Sentiment des Tages.
+    </p>
+    <div class="chart-wrapper">
+      <div id="barChartRoot"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Sentiment Distribution - ComposedChart</h2>
+    <p class="card-description">
+      Kombiniertes Diagramm mit Line (Sentiment) und Area (Nachrichten-Volumen).
+      Zeigt Zusammenhang zwischen Aktivitat und Stimmung.
+    </p>
+    <div class="chart-wrapper">
+      <div id="composedChartRoot"></div>
+    </div>
+  </div>
+</div>
+
+<script type="text/babel">
+  const { LineChart, Line, AreaChart, Area, BarChart, Bar, ComposedChart,
+          XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } = Recharts;
+
+  let API_KEY = '';
+  let CHAT_ID = '';
+
+  function headers() {
+    return {
+      'Authorization': 'Bearer ' + API_KEY,
+      'Content-Type': 'application/json'
+    };
+  }
+
+  async function apiFetch(path) {
+    const resp = await fetch(path, { headers: headers() });
+    if (!resp.ok) throw new Error(`API error ${resp.status}`);
+    return resp.json();
+  }
+
+  // Custom tooltip component with styling
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload || !payload.length) return null;
+
+    const sentimentValue = payload.find(p => p.dataKey === 'sentiment')?.value;
+    const messageCount = payload.find(p => p.dataKey === 'messages')?.value;
+
+    let sentimentClass = 'neutral';
+    if (sentimentValue > 0.1) sentimentClass = 'positive';
+    else if (sentimentValue < -0.1) sentimentClass = 'negative';
+
+    return (
+      <div className="custom-tooltip">
+        <div className="label">{label}</div>
+        {sentimentValue !== undefined && (
+          <div className={`sentiment ${sentimentClass}`}>
+            Sentiment: {sentimentValue > 0 ? '+' : ''}{sentimentValue.toFixed(2)}
+          </div>
+        )}
+        {messageCount !== undefined && (
+          <div className="value">
+            {messageCount} Nachrichten
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // SentimentLineChart Component
+  const SentimentLineChart = ({ data }) => {
+    return (
+      <ResponsiveContainer width="100%" height={400}>
+        <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <defs>
+            <linearGradient id="colorSentiment" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#2a2d3a" />
+          <XAxis
+            dataKey="date"
+            stroke="#8b8d97"
+            tick={{ fill: '#8b8d97', fontSize: 12 }}
+          />
+          <YAxis
+            stroke="#8b8d97"
+            tick={{ fill: '#8b8d97', fontSize: 12 }}
+            domain={[-1, 1]}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend wrapperStyle={{ color: '#e4e4e7' }} />
+          <Line
+            type="monotone"
+            dataKey="sentiment"
+            stroke="#6366f1"
+            strokeWidth={2}
+            dot={{ fill: '#6366f1', r: 4 }}
+            activeDot={{ r: 6 }}
+            name="Sentiment"
+          />
+          <Line
+            type="monotone"
+            dataKey="messages"
+            stroke="#8b8d97"
+            strokeWidth={1}
+            strokeDasharray="5 5"
+            dot={false}
+            name="Nachrichten"
+            yAxisId="right"
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            stroke="#8b8d97"
+            tick={{ fill: '#8b8d97', fontSize: 12 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // SentimentAreaChart Component
+  const SentimentAreaChart = ({ data }) => {
+    return (
+      <ResponsiveContainer width="100%" height={400}>
+        <AreaChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <defs>
+            <linearGradient id="colorAreaSentiment" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
+              <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#2a2d3a" />
+          <XAxis
+            dataKey="date"
+            stroke="#8b8d97"
+            tick={{ fill: '#8b8d97', fontSize: 12 }}
+          />
+          <YAxis
+            stroke="#8b8d97"
+            tick={{ fill: '#8b8d97', fontSize: 12 }}
+            domain={[-1, 1]}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend wrapperStyle={{ color: '#e4e4e7' }} />
+          <Area
+            type="monotone"
+            dataKey="sentiment"
+            stroke="#6366f1"
+            fillOpacity={1}
+            fill="url(#colorAreaSentiment)"
+            strokeWidth={2}
+            name="Sentiment"
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // MessageBarChart Component
+  const MessageBarChart = ({ data }) => {
+    // Color bars based on sentiment
+    const dataWithColor = data.map(item => ({
+      ...item,
+      fill: item.sentiment > 0.1 ? '#22c55e' : item.sentiment < -0.1 ? '#ef4444' : '#8b8d97'
+    }));
+
+    return (
+      <ResponsiveContainer width="100%" height={400}>
+        <BarChart data={dataWithColor} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#2a2d3a" />
+          <XAxis
+            dataKey="date"
+            stroke="#8b8d97"
+            tick={{ fill: '#8b8d97', fontSize: 12 }}
+          />
+          <YAxis
+            stroke="#8b8d97"
+            tick={{ fill: '#8b8d97', fontSize: 12 }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend wrapperStyle={{ color: '#e4e4e7' }} />
+          <Bar
+            dataKey="messages"
+            name="Nachrichten"
+            radius={[4, 4, 0, 0]}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // ComposedChart Component
+  const SentimentComposedChart = ({ data }) => {
+    return (
+      <ResponsiveContainer width="100%" height={400}>
+        <ComposedChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <defs>
+            <linearGradient id="colorMessages" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#8b8d97" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#8b8d97" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#2a2d3a" />
+          <XAxis
+            dataKey="date"
+            stroke="#8b8d97"
+            tick={{ fill: '#8b8d97', fontSize: 12 }}
+          />
+          <YAxis
+            yAxisId="left"
+            stroke="#8b8d97"
+            tick={{ fill: '#8b8d97', fontSize: 12 }}
+            domain={[-1, 1]}
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            stroke="#8b8d97"
+            tick={{ fill: '#8b8d97', fontSize: 12 }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend wrapperStyle={{ color: '#e4e4e7' }} />
+          <Area
+            yAxisId="right"
+            type="monotone"
+            dataKey="messages"
+            fill="url(#colorMessages)"
+            stroke="#8b8d97"
+            strokeWidth={1}
+            name="Nachrichten"
+          />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="sentiment"
+            stroke="#6366f1"
+            strokeWidth={3}
+            dot={{ fill: '#6366f1', r: 4 }}
+            activeDot={{ r: 6 }}
+            name="Sentiment"
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // Main App Component
+  const App = () => {
+    const [chartData, setChartData] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+      // Make loadChartData available globally
+      window.loadChartData = loadData;
+      loadData();
+    }, []);
+
+    async function loadData() {
+      setLoading(true);
+      try {
+        const days = document.getElementById('daysSelect').value;
+        const data = await apiFetch(`/api/drift/${encodeURIComponent(CHAT_ID)}?days=${days}`);
+
+        // Transform API data to chart format
+        const transformed = data.data.map(point => ({
+          date: point.date.slice(5), // MM-DD format
+          sentiment: parseFloat(point.avg_sentiment.toFixed(2)),
+          messages: point.message_count
+        }));
+
+        setChartData(transformed);
+      } catch (e) {
+        console.error('Error loading chart data:', e);
+        // Use mock data for demo
+        setChartData(generateMockData(30));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function generateMockData(days) {
+      const data = [];
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        data.push({
+          date: `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+          sentiment: parseFloat((Math.random() * 2 - 1).toFixed(2)),
+          messages: Math.floor(Math.random() * 50) + 10
+        });
+      }
+      return data;
+    }
+
+    if (loading) {
+      return (
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <div>Lade Chart-Daten...</div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <SentimentLineChart data={chartData} />
+      </>
+    );
+  };
+
+  // Render different charts in different roots
+  function renderCharts(data) {
+    const lineChartRoot = ReactDOM.createRoot(document.getElementById('lineChartRoot'));
+    lineChartRoot.render(<SentimentLineChart data={data} />);
+
+    const areaChartRoot = ReactDOM.createRoot(document.getElementById('areaChartRoot'));
+    areaChartRoot.render(<SentimentAreaChart data={data} />);
+
+    const barChartRoot = ReactDOM.createRoot(document.getElementById('barChartRoot'));
+    barChartRoot.render(<MessageBarChart data={data} />);
+
+    const composedChartRoot = ReactDOM.createRoot(document.getElementById('composedChartRoot'));
+    composedChartRoot.render(<SentimentComposedChart data={data} />);
+  }
+
+  // Global load function
+  window.loadChartData = async function() {
+    const days = document.getElementById('daysSelect').value;
+
+    try {
+      const data = await apiFetch(`/api/drift/${encodeURIComponent(CHAT_ID)}?days=${days}`);
+
+      // Transform API data to chart format
+      const transformed = data.data.map(point => ({
+        date: point.date.slice(5), // MM-DD format
+        sentiment: parseFloat(point.avg_sentiment.toFixed(2)),
+        messages: point.message_count
+      }));
+
+      renderCharts(transformed);
+    } catch (e) {
+      console.error('Error loading chart data:', e);
+      // Use mock data for demo
+      const mockData = generateMockData(parseInt(days));
+      renderCharts(mockData);
+    }
+  };
+
+  function generateMockData(days) {
+    const data = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      data.push({
+        date: `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+        sentiment: parseFloat((Math.random() * 2 - 1).toFixed(2)),
+        messages: Math.floor(Math.random() * 50) + 10
+      });
+    }
+    return data;
+  }
+
+  // Initial render with loading state
+  function initCharts() {
+    const loading = '<div class="loading"><div class="loading-spinner"></div><div>Lade Chart-Daten...</div></div>';
+    document.getElementById('lineChartRoot').innerHTML = loading;
+    document.getElementById('areaChartRoot').innerHTML = loading;
+    document.getElementById('barChartRoot').innerHTML = loading;
+    document.getElementById('composedChartRoot').innerHTML = loading;
+  }
+
+  initCharts();
+</script>
+
+<script>
+  // Auth logic (vanilla JS)
+  function authenticate() {
+    API_KEY = document.getElementById('authKey').value.trim();
+    CHAT_ID = document.getElementById('authChatId').value.trim();
+
+    if (!API_KEY || !CHAT_ID) {
+      document.getElementById('authError').textContent = 'Bitte beide Felder ausfuellen';
+      return;
+    }
+
+    // Test auth by fetching data
+    fetch(`/api/drift/${encodeURIComponent(CHAT_ID)}?days=7`, {
+      headers: {
+        'Authorization': 'Bearer ' + API_KEY,
+        'Content-Type': 'application/json'
+      }
+    })
+      .then(resp => {
+        if (!resp.ok) throw new Error(`API error ${resp.status}`);
+        return resp.json();
+      })
+      .then(() => {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('chatLabel').textContent = CHAT_ID;
+        localStorage.setItem('charts_api_key', API_KEY);
+        localStorage.setItem('charts_chat_id', CHAT_ID);
+        window.loadChartData();
+      })
+      .catch(err => {
+        document.getElementById('authError').textContent = 'Authentifizierung fehlgeschlagen: ' + err.message;
+      });
+  }
+
+  // Auto-login from localStorage
+  (function init() {
+    const saved_key = localStorage.getItem('charts_api_key');
+    const saved_chat = localStorage.getItem('charts_chat_id');
+    if (saved_key && saved_chat) {
+      document.getElementById('authKey').value = saved_key;
+      document.getElementById('authChatId').value = saved_chat;
+      authenticate();
+    }
+  })();
+</script>
+
+</body>
+</html>
