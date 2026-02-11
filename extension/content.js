@@ -415,8 +415,11 @@ class RadarTracker {
         }
         console.log(`[Radar] Confirmed ${batch.length} messages`);
       } else if (response.status === 401 || response.status === 403) {
-        // Auth error - stop retrying
-        console.error('[Radar] Auth error - check API key');
+        // Auth error - stop retrying: remove messages from queue
+        for (const item of batch) {
+          this.messageQueue.markConfirmed(item.id);
+        }
+        console.error('[Radar] Auth error - check API key; dropping current batch from queue');
         return;
       } else {
         // Server error - increment retry (synchronous - no await)
