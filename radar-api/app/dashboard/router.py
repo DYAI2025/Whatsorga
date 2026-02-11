@@ -9,7 +9,7 @@ from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.storage.database import get_session, Message, Analysis, DriftSnapshot, Thread, Termin
+from app.storage.database import get_session, Message, Analysis, DriftSnapshot, Thread, Termin, CaptureStats
 from app.storage.rag_store import rag_store
 
 logger = logging.getLogger(__name__)
@@ -337,3 +337,73 @@ async def get_service_status(
         services.append({"name": "Termine", "status": "error", "detail": "DB-Fehler"})
 
     return {"services": services}
+
+
+def _compute_status(last_heartbeat: datetime | None, error_count_24h: int) -> str:
+    """Compute health status based on heartbeat age and error rate.
+
+    Logic:
+    - GREEN: heartbeat < 5 minutes ago, error_count_24h < 10
+    - YELLOW: heartbeat 5-15 minutes ago OR error_count_24h 10-50
+    - RED: heartbeat > 15 minutes ago OR error_count_24h > 50
+    """
+    now = datetime.utcnow()
+
+    # Check heartbeat age
+    if not last_heartbeat:
+        return "red"
+
+    age_minutes = (now - last_heartbeat).total_seconds() / 60
+
+    # Determine status based on age
+    if age_minutes > 15:
+        status_from_age = "red"
+    elif age_minutes > 5:
+        status_from_age = "yellow"
+    else:
+        status_from_age = "green"
+
+    # Determine status based on error rate
+    if error_count_24h > 50:
+        status_from_errors = "red"
+    elif error_count_24h > 10:
+        status_from_errors = "yellow"
+    else:
+        status_from_errors = "green"
+
+    # Return worst status (red > yellow > green)
+    if status_from_age == "red" or status_from_errors == "red":
+        return "red"
+    elif status_from_age == "yellow" or status_from_errors == "yellow":
+        return "yellow"
+    else:
+        return "green"
+
+
+@router.get("/capture-stats")
+async def get_capture_stats(
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Get capture statistics for all monitored chats with computed health status.
+
+    Returns stats from the capture_stats table with green/yellow/red status
+    computed based on last heartbeat age and error count.
+    """
+    result = await session.execute(select(CaptureStats).order_by(desc(CaptureStats.last_heartbeat)))
+    stats = result.scalars().all()
+
+    return {
+        "chats": [
+            {
+                "chat_id": s.chat_id,
+                "last_heartbeat": s.last_heartbeat.isoformat() if s.last_heartbeat else None,
+                "messages_captured_24h": s.messages_captured_24h,
+                "error_count_24h": s.error_count_24h,
+                "status": _compute_status(s.last_heartbeat, s.error_count_24h),
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+            }
+            for s in stats
+        ],
+    }
