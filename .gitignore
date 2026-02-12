@@ -7,3 +7,6 @@ node_modules/
 .venv/
 venv/
 .worktrees/
+
+# Compiled marker registry (large, generated artifact)
+radar-api/data/marker_registry_radar.json

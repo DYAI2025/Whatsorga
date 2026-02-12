@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     caldav_password: str = ""
     caldav_calendar: str = "Beziehungs-Radar"
 
+    # Marker registry
+    marker_registry_path: str = "data/marker_registry_radar.json"
+
     model_config = {"env_prefix": "RADAR_"}
 
 
