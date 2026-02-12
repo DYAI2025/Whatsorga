@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 
 from app.storage.database import init_db
+from app.analysis.unified_engine import engine as marker_engine
 from app.ingestion.router import router as ingestion_router
 from app.dashboard.router import router as dashboard_router
 
@@ -36,6 +37,7 @@ if STATIC_DIR.exists():
 @app.on_event("startup")
 async def startup():
     await init_db()
+    marker_engine.load()
 
 
 @app.get("/")

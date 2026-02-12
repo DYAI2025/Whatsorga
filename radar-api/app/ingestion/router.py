@@ -12,7 +12,7 @@ from app.config import settings
 from app.storage.database import get_session, Message, Analysis, CaptureStats
 from app.ingestion.audio_handler import transcribe_audio
 from sqlalchemy import select
-from app.analysis.marker_engine import analyze_markers
+from app.analysis.unified_engine import engine as marker_engine
 from app.analysis.sentiment_tracker import score_sentiment
 from app.analysis.weaver import process_message_context
 from app.analysis.termin_extractor import extract_termine
@@ -98,7 +98,7 @@ async def ingest_messages(
 
             # Run analysis (marker engine + sentiment)
             if text:
-                marker_result = analyze_markers(text)
+                marker_result = marker_engine.analyze(text)
                 sentiment_result = score_sentiment(text)
 
                 analysis = Analysis(
@@ -110,6 +110,7 @@ async def ingest_messages(
                         "categories": marker_result.categories,
                         "scores": marker_result.markers,
                         "sentiment_label": sentiment_result.label,
+                        "activated_markers": marker_result.activated_markers,
                     },
                 )
                 session.add(analysis)
