@@ -1,4 +1,4 @@
-"""Beziehungs-Radar API — main FastAPI application.
+"""WhatsOrga API — main FastAPI application.
 
 Integrates EverMemOS as persistent semantic context memory.
 """
@@ -23,7 +23,7 @@ STATIC_DIR = Path(__file__).parent / "dashboard" / "static"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
-app = FastAPI(title="Beziehungs-Radar API", version="0.2.0")
+app = FastAPI(title="WhatsOrga API", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -64,7 +64,7 @@ async def health():
     mem_health = await evermemos_client.health_check()
     return {
         "status": "ok",
-        "service": "beziehungs-radar",
+        "service": "whatsorga",
         "memory": mem_health,
     }
 

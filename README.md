@@ -1,8 +1,8 @@
-# Beziehungs-Radar
+# WhatsOrga
 
 **WhatsApp message analysis system with persistent semantic memory**
 
-Beziehungs-Radar captures WhatsApp messages from whitelisted contacts, analyzes them through an AI/ML pipeline (sentiment, markers, semantic threads), and syncs extracted appointments to Apple Calendar. With the EverMemOS integration, every message is memorized in a semantic knowledge graph — enabling pronoun resolution, fact tracking, and context-aware appointment extraction across weeks of conversation.
+WhatsOrga captures WhatsApp messages from whitelisted contacts, analyzes them through an AI/ML pipeline (sentiment, markers, semantic threads), and syncs extracted appointments to Apple Calendar. With the EverMemOS integration, every message is memorized in a semantic knowledge graph — enabling pronoun resolution, fact tracking, and context-aware appointment extraction across weeks of conversation.
 
 ---
 
@@ -347,7 +347,7 @@ All endpoints (except `/health`) require `Authorization: Bearer <API_KEY>`.
 ### Prerequisites
 
 - Google Chrome (or Chromium-based browser)
-- A running Beziehungs-Radar backend (local or deployed)
+- A running WhatsOrga backend (local or deployed)
 - The backend's API key (`RADAR_API_KEY`)
 
 ### Step 1: Install the Extension
@@ -356,11 +356,11 @@ All endpoints (except `/health`) require `Authorization: Bearer <API_KEY>`.
 2. Enable **Developer mode** (toggle in the top-right corner)
 3. Click **"Load unpacked"**
 4. Select the `extension/` directory from this repository
-5. The Beziehungs-Radar icon appears in the browser toolbar
+5. The WhatsOrga icon appears in the browser toolbar
 
 ### Step 2: Configure Server Connection
 
-1. Click the **Beziehungs-Radar** icon in the toolbar to open the popup
+1. Click the **WhatsOrga** icon in the toolbar to open the popup
 2. In the **Server** section:
    - **Server URL**: Enter your backend URL (e.g. `https://radar.your-domain.de` or `http://localhost:8900` for local development)
    - **API Key**: Enter the value of `RADAR_API_KEY` from your `.env` file
@@ -509,7 +509,7 @@ All radar-api settings use the `RADAR_` prefix (see `radar-api/app/config.py`):
 | `RADAR_CALDAV_URL` | str | "" | iCloud CalDAV server |
 | `RADAR_CALDAV_USERNAME` | str | "" | iCloud email |
 | `RADAR_CALDAV_PASSWORD` | str | "" | App-specific password |
-| `RADAR_CALDAV_CALENDAR` | str | Beziehungs-Radar | Calendar name |
+| `RADAR_CALDAV_CALENDAR` | str | WhatsOrga | Calendar name |
 | `RADAR_EVERMEMOS_URL` | str | http://evermemos:8001 | EverMemOS API endpoint |
 | `RADAR_EVERMEMOS_ENABLED` | bool | true | Enable/disable semantic memory |
 

@@ -1,7 +1,7 @@
 version: "3.8"
 
 # ═══════════════════════════════════════════════════════════════════════
-# Beziehungs-Radar + EverMemOS Unified Stack
+# WhatsOrga + EverMemOS Unified Stack
 # ═══════════════════════════════════════════════════════════════════════
 #
 # WHATSORGA CORE:    caddy, radar-api, postgres, chromadb, ollama

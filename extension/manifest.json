@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Beziehungs-Radar",
-  "version": "0.1.0",
-  "description": "Captures WhatsApp messages from whitelisted contacts and forwards them for semantic analysis",
+  "name": "WhatsOrga",
+  "version": "0.2.0",
+  "description": "Captures WhatsApp messages from whitelisted contacts, analyzes them with AI, and syncs appointments to your calendar",
   "permissions": [
     "activeTab",
     "storage"
@@ -25,11 +25,19 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Beziehungs-Radar",
+    "default_title": "WhatsOrga",
     "default_popup": "popup.html",
-    "default_icon": "logo.png"
+    "default_icon": {
+      "16": "icon-16.png",
+      "32": "icon-32.png",
+      "48": "icon-48.png",
+      "128": "icon-128.png"
+    }
   },
   "icons": {
-    "128": "logo.png"
+    "16": "icon-16.png",
+    "32": "icon-32.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
   }
 }

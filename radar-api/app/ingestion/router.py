@@ -1,4 +1,4 @@
-"""Ingestion endpoint — receives messages from the Chrome extension.
+"""WhatsOrga Ingestion — receives messages from the Chrome extension.
 
 Every message flows through EverMemOS for persistent context memory,
 enabling pronoun resolution, fact tracking, and context-aware analysis.
