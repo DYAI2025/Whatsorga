@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     caldav_password: str = ""
     caldav_calendar: str = "Beziehungs-Radar"
 
+    # EverMemOS (semantic context memory)
+    evermemos_url: str = "http://evermemos:8001"
+    evermemos_enabled: bool = True
+
     # Marker registry
     marker_registry_path: str = "data/marker_registry_radar.json"
 
