@@ -1,1 +1,1 @@
-"""Memory integration module — connects Beziehungs-Radar to EverMemOS."""
+"""Memory integration module — connects WhatsOrga to EverMemOS."""

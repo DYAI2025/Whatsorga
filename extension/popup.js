@@ -1,4 +1,4 @@
-// Beziehungs-Radar Popup Script
+// WhatsOrga Popup Script
 document.addEventListener('DOMContentLoaded', async () => {
   const serverUrlInput = document.getElementById('serverUrl');
   const apiKeyInput = document.getElementById('apiKey');
