@@ -117,7 +117,7 @@ Die Extension läuft auf `web.whatsapp.com` und erfasst Nachrichten ausschließl
 
 **Funktionsweise von `content.js`:**
 
-1. **Initialisierung**: Wartet auf WhatsApp-DOM-Readyness (bis zu 30 Sekunden)
+1. **Initialisierung**: Wartet auf WhatsApp-DOM-Readiness (bis zu 30 Sekunden)
 2. **Chat-Erkennung**: 5 Strategien für verschiedene WhatsApp-Web-Versionen:
    - `data-testid="conversation-info-header-chat-title"`
    - `#main header span[title]`
