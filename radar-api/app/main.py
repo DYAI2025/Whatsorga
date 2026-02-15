@@ -1,4 +1,7 @@
-"""Beziehungs-Radar API — main FastAPI application."""
+"""Beziehungs-Radar API — main FastAPI application.
+
+Integrates EverMemOS as persistent semantic context memory.
+"""
 
 import logging
 
@@ -13,12 +16,14 @@ from app.storage.database import init_db
 from app.analysis.unified_engine import engine as marker_engine
 from app.ingestion.router import router as ingestion_router
 from app.dashboard.router import router as dashboard_router
+from app.memory.context_init import router as context_router
+from app.memory import evermemos_client
 
 STATIC_DIR = Path(__file__).parent / "dashboard" / "static"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
-app = FastAPI(title="Beziehungs-Radar API", version="0.1.0")
+app = FastAPI(title="Beziehungs-Radar API", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,6 +34,7 @@ app.add_middleware(
 
 app.include_router(ingestion_router)
 app.include_router(dashboard_router)
+app.include_router(context_router)
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -38,6 +44,14 @@ if STATIC_DIR.exists():
 async def startup():
     await init_db()
     marker_engine.load()
+    # Check EverMemOS connectivity
+    mem_health = await evermemos_client.health_check()
+    logging.getLogger(__name__).info(f"EverMemOS status: {mem_health}")
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await evermemos_client.close()
 
 
 @app.get("/")
@@ -47,7 +61,12 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "service": "beziehungs-radar"}
+    mem_health = await evermemos_client.health_check()
+    return {
+        "status": "ok",
+        "service": "beziehungs-radar",
+        "memory": mem_health,
+    }
 
 
 @app.get("/dashboard")

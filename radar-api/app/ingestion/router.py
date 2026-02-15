@@ -1,4 +1,8 @@
-"""Ingestion endpoint — receives messages from the Chrome extension."""
+"""Ingestion endpoint — receives messages from the Chrome extension.
+
+Every message flows through EverMemOS for persistent context memory,
+enabling pronoun resolution, fact tracking, and context-aware analysis.
+"""
 
 import base64
 import logging
@@ -19,6 +23,8 @@ from app.analysis.termin_extractor import extract_termine
 from app.analysis.semantic_transcriber import enrich_transcript
 from app.outputs.caldav_sync import sync_termin_to_calendar
 from app.storage.database import Termin
+from app.memory import evermemos_client
+from app.memory.context_termin import extract_termine_with_context
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -115,6 +121,19 @@ async def ingest_messages(
                 )
                 session.add(analysis)
 
+                # ── EverMemOS: Store message in semantic memory ──
+                try:
+                    await evermemos_client.memorize(
+                        chat_id=msg.chatId,
+                        chat_name=msg.chatName,
+                        sender=msg.sender,
+                        text=text,
+                        timestamp=ts,
+                        message_id=msg.messageId,
+                    )
+                except Exception as e:
+                    logger.debug(f"EverMemOS memorize (non-fatal): {e}")
+
                 # RAG embed + thread update (non-blocking on failure)
                 try:
                     await process_message_context(
@@ -125,9 +144,12 @@ async def ingest_messages(
                 except Exception as e:
                     logger.warning(f"Weaver/RAG error (non-fatal): {e}")
 
-                # Termin extraction + CalDAV sync
+                # ── Context-aware Termin extraction + CalDAV sync ──
                 try:
-                    termine = await extract_termine(text, msg.sender, ts)
+                    # Use EverMemOS context for better termin extraction
+                    termine = await extract_termine_with_context(
+                        text, msg.sender, ts, msg.chatId, msg.chatName,
+                    )
                     for t in termine:
                         termin_dt = datetime.fromisoformat(t.datetime_str) if t.datetime_str else None
                         if not termin_dt:

@@ -1,6 +1,19 @@
 version: "3.8"
 
+# ═══════════════════════════════════════════════════════════════════════
+# Beziehungs-Radar + EverMemOS Unified Stack
+# ═══════════════════════════════════════════════════════════════════════
+#
+# WHATSORGA CORE:    caddy, radar-api, postgres, chromadb, ollama
+# EVERMEMOS MEMORY:  evermemos, mongodb, elasticsearch, milvus, redis
+#
+# radar-api reaches EverMemOS at http://evermemos:8001 internally.
+# ═══════════════════════════════════════════════════════════════════════
+
 services:
+
+  # ─── WHATSORGA CORE ──────────────────────────────────────────────────
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -25,11 +38,15 @@ services:
       - "8900:8000"
     environment:
       TZ: Europe/Berlin
+      RADAR_EVERMEMOS_URL: http://evermemos:8001
+      RADAR_EVERMEMOS_ENABLED: "true"
     env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
       chromadb:
+        condition: service_started
+      evermemos:
         condition: service_started
     networks:
       - radar-net
@@ -70,12 +87,183 @@ services:
     networks:
       - radar-net
 
+  # ─── EVERMEMOS MEMORY STACK ──────────────────────────────────────────
+
+  evermemos:
+    build:
+      context: ../whatsorga-next/EverMemOS-main
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      LLM_PROVIDER: openai
+      LLM_MODEL: ${EVERMEMOS_LLM_MODEL:-meta-llama/llama-3.3-70b-instruct}
+      LLM_BASE_URL: ${EVERMEMOS_LLM_BASE_URL:-https://api.groq.com/openai/v1}
+      LLM_API_KEY: ${RADAR_GROQ_API_KEY}
+      LLM_TEMPERATURE: "0.3"
+      LLM_MAX_TOKENS: "32768"
+      DEEPINFRA_API_KEY: ${EVERMEMOS_DEEPINFRA_KEY:-}
+      DEEPINFRA_BASE_URL: https://api.deepinfra.com/v1/openai
+      DEEPINFRA_EMBEDDING_MODEL: Qwen/Qwen3-Embedding-4B
+      DEEPINFRA_DIMENSIONS: "1024"
+      DEEPINFRA_RERANK_BASE_URL: https://api.deepinfra.com/v1/inference
+      DEEPINFRA_RERANK_MODEL: Qwen/Qwen3-Reranker-4B
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: "27017"
+      MONGODB_USERNAME: admin
+      MONGODB_PASSWORD: memsys123
+      MONGODB_DATABASE: memsys
+      MONGODB_URI_PARAMS: "socketTimeoutMS=15000&authSource=admin"
+      ES_HOSTS: http://elasticsearch:9200
+      ES_VERIFY_CERTS: "false"
+      SELF_ES_INDEX_NS: memsys
+      MILVUS_HOST: milvus-standalone
+      MILVUS_PORT: "19530"
+      SELF_MILVUS_COLLECTION_NS: memsys
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_DB: "8"
+      MEMORY_LANGUAGE: de
+      LOG_LEVEL: INFO
+      ENV: prod
+    command: ["uv", "run", "python", "src/bootstrap.py", "src/run.py", "--port", "8001"]
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      milvus-standalone:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - radar-net
+
+  mongodb:
+    image: mongo:7.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: memsys123
+      MONGO_INITDB_DATABASE: memsys
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - radar-net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - radar-net
+
+  milvus-etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    restart: unless-stopped
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    command: >
+      etcd
+      -advertise-client-urls=http://127.0.0.1:2379
+      -listen-client-urls=http://0.0.0.0:2379
+      --data-dir=/etcd
+    volumes:
+      - milvus_etcd_data:/etcd
+    networks:
+      - radar-net
+
+  milvus-minio:
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    restart: unless-stopped
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    command: minio server /minio_data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    volumes:
+      - milvus_minio_data:/minio_data
+    networks:
+      - radar-net
+
+  milvus-standalone:
+    image: milvusdb/milvus:v2.5.2
+    restart: unless-stopped
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: milvus-etcd:2379
+      MINIO_ADDRESS: milvus-minio:9000
+    volumes:
+      - milvus_data:/var/lib/milvus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 90s
+    depends_on:
+      - milvus-etcd
+      - milvus-minio
+    networks:
+      - radar-net
+
+  redis:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - radar-net
+
 volumes:
   caddy_data:
   caddy_config:
   postgres_data:
   chroma_data:
   ollama_data:
+  mongodb_data:
+  elasticsearch_data:
+  milvus_etcd_data:
+  milvus_minio_data:
+  milvus_data:
+  redis_data:
+
 networks:
   radar-net:
     driver: bridge

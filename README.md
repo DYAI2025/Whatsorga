@@ -1,727 +1,580 @@
 # Beziehungs-Radar
 
-**WhatsApp-Nachrichtenanalyse-System zur Beziehungsgesundheit**
+**WhatsApp message analysis system with persistent semantic memory**
 
-Beziehungs-Radar erfasst WhatsApp-Nachrichten von ausgewählten Kontakten, analysiert sie mit KI-Methoden (Sentiment, Marker, Threads) und stellt die Ergebnisse über ein Dashboard und eine API bereit. Termine werden automatisch erkannt und in den Apple Kalender synchronisiert.
+Beziehungs-Radar captures WhatsApp messages from whitelisted contacts, analyzes them through an AI/ML pipeline (sentiment, markers, semantic threads), and syncs extracted appointments to Apple Calendar. With the EverMemOS integration, every message is memorized in a semantic knowledge graph — enabling pronoun resolution, fact tracking, and context-aware appointment extraction across weeks of conversation.
 
 ---
 
-## Inhaltsverzeichnis
+## Table of Contents
 
-1. [Systemübersicht](#systemübersicht)
-2. [Architektur](#architektur)
-3. [Komponenten im Detail](#komponenten-im-detail)
+1. [System Overview](#system-overview)
+2. [Architecture](#architecture)
+3. [Components](#components)
    - [Chrome Extension](#chrome-extension)
    - [FastAPI Backend](#fastapi-backend)
-   - [Analyse-Pipeline](#analyse-pipeline)
-   - [Speicher & Datenbank](#speicher--datenbank)
-   - [Deployment Stack](#deployment-stack)
-4. [Nachrichtenfluss (End-to-End)](#nachrichtenfluss-end-to-end)
-5. [API-Referenz](#api-referenz)
-6. [Kontextverständnis — Analyse & Schwachstellen](#kontextverständnis--analyse--schwachstellen)
-7. [Vorgeschlagene Lösung: Kontextgedächtnis](#vorgeschlagene-lösung-kontextgedächtnis)
-8. [Installation & Entwicklung](#installation--entwicklung)
-9. [Konfiguration](#konfiguration)
+   - [Analysis Pipeline](#analysis-pipeline)
+   - [EverMemOS Memory](#evermemos-semantic-memory)
+   - [Storage](#storage)
+4. [Message Flow](#message-flow)
+5. [API Reference](#api-reference)
+6. [Extension Setup & Configuration](#extension-setup--configuration)
+7. [Deployment](#deployment)
+8. [Configuration Reference](#configuration-reference)
+9. [Development](#development)
 
 ---
 
-## Systemübersicht
+## System Overview
 
 ```
 ┌─────────────────┐     HTTPS/JSON      ┌──────────────────────────────────────┐
-│  Chrome Extension│ ──────────────────→ │         FastAPI Backend               │
+│  Chrome Extension│ ──────────────────→ │         FastAPI Backend (v0.2.0)     │
 │  (WhatsApp Web)  │                     │                                      │
-│                  │  Nachrichten         │  ┌──────────┐  ┌───────────────────┐│
-│  • Whitelist     │  + Audio-Blobs      │  │ Sentiment │  │ Marker Engine     ││
-│  • DOM-Scraping  │                     │  │ Tracker   │  │ (Regex+Embedding) ││
-│  • Queue/Retry   │                     │  └──────────┘  └───────────────────┘│
-└─────────────────┘                     │  ┌──────────┐  ┌───────────────────┐│
-                                         │  │ Weaver   │  │ Termin Extractor  ││
-                                         │  │ (Threads)│  │ (LLM + Regex)    ││
-                                         │  └──────────┘  └───────────────────┘│
-                                         │                                      │
-                                         │  ┌────────────────────────────────┐  │
-                                         │  │ Semantic Transcriber (Audio)   │  │
-                                         │  │ Groq LLaMA → Gemini Fallback  │  │
-                                         │  └────────────────────────────────┘  │
+│                  │  Messages            │  1. Store in PostgreSQL              │
+│  • Whitelist     │  + Audio blobs      │  2. EverMemOS memorize()             │
+│  • DOM scraping  │                     │  3. Sentiment + Marker analysis      │
+│  • Queue/retry   │                     │  4. RAG embedding (ChromaDB)         │
+└─────────────────┘                     │  5. Thread weaving                   │
+                                         │  6. Context-aware termin extraction  │
+                                         │     (EverMemOS recall → LLM)        │
+                                         │  7. CalDAV → Apple Calendar          │
                                          └──────────┬───────────┬──────────────┘
                                                     │           │
-                                         ┌──────────▼──┐  ┌────▼──────────┐
-                                         │ PostgreSQL   │  │ ChromaDB      │
-                                         │ (Nachrichten,│  │ (RAG-Vektoren)│
-                                         │  Analysen,   │  │               │
-                                         │  Threads,    │  └───────────────┘
-                                         │  Termine)    │
-                                         └──────────────┘
-                                                    │
-                                         ┌──────────▼──────────┐
-                                         │ Apple iCloud CalDAV  │
-                                         │ (Termine → Kalender) │
-                                         └─────────────────────┘
+                                    ┌───────────────┘           │
+                                    │                           │
+                         ┌──────────▼──┐  ┌─────────▼─────┐  ┌─────────────────┐
+                         │ PostgreSQL   │  │ ChromaDB      │  │ EverMemOS       │
+                         │ (messages,   │  │ (RAG vectors) │  │ (semantic       │
+                         │  analysis,   │  │               │  │  memory:        │
+                         │  threads,    │  └───────────────┘  │  MongoDB,       │
+                         │  termine)    │                      │  Milvus, ES,   │
+                         └──────────────┘                      │  Redis)        │
+                                    │                          └─────────────────┘
+                         ┌──────────▼──────────┐
+                         │ Apple iCloud CalDAV  │
+                         └─────────────────────┘
 ```
 
-**Drei Hauptkomponenten:**
+**Three main components:**
 
-| Komponente | Verzeichnis | Technologie | Aufgabe |
+| Component | Directory | Technology | Purpose |
 |---|---|---|---|
-| Chrome Extension | `extension/` | JavaScript (Manifest V3) | Nachrichten von WhatsApp Web erfassen |
-| FastAPI Backend | `radar-api/` | Python 3.12, FastAPI | Analyse-Pipeline + REST-API |
-| Deployment | `deploy/` | Docker Compose, Caddy | Orchestrierung, HTTPS, Datenbanken |
+| Chrome Extension | `extension/` | JavaScript (Manifest V3) | Captures messages from WhatsApp Web |
+| FastAPI Backend | `radar-api/` | Python 3.12, FastAPI | Analysis pipeline + REST API |
+| Deployment | `deploy/` | Docker Compose, Caddy | Orchestration, HTTPS, databases |
 
----
+**External services:**
 
-## Architektur
-
-### Nachrichtenfluss (Übersicht)
-
-```
-WhatsApp Web → Extension (DOM-Scraping + Whitelist-Filter)
-  → POST /api/ingest (Bearer-Auth)
-    → PostgreSQL speichern
-    → [Audio? → Groq Whisper Transkription]
-    → Sentiment-Score berechnen (-1.0 bis +1.0)
-    → Marker erkennen (Regex + Embedding, 2-Phasen)
-    → RAG-Embedding in ChromaDB speichern
-    → Thread-Weaving (semantische Gesprächsfäden)
-    → [Audio? → Semantische Transkript-Anreicherung via LLM]
-    → Termin-Extraktion (Ollama/Regex)
-    → [Termin erkannt? → CalDAV-Sync → Apple Kalender]
-```
-
-### Externe Services
-
-| Service | Zweck | Modell |
+| Service | Purpose | Model |
 |---|---|---|
-| **Groq** | Audio-Transkription + LLM-Anreicherung | Whisper Large V3 Turbo + LLaMA 3.3 70B |
-| **Gemini** | Fallback-LLM | Gemini 2.5 Flash |
-| **Ollama** | Lokale Termin-Extraktion | LLaMA 3.1 8B |
-| **Apple iCloud** | Kalender-Sync | CalDAV-Protokoll |
+| Groq | Audio transcription + LLM | Whisper Large V3 Turbo + LLaMA 3.3 70B |
+| Gemini | Fallback LLM | Gemini 2.5 Flash |
+| DeepInfra | EverMemOS embeddings + reranking | Qwen3-Embedding-4B + Qwen3-Reranker-4B |
+| Apple iCloud | Calendar sync | CalDAV protocol |
 
 ---
 
-## Komponenten im Detail
+## Architecture
+
+### Message Flow (Overview)
+
+```
+WhatsApp Web → Extension (DOM scraping + whitelist filter)
+  → POST /api/ingest (Bearer auth)
+    → Store in PostgreSQL
+    → EverMemOS memorize() — persistent semantic memory
+    → Sentiment score (-1.0 to +1.0)
+    → Marker detection (regex + embedding, 2-phase)
+    → RAG embedding → ChromaDB
+    → Semantic thread weaving
+    → Context-aware termin extraction (EverMemOS recall → enriched LLM prompt)
+    → [Termin found? → CalDAV sync → Apple Calendar]
+```
+
+### Before vs. After EverMemOS
+
+**Before** — "Kannst du an ihrem Geburtstag Süßigkeiten-Tüten mitbringen?"
+```
+Text → Termin extractor → No date recognized ("ihrem" = who?) → No appointment created
+```
+
+**After** — same message with EverMemOS context:
+```
+Text → EverMemOS memorize()
+     → EverMemOS recall("Termine Geburtstage: Kannst du an ihrem...")
+       → Context: "Romy = daughter, birthday: 18.02., party: 21.02., 8 guests"
+     → Context-enriched termin extractor:
+       → "ihrem" = Romy's
+       → Date: 21.02. (party, not birthday)
+       → Task: "Süßigkeiten-Tüten für 8 Gäste"
+       → CalDAV → Apple Calendar
+```
+
+---
+
+## Components
 
 ### Chrome Extension
 
-Die Extension läuft auf `web.whatsapp.com` und erfasst Nachrichten ausschließlich von Kontakten auf der Whitelist.
+The extension runs on `web.whatsapp.com` and captures messages exclusively from contacts on the whitelist.
 
-**Dateien:**
+**Files:**
 
-| Datei | Aufgabe |
+| File | Purpose |
 |---|---|
-| `manifest.json` | Berechtigungen, Content-Scripts, Service Worker |
-| `content.js` | DOM-Scraping der WhatsApp-Oberfläche (Klasse `RadarTracker`) |
-| `background.js` | Retry-Queue, Heartbeat, Nachrichtenweiterleitung |
-| `queue-manager.js` | Persistente Warteschlange in `localStorage` |
-| `popup.html/js/css` | Konfigurations-UI (Server-URL, API-Key, Whitelist) |
+| `manifest.json` | Manifest V3 — permissions, content scripts, service worker |
+| `content.js` | DOM scraping of WhatsApp Web UI (`RadarTracker` class) |
+| `background.js` | Service worker — retry queue, heartbeat, message forwarding |
+| `queue-manager.js` | Persistent message queue in `localStorage` |
+| `popup.html/js/css` | Configuration UI (server URL, API key, whitelist, status) |
 
-**Funktionsweise von `content.js`:**
+**How `content.js` works:**
 
-1. **Initialisierung**: Wartet auf WhatsApp-DOM-Readiness (bis zu 30 Sekunden)
-2. **Chat-Erkennung**: 5 Strategien für verschiedene WhatsApp-Web-Versionen:
-   - `data-testid="conversation-info-header-chat-title"`
-   - `#main header span[title]`
-   - `#main header span[dir="auto"]`
-   - usw.
-3. **Whitelist-Prüfung**: Nur Chats deren Name einen Whitelist-Eintrag enthält (case-insensitive)
-4. **MutationObserver**: Beobachtet DOM-Änderungen im `#main` Container
-5. **Nachrichten-Extraktion** (6 Strategien pro Feld):
-   - Sender, Text, Timestamp aus `data-pre-plain-text` Attribut (primär)
-   - Fallback über `aria-label`, `.selectable-text`, `innerText`
-6. **Audio-Erfassung**: Erkennt `<audio>`-Elemente, fetcht Blob-URLs, base64-Kodierung
-7. **Deduplizierung**: Content-Hash + Message-ID verhindern doppelte Erfassung
-8. **Queue**: Nachrichten werden gebatcht (10er-Gruppen) und via `background.js` gesendet
+1. **Init**: Waits for WhatsApp DOM readiness (up to 30 seconds)
+2. **Chat detection**: 5 strategies for different WhatsApp Web versions (data-testid, header spans, etc.)
+3. **Whitelist check**: Only chats whose name contains a whitelist entry (case-insensitive)
+4. **MutationObserver**: Watches DOM changes in `#main` container
+5. **Message extraction** (6 strategies per field): sender, text, timestamp from `data-pre-plain-text` attribute (primary), fallback via `aria-label`, `.selectable-text`, `innerText`
+6. **Audio capture**: Detects `<audio>` elements, fetches blob URLs, base64-encodes
+7. **Deduplication**: Content hash + message ID prevents duplicate capture
+8. **Batching**: Messages are batched (groups of 10) and sent via `background.js`
 
-**Retry-Logik (`background.js`):**
-- Exponentielles Backoff: 5s → 15s → 1min → 5min
-- Max. Queue-Größe: 500 Nachrichten
-- Bei 401/403: Nachricht verworfen (Auth-Fehler)
-- Bei 5xx: Retry mit Backoff
-- Queue überlebt Browser-Neustarts (localStorage-Persistenz)
-
-**Popup-UI:**
-- Server-URL + API-Key Konfiguration
-- Whitelist-Verwaltung (Kontaktnamen hinzufügen/entfernen)
-- Live-Status: Aktiv/Pausiert, aktueller Chat, Queue-Größe, Verbindungsstatus
+**Retry logic (`background.js`):**
+- Exponential backoff: 5s → 15s → 1min → 5min
+- Max queue size: 500 messages
+- 401/403: Message discarded (auth error)
+- 5xx: Retry with backoff
+- Queue survives browser restarts (localStorage persistence)
 
 ---
 
 ### FastAPI Backend
 
-**Einstiegspunkt:** `radar-api/app/main.py`
+**Entry point:** `radar-api/app/main.py` (v0.2.0)
 
-Initialisiert FastAPI mit:
-- Ingestion-Router (`/api/ingest`, `/api/transcribe`, `/api/heartbeat`)
-- Dashboard-Router (Analyse-Endpunkte)
-- Health-Check (`/health`)
-- Datenbankverbindung (async SQLAlchemy + asyncpg)
+- Ingestion router (`/api/ingest`, `/api/transcribe`, `/api/heartbeat`)
+- Dashboard router (analysis endpoints)
+- Context router (`/api/context/init` — WhatsApp export seeding)
+- Health check with EverMemOS status (`/health`)
+- EverMemOS startup connectivity check + shutdown cleanup
 
-**Authentifizierung:** Bearer-Token (`RADAR_API_KEY`) für alle Endpunkte erforderlich.
+**Authentication:** Bearer token (`RADAR_API_KEY`) required for all endpoints.
 
 ---
 
-### Analyse-Pipeline
+### Analysis Pipeline
 
-Jede eingehende Nachricht durchläuft folgende Schritte:
+Every incoming message passes through these steps:
 
-#### 1. Sentiment Tracker (`sentiment_tracker.py`)
+#### 1. Sentiment Tracker
 
-Berechnet einen emotionalen Tonwert von **-1.0** (sehr negativ) bis **+1.0** (sehr positiv).
+Scores emotional tone from **-1.0** (very negative) to **+1.0** (very positive).
+- ~35 positive and ~35 negative keywords, specialized for German everyday language
+- Context modifiers: negation detection (previous 2 words), intensifier multiplication (1.5x)
+- Labels: `"positive"` (>0.15), `"negative"` (<-0.15), `"neutral"`
 
-**Algorithmus:**
-1. Text in Wörter tokenisieren
-2. Positive/negative Wort-Treffer zählen (Substring-Matching)
-3. Kontext-Modifikatoren anwenden:
-   - **Negation** in den vorherigen 2 Wörtern (`nicht`, `kein`, `nie`) → Valenz umkehren
-   - **Intensivierer** im vorherigen Wort (`sehr`, `extrem`, `mega`) → 1.5x Multiplikator
-4. Score berechnen: `(positive - negative) / gesamt`
-5. Label: `"positive"` (>0.15), `"negative"` (<-0.15), `"neutral"` (sonst)
+#### 2. Marker Engine (2-Phase)
 
-**Wortlisten:** ~35 positive Wörter (lieb, schön, toll, super, danke, ...) und ~35 negative (traurig, wütend, sauer, stress, ...) — spezialisiert auf deutsche Alltagssprache.
+**Phase 1 — Regex** (fast, deterministic): compiled patterns from `marker_registry_radar.json`
 
-#### 2. Marker Engine (`unified_engine.py` + `marker_engine.py`)
+**Phase 2 — Embedding similarity** (semantic): `all-MiniLM-L6-v2` (384 dims) against precomputed marker embeddings, configurable threshold (default 0.65)
 
-Erkennt emotionale und beziehungsrelevante Marker in **zwei Phasen**:
+**10 dashboard categories:** waerme, distanz, stress, konflikt, freude, trauer, fuersorge, planung, dankbarkeit, unsicherheit
 
-**Phase 1 — Regex (schnell, deterministisch):**
-- Kompilierte Muster aus `marker_registry_radar.json`
-- Sofortige Erkennung bekannter Schlüsselwörter
+#### 3. EverMemOS Memorize
 
-**Phase 2 — Embedding-Ähnlichkeit (semantisch, genauer):**
-- Sentence-Transformers Modell (`all-MiniLM-L6-v2`, 384 Dimensionen)
-- Vergleich gegen vorberechnete Marker-Embeddings
-- Konfigurierbarer Schwellenwert pro Marker (Standard: 0.65)
-- 100+ granulare Marker (ATO, SEM, CLU, MEMA aus LeanDeep)
+After analysis, the message is stored in EverMemOS for persistent context memory. This is non-blocking — if EverMemOS is down, the pipeline continues without it.
 
-**10 Dashboard-Kategorien:**
+#### 4. RAG Embedding & Thread Weaving
 
-| Kategorie | Bedeutung | Beispiel-Keywords |
+- Stores message as vector in ChromaDB
+- Semantic thread grouping via similarity overlap
+- Emotional arc tracking + tension/resolution detection
+- Thread dormancy after 72 hours of inactivity
+
+#### 5. Context-Aware Termin Extraction
+
+1. Recalls relevant context from EverMemOS (persons, facts, episodes)
+2. If context found: enriches LLM prompt with `<kontext_gedächtnis>` block containing profiles, episodes, and facts
+3. If no context: falls back to raw extraction (existing behavior)
+4. Appointments with confidence >= 0.7 are synced to Apple Calendar via CalDAV
+
+---
+
+### EverMemOS Semantic Memory
+
+[EverMemOS](https://github.com/EverMind-AI/EverMemOS) provides persistent semantic memory for the analysis pipeline. It runs as a separate service in the Docker stack.
+
+**Storage backends:**
+- **MongoDB** — Documents and MemCells (atomic knowledge units)
+- **Elasticsearch** — BM25 keyword search
+- **Milvus** — Vector similarity search (embeddings via Qwen3-Embedding-4B)
+- **Redis** — Cache and boundary detection
+
+**Core operations:**
+
+| Operation | Endpoint | Purpose |
 |---|---|---|
-| `waerme` | Wärme/Nähe | lieb, schatz, vermiss, kuschel |
-| `distanz` | Distanz/Rückzug | brauch zeit, allein, pause |
-| `stress` | Druck/Überlastung | stress, überfordert, müde |
-| `konflikt` | Konflikt/Spannung | streit, wütend, sauer |
-| `freude` | Freude/Begeisterung | super, toll, genial, mega |
-| `trauer` | Trauer/Melancholie | traurig, weinen, einsam |
-| `fuersorge` | Fürsorge/Anteilnahme | wie geht, pass auf, bin da |
-| `planung` | Planung/Zukunft | wollen wir, treffen, termin |
-| `dankbarkeit` | Dankbarkeit | danke, dankbar, schätze |
-| `unsicherheit` | Unsicherheit | weiß nicht, angst, sorge |
+| `memorize()` | `/api/v3/agentic/memorize` | Store message → MemCell extraction (persons, facts, events) |
+| `recall()` | `/api/v3/agentic/retrieve_lightweight` | Hybrid search (embedding + BM25 + RRF fusion) |
+| `recall_for_termin()` | (composed) | Specialized recall for appointment extraction with pronoun resolution |
 
-**Ergebnis:**
-```json
-{
-  "dominant": "konflikt",
-  "categories": ["konflikt", "stress"],
-  "scores": {"konflikt": 0.8, "stress": 0.5},
-  "activated_markers": [
-    {"id": "SEM_BLAME_SHIFT", "score": 0.95, "method": "embedding"}
-  ]
-}
-```
+**New capabilities via EverMemOS:**
+- **Pronoun resolution**: "ihrem" → Romy, because EverMemOS knows the relationship graph
+- **Temporal logic**: Birthday (18.02.) vs. party (21.02.), because facts are stored
+- **Quantity inference**: "Süßigkeiten-Tüten für ihre Gäste" → 8, because guest count is known
+- **Learning profiles**: Each message enriches person knowledge further
 
-#### 3. RAG-Embedding & ChromaDB (`rag_store.py`)
-
-Speichert jede Nachricht als Vektor in ChromaDB für spätere Ähnlichkeitssuche.
-
-**Aktueller Stand:**
-- Verwendet **Trigram-Hash-Embedding** (`_simple_embed`) — ein einfaches, deterministisches Verfahren auf Zeichenebene (NICHT semantisch)
-- 384 Dimensionen, normalisiert auf [-1, 1]
-- Cosine-Distanz als Ähnlichkeitsmetrik
-
-> **Hinweis:** Dies ist ein Provisorium. Die Trigram-Hash-Methode findet Nachrichten mit ähnlichen Buchstabenfolgen, versteht aber keine Bedeutung. "Ich bin traurig" und "Mir geht es schlecht" würden als unähnlich eingestuft. Für echte semantische Suche muss auf Sentence-Transformers (wie bereits in `unified_engine.py` verwendet) oder eine Embedding-API umgestellt werden.
-
-#### 4. Semantic Thread Weaver (`weaver.py`)
-
-Erkennt und verfolgt thematische Gesprächsfäden über mehrere Nachrichten hinweg.
-
-**Algorithmus:**
-1. Nachricht in ChromaDB einbetten (mit Metadaten: Chat, Sender, Sentiment, Marker)
-2. Top-20 ähnliche Nachrichten abfragen
-3. Aktive Threads des Chats laden
-4. **Thread-Matching:** Überlappung zwischen ähnlichen Nachrichten und Thread-Mitgliedern berechnen
-5. Nachricht an Thread mit größter Überlappung anhängen (≥1 Match) oder neuen Thread erstellen
-6. **Emotional Arc:** Sentiment-Scores im Thread verfolgen
-7. **Spannungserkennung:** Aufeinanderfolgende Sentiment-Abfälle (Δ < -0.1)
-8. **Auflösungserkennung:** Sentiment-Erholung nach Tiefpunkt
-9. **Dormanz:** Threads werden nach **72 Stunden** Inaktivität als "ruhend" markiert
-
-#### 5. Semantic Transcriber (`semantic_transcriber.py`)
-
-Reichert Audio-Transkriptionen mit Gesprächskontext an (**nur für Audio-Nachrichten**).
-
-**Kontextquellen:**
-- Letzte 10 Nachrichten im selben Chat (PostgreSQL)
-- 5 ähnliche Nachrichten (ChromaDB RAG)
-
-**LLM-Kette:**
-1. Groq LLaMA 3.3 70B (primär, Temperatur 0.2)
-2. Gemini 2.5 Flash (Fallback)
-
-**Ergebnis:** Angereicherte Version des Transkripts + Zusammenfassung + Themen + Konfidenz
-
-#### 6. Termin-Extraktion (`termin_extractor.py`)
-
-Erkennt Datum/Uhrzeit-Angaben in deutschen Nachrichten.
-
-**Zwei Stufen:**
-1. **Ollama LLaMA 3.1 8B** (wenn verfügbar): LLM extrahiert strukturierte Termine als JSON
-2. **Regex-Fallback:** Patterns wie `14.02. um 10:00`, `morgen um 10`
-
-**Pre-Filter:** Nur Nachrichten mit Datums-/Zeit-Keywords werden verarbeitet.
-
-**CalDAV-Sync:** Termine mit Konfidenz ≥ 0.7 werden automatisch als iCal-Events in den Apple Kalender geschrieben, mit 4 Erinnerungen (5 Tage, 2 Tage, 1 Tag, 2 Stunden vorher).
+**Context init endpoint:** `POST /api/context/init` accepts a WhatsApp chat export (plain text) and feeds all messages into EverMemOS to bootstrap the knowledge base before real-time messages start flowing.
 
 ---
 
-### Speicher & Datenbank
+### Storage
 
-#### PostgreSQL — Strukturierte Daten
+#### PostgreSQL — Structured Data
 
-| Tabelle | Zweck | Wichtige Felder |
-|---|---|---|
-| `messages` | Rohe Nachrichten | chat_id, sender, text, timestamp, audio_path, is_transcribed |
-| `analysis` | Analyse-Ergebnisse | message_id (FK), sentiment_score, markers, marker_categories |
-| `threads` | Gesprächsfäden | chat_id, theme, message_ids[], emotional_arc[], status |
-| `termine` | Erkannte Termine | title, datetime, participants[], confidence, caldav_uid |
-| `capture_stats` | Extension-Gesundheit | chat_id, last_heartbeat, messages_captured_24h, error_count_24h |
-| `drift_snapshots` | Sentiment-Trend | chat_id, date, avg_sentiment, dominant_markers, message_count |
+| Table | Purpose |
+|---|---|
+| `messages` | Raw messages (chat_id, sender, text, timestamp, audio_path) |
+| `analysis` | Per-message sentiment + markers (JSONB) |
+| `threads` | Semantic conversation groupings (theme, emotional_arc) |
+| `termine` | Extracted appointments (datetime, participants, caldav_uid) |
+| `capture_stats` | Extension heartbeat health tracking |
+| `drift_snapshots` | Sentiment trend snapshots |
 
-#### ChromaDB — Vektor-Speicher
+#### ChromaDB — Vector Store
 
-- Collection: `messages`
-- Embedding-Dimension: 384
-- Metadaten: chat_id, sender, timestamp, sentiment, dominant_marker
-- Metrik: Cosine-Distanz
+- Collection: `messages`, 384 dimensions, cosine distance
+- Metadata: chat_id, sender, timestamp, sentiment, dominant_marker
 
----
+#### EverMemOS — Semantic Memory
 
-### Deployment Stack
-
-```yaml
-# docker-compose.yml — 5 Services
-caddy:        # HTTPS Reverse-Proxy, Auto-TLS
-radar-api:    # Python FastAPI Container
-postgres:     # PostgreSQL 16
-chromadb:     # ChromaDB 0.5.23 Vektor-DB
-ollama:       # Lokale LLMs
-```
-
-**Port-Mapping:**
-
-| Service | Intern | Extern |
-|---|---|---|
-| Caddy | 80/443 | 80/443 (öffentlich) |
-| radar-api | 8000 | 8900 (Host) |
-| PostgreSQL | 5432 | — (nur intern) |
-| ChromaDB | 8000 | — (nur intern) |
-| Ollama | 11434 | — (nur intern) |
+- MongoDB: MemCells, profiles, episodes
+- Milvus: Vector embeddings (1024 dims via Qwen3-Embedding-4B)
+- Elasticsearch: BM25 keyword index
+- Redis: Cache layer
 
 ---
 
-## Nachrichtenfluss (End-to-End)
+## Message Flow
 
-### Beispiel: Textnachricht "Ich vermisse dich"
+### Example: Text message "Ich vermisse dich"
 
 ```
-1. Extension: DOM-Scraping → {sender: "Marike", text: "Ich vermisse dich", chat: "Marike"}
-2. Whitelist-Check: "Marike" ✓ → in Queue
+1. Extension: DOM scraping → {sender: "Marike", text: "Ich vermisse dich", chat: "Marike"}
+2. Whitelist check: "Marike" → in queue
 3. background.js → POST /api/ingest
 
 4. Backend:
-   a) Message in PostgreSQL speichern (id: abc-123)
-   b) Sentiment: score=0.65 (positiv, "vermiss" → wärme)
-   c) Marker: dominant="waerme", categories=["waerme"]
-   d) RAG: Embedding in ChromaDB + Query ähnliche Nachrichten
-   e) Thread: Ähnlich zu bisherigem "waerme"-Thread → anhängen
-   f) Termin: Keine Datums-Keywords → übersprungen
-   g) Analysis in PostgreSQL speichern
+   a) Message → PostgreSQL (id: abc-123)
+   b) EverMemOS memorize() → stores message, extracts MemCells
+   c) Sentiment: score=0.65 (positive, "vermiss" → waerme)
+   d) Marker: dominant="waerme"
+   e) RAG: embedding → ChromaDB + query similar messages
+   f) Thread: similar to existing "waerme" thread → append
+   g) Termin: no date keywords → skipped
+   h) Analysis → PostgreSQL
 
 5. Response: {accepted: 1, errors: 0}
 ```
 
-### Beispiel: Sprachnachricht mit Termin
+### Example: Voice message with appointment
 
 ```
-1. Extension: <audio>-Element erkannt → Blob fetchen → base64
-2. POST /api/ingest mit {hasAudio: true, audioBlob: "base64..."}
+1. Extension: <audio> element detected → fetch blob → base64
+2. POST /api/ingest with {hasAudio: true, audioBlob: "base64..."}
 
 3. Backend:
    a) Groq Whisper: "Können wir uns Samstag um 15 Uhr treffen?"
-   b) Message in PostgreSQL (is_transcribed: true)
-   c) Sentiment: score=0.2 (neutral-positiv, "treffen" → planung)
-   d) Marker: dominant="planung"
-   e) Semantic Transcriber:
-      - Kontext: letzte 10 Nachrichten + 5 ähnliche
-      - LLM-Anreicherung: "Möchte sich Samstag um 15 Uhr treffen"
-   f) Termin-Extraktion: "Samstag um 15:00" → {title: "Treffen", datetime: "2026-02-21T15:00"}
-   g) CalDAV-Sync: iCal-Event erstellt (Konfidenz 0.75 ≥ 0.7)
-   h) 4 Erinnerungen gesetzt
+   b) Message → PostgreSQL (is_transcribed: true)
+   c) EverMemOS memorize() + recall context
+   d) Sentiment: score=0.2 (neutral-positive, "treffen" → planung)
+   e) Marker: dominant="planung"
+   f) Context-aware termin extraction:
+      - EverMemOS recalls: previous plans, person profiles
+      - Enriched LLM prompt → "Samstag um 15:00"
+      - {title: "Treffen", datetime: "2026-02-21T15:00", confidence: 0.8}
+   g) CalDAV sync: iCal event created + 4 reminders
 ```
 
 ---
 
-## API-Referenz
+## API Reference
 
 ### Ingestion
 
-| Endpunkt | Methode | Beschreibung |
+| Endpoint | Method | Description |
 |---|---|---|
-| `/api/ingest` | POST | Nachrichten-Batch von Extension |
-| `/api/transcribe` | POST | Standalone Audio-Transkription + Anreicherung |
-| `/api/heartbeat` | POST | Extension-Heartbeat mit Capture-Statistiken |
+| `/api/ingest` | POST | Message batch from extension |
+| `/api/transcribe` | POST | Standalone audio transcription + enrichment |
+| `/api/heartbeat` | POST | Extension heartbeat with capture stats |
 
-### Dashboard & Analyse
+### Context Memory
 
-| Endpunkt | Methode | Beschreibung |
+| Endpoint | Method | Description |
 |---|---|---|
-| `/api/overview/{chat_id}` | GET | Zusammenfassung (Nachrichten, Sentiment, Threads, Termine) |
-| `/api/drift/{chat_id}` | GET | Sentiment-Verlauf über Zeit (tägliche Durchschnitte) |
-| `/api/markers/{chat_id}` | GET | Marker-Verteilung als Heatmap |
-| `/api/threads/{chat_id}` | GET | Semantische Gesprächsfäden |
-| `/api/termine/{chat_id}` | GET | Erkannte Termine |
-| `/api/search?q=query` | GET | RAG-basierte semantische Suche |
-| `/api/communication-pattern/{chat_id}` | GET | Wochentag × Stunde Heatmap |
-| `/api/response-times/{chat_id}` | GET | Antwortzeiten pro Sender |
-| `/api/capture-stats` | GET | Extension-Gesundheit aller Chats |
-| `/api/status` | GET | Service-Gesundheit (Whisper, LLM, ChromaDB, CalDAV) |
+| `/api/context/init` | POST | Seed EverMemOS from WhatsApp chat export |
+
+### Dashboard & Analysis
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/overview/{chat_id}` | GET | Summary (messages, sentiment, threads, appointments) |
+| `/api/drift/{chat_id}` | GET | Sentiment trend over time |
+| `/api/markers/{chat_id}` | GET | Marker distribution heatmap |
+| `/api/threads/{chat_id}` | GET | Semantic conversation threads |
+| `/api/termine/{chat_id}` | GET | Extracted appointments |
+| `/api/search?q=query` | GET | RAG-based semantic search |
+| `/api/communication-pattern/{chat_id}` | GET | Weekday x hour heatmap |
+| `/api/response-times/{chat_id}` | GET | Response times per sender |
+| `/api/capture-stats` | GET | Extension health across all chats |
+| `/api/status` | GET | Service health (Whisper, LLM, ChromaDB, CalDAV) |
 
 ### System
 
-| Endpunkt | Methode | Beschreibung |
+| Endpoint | Method | Description |
 |---|---|---|
-| `/health` | GET | Einfacher Health-Check |
-| `/dashboard` | GET | Statisches Dashboard-Frontend |
+| `/health` | GET | Health check (includes EverMemOS memory status) |
+| `/dashboard` | GET | Static dashboard frontend |
 
-Alle Endpunkte (außer `/health`) erfordern `Authorization: Bearer <API_KEY>`.
+All endpoints (except `/health`) require `Authorization: Bearer <API_KEY>`.
 
 ---
 
-## Kontextverständnis — Analyse & Schwachstellen
+## Extension Setup & Configuration
 
-### Das Problem anhand eines Beispiels
+### Prerequisites
 
-Marike schreibt:
-> **"Kannst du an ihrem Geburtstag noch Süßigkeiten-Tüten für ihre Gäste mitbringen?"**
+- Google Chrome (or Chromium-based browser)
+- A running Beziehungs-Radar backend (local or deployed)
+- The backend's API key (`RADAR_API_KEY`)
 
-Um diese Nachricht korrekt zu verstehen, muss das System wissen:
-1. **Wer ist "ihrem"?** → Romy (Tochter)
-2. **Wann ist der Geburtstag?** → 18. Februar
-3. **Wann findet die Feier statt?** → 21. Februar (nicht am eigentlichen Geburtstag!)
-4. **Wie viele Gäste?** → Aus vorherigen Gesprächen bekannt
-5. **Was sind "Süßigkeiten-Tüten"?** → Mitgebsel für Kindergeburtstag
+### Step 1: Install the Extension
 
-Dieses Wissen stammt aus **Wochen an Konversation** — nicht aus dieser einzelnen Nachricht.
+1. Open `chrome://extensions/` in Chrome
+2. Enable **Developer mode** (toggle in the top-right corner)
+3. Click **"Load unpacked"**
+4. Select the `extension/` directory from this repository
+5. The Beziehungs-Radar icon appears in the browser toolbar
 
-### Aktueller Stand der Kontextverarbeitung
+### Step 2: Configure Server Connection
 
-| Fähigkeit | Status | Details |
-|---|---|---|
-| Einzelnachricht-Sentiment | ✅ Funktioniert | Wortlisten-basiert, mit Negation + Intensivierern |
-| Marker-Erkennung | ✅ Funktioniert | 2-Phasen (Regex + Embedding), 100+ Marker |
-| Audio-Transkription | ✅ Funktioniert | Groq Whisper mit Gemini-Fallback |
-| Thread-Gruppierung | ⚠️ Begrenzt | Basiert auf Trigram-Ähnlichkeit, nicht semantisch |
-| Audio-Kontextanreicherung | ⚠️ Begrenzt | Nur 10 letzte Nachrichten + 5 "ähnliche" |
-| **Pronomen-Auflösung** | ❌ Fehlt | "ihrem" → wer? System hat keine Ahnung |
-| **Entitäten-Tracking** | ❌ Fehlt | Keine Wissensbasis über Personen, Beziehungen, Fakten |
-| **Temporales Reasoning** | ❌ Fehlt | "Geburtstag am 18." vs "Feier am 21." nicht unterscheidbar |
-| **Tagesübergreifender Kontext** | ❌ Fehlt | Kein Gedächtnis über Tage/Wochen hinweg |
-| **Implizites Wissen** | ❌ Fehlt | "Mitgebsel" → Kindergeburtstag-Konvention |
-| **Textnachricht-Kontextanreicherung** | ❌ Fehlt | Nur Audio-Nachrichten bekommen LLM-Kontext |
+1. Click the **Beziehungs-Radar** icon in the toolbar to open the popup
+2. In the **Server** section:
+   - **Server URL**: Enter your backend URL (e.g. `https://radar.your-domain.de` or `http://localhost:8900` for local development)
+   - **API Key**: Enter the value of `RADAR_API_KEY` from your `.env` file
+3. Click **Save**
 
-### Detaillierte Schwachstellen
+### Step 3: Add Contacts to the Whitelist
 
-#### 1. RAG-Embedding ist NICHT semantisch
+The extension only captures messages from whitelisted contacts. This is a privacy safeguard.
 
-Die aktuelle Implementierung in `rag_store.py` verwendet **Trigram-Character-Hashing** statt echter semantischer Embeddings:
+1. In the **Whitelist** section of the popup:
+   - Type a contact or group name exactly as it appears in WhatsApp (case-insensitive matching)
+   - Click **Add** (or press Enter)
+2. Repeat for each contact you want to track
+3. To remove a contact, click the **x** button next to their name
 
-```python
-# rag_store.py — _simple_embed()
-for i in range(len(text) - 2):
-    trigram = text[i:i+3]
-    h = hash(trigram) % EMBED_DIM
-    vec[h] += 1.0
-```
+### Step 4: Start Capturing
 
-**Auswirkung:** "Ich bin traurig" und "Mir geht es schlecht" werden als **unähnlich** eingestuft, obwohl sie semantisch identisch sind. Die gesamte "semantische" Ähnlichkeitssuche, auf der der Weaver und die Kontextsuche basieren, ist faktisch eine Zeichenketten-Ähnlichkeitssuche.
+1. Open [WhatsApp Web](https://web.whatsapp.com/) in a tab
+2. Navigate to a whitelisted chat
+3. The extension popup shows live status:
+   - **Extension**: Active / Paused
+   - **Current Chat**: The chat currently open in WhatsApp Web
+   - **Whitelisted**: Yes / No (whether the current chat is on the whitelist)
+   - **Messages Sent**: Count of messages forwarded to the backend
+   - **Retry Queue**: Messages waiting to be sent (network issues, etc.)
+4. Use the **Capture enabled** toggle to pause/resume capturing
 
-**Lösung:** `sentence-transformers` (bereits als Dependency installiert und in `unified_engine.py` genutzt) für RAG-Embeddings verwenden.
+### How It Works
 
-#### 2. Kein Entitäten-/Wissensmodell
+- The extension watches the WhatsApp Web DOM for new messages using a `MutationObserver`
+- Only messages from chats matching a whitelist entry are captured
+- Messages are batched (groups of 10) and sent to the backend via `POST /api/ingest`
+- Audio messages are detected, fetched as blobs, base64-encoded, and included in the payload
+- A persistent retry queue handles network failures with exponential backoff (5s → 15s → 1min → 5min)
+- The queue survives browser restarts (persisted in `localStorage`)
+- Heartbeats are sent periodically so the backend can monitor extension health
 
-Das System hat **keine Wissensbasis** über:
-- **Personen:** Wer ist Romy? Wer ist "sie"? Familienbeziehungen
-- **Fakten:** Geburtstage, Adressen, Vorlieben, Gewohnheiten
-- **Ereignisse:** Geplante Feiern, wiederkehrende Termine, Absprachen
-- **Beziehungsgraph:** Marike → Mutter von → Romy; Ben → Partner von → Marike
+### Troubleshooting
 
-Ohne dieses Wissen ist eine korrekte Interpretation impliziter Referenzen unmöglich.
-
-#### 3. Kontextfenster zu klein und nur für Audio
-
-Die semantische Anreicherung (`semantic_transcriber.py`) wird **nur für Audio-Nachrichten** aufgerufen und nutzt:
-- 10 letzte Nachrichten (nur Chat-Verlauf, ohne Analyse)
-- 5 "ähnliche" Nachrichten (basierend auf Trigram-Hash, nicht semantisch)
-
-**Auswirkung:** Textnachrichten — der Großteil aller Nachrichten — bekommen keinerlei kontextuelle Anreicherung. Der Termin-Extraktor sieht nur den Rohtext ohne Kontext.
-
-#### 4. Thread-Weaving ohne kausale Verknüpfung
-
-Der Weaver gruppiert Nachrichten nach Oberflächen-Ähnlichkeit (Trigram-Overlap), nicht nach kausaler Beziehung. Eine Kette wie:
-
-```
-Tag 1: "Romy hat nächste Woche Geburtstag"
-Tag 3: "Sollen wir die Feier am Samstag machen?"
-Tag 5: "Kannst du Süßigkeiten-Tüten mitbringen?"
-```
-
-Würde möglicherweise **nicht** als zusammenhängender Thread erkannt, weil die Texte auf Zeichenebene zu unterschiedlich sind.
-
-#### 5. Keine temporale Logik
-
-Der Termin-Extraktor erkennt explizite Daten (`14.02. um 10:00`), hat aber kein Verständnis für:
-- "An ihrem Geburtstag" → Welches Datum?
-- "Die Feier" → Welcher Termin? Geburtstag ≠ Feier-Datum
-- "Nächsten Samstag" → Relativ zu wann?
-- Unterschied zwischen Geburtstag (18.02.) und Geburtstagsfeier (21.02.)
-
----
-
-## Vorgeschlagene Lösung: Kontextgedächtnis
-
-### Architektur-Konzept: "Chat-Gehirn"
-
-Um das Marike/Romy-Problem zu lösen, braucht das System ein **persistentes, strukturiertes Kontextgedächtnis** — ein "Chat-Gehirn" pro Beziehung.
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    KONTEXTGEDÄCHTNIS                     │
-│                                                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐ │
-│  │ Personen-     │  │ Fakten-      │  │ Ereignis-     │ │
-│  │ Register      │  │ Speicher     │  │ Zeitleiste    │ │
-│  │               │  │              │  │               │ │
-│  │ Romy          │  │ Romys Geb:   │  │ 18.02 Romys   │ │
-│  │ → Tochter     │  │   18.02.     │  │   Geburtstag  │ │
-│  │ → 6 Jahre     │  │ Feier: 21.02 │  │ 21.02 Feier   │ │
-│  │ → Geb: 18.02  │  │ Gäste: 8     │  │   8 Gäste     │ │
-│  │               │  │ Ort: zuhause  │  │   Zuhause     │ │
-│  │ Marike        │  │              │  │ 22.02 Aufräumen│ │
-│  │ → Partnerin   │  │ Ben mag kein │  │               │ │
-│  │               │  │   Koriander  │  │               │ │
-│  └──────────────┘  └──────────────┘  └───────────────┘ │
-│                                                         │
-│  ┌─────────────────────────────────────────────────────┐│
-│  │ Aktiver Kontext (letzte 7 Tage, gewichtet)         ││
-│  │ → "Romys Geburtstagsfeier am 21.02., 8 Kinder,    ││
-│  │    Motto: Einhorn, Ort: Zuhause, Mitgebsel nötig"  ││
-│  └─────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────┘
-```
-
-### Umsetzungs-Vorschlag
-
-#### Schritt 1: Basis-Kontext aus Chat-Export
-
-Der Nutzer kann einen **WhatsApp Chat-Export** (Textdatei) hochladen. Ein LLM erstellt daraus einen strukturierten Basis-Kontext:
-
-```
-POST /api/context/init
-Body: { "chat_id": "marike", "export_text": "..." }
-
-→ LLM extrahiert:
-  - Alle erwähnten Personen + Beziehungen
-  - Wichtige Fakten (Geburtstage, Vorlieben, Adressen)
-  - Wiederkehrende Themen
-  - Wichtige Ereignisse der Vergangenheit
-```
-
-Dieser Basis-Kontext wird als strukturiertes JSON in einer neuen `context_memory` Tabelle gespeichert.
-
-#### Schritt 2: Laufende Aktualisierung
-
-Bei jeder neuen Nachricht:
-1. **Entitäten-Extraktion** (NER): Personen, Orte, Daten, Beziehungen
-2. **Fakten-Update**: Neue Fakten zum Kontext hinzufügen, veraltete aktualisieren
-3. **Referenz-Auflösung**: "ihrem" → Kontext durchsuchen → Romy (wahrscheinlichster Bezug)
-4. **Termin-Kontext**: Extrahierte Termine mit Kontextwissen anreichern
-
-#### Schritt 3: Kontextgestützte Analyse
-
-Jede Analyse-Stufe bekommt den aktuellen Kontext als Eingabe:
-
-```python
-# Beispiel: Termin-Extraktion mit Kontext
-context = await get_chat_context(chat_id)  # Personen, Fakten, Ereignisse
-termine = await extract_termine_with_context(text, sender, timestamp, context)
-
-# LLM-Prompt:
-# "Kontext: Romys Geburtstag ist am 18.02., die Feier am 21.02., 8 Gäste eingeladen.
-#  Nachricht: 'Kannst du an ihrem Geburtstag noch Süßigkeiten-Tüten für ihre Gäste mitbringen?'
-#  → Termin: 21.02. (Feier, nicht Geburtstag), Aufgabe: Süßigkeiten-Tüten für 8 Gäste"
-```
-
-### EverMemOS als mögliche Lösung
-
-[EverMemOS](https://github.com/EverMind-AI/EverMemOS) ist ein Open-Source "Memory Operating System" von EverMind, das genau für diesen Anwendungsfall entwickelt wurde:
-
-**Relevante Fähigkeiten:**
-
-| Feature | Relevanz für Beziehungs-Radar |
+| Symptom | Solution |
 |---|---|
-| **MemCells** (atomare Wissenseinheiten) | Fakten wie "Romys Geburtstag = 18.02." als einzelne, referenzierbare Einheiten |
-| **Hierarchisches Gedächtnis** | Episoden → Profile → Beziehungen → Fakten → Kern-Erinnerungen |
-| **Hybrid-Retrieval** (BM25 + semantisch) | Kombiniert Keyword- und Bedeutungssuche für Kontext-Abruf |
-| **Agentic Multi-Round Recall** | Generiert 2-3 komplementäre Suchanfragen für komplexe Kontexte |
-| **Lebende Profile** | Dynamisch aktualisierte Personenprofile (Romy, Marike, etc.) |
-| **MCP-Integration** | Kann als externes Tool an LLMs angebunden werden |
-| **93% Genauigkeit** (LoCoMo-Benchmark) | Hohe Trefferquote bei komplexen Kontextfragen |
-
-**Bewertung für Beziehungs-Radar:**
-
-EverMemOS wäre eine sehr gute Basis für das Kontextgedächtnis, weil es:
-- Bereits die harte Arbeit der Wissensstrukturierung übernimmt
-- Profil-Aktualisierungen über Zeit hinweg automatisch handhabt
-- Semantisches + Keyword-basiertes Retrieval kombiniert
-- Open-Source ist und selbst-gehostet werden kann
-
-**Einschränkungen:**
-- Zusätzliche Infrastruktur (eigener Service)
-- Muss an die Pipeline angebunden werden (neuer Analyse-Schritt)
-- Deutschsprachige Inhalte müssen getestet werden
-
-**Alternative: Eigene Lösung**
-
-Eine schlankere Alternative wäre ein eigenes `context_memory`-Modul mit:
-1. PostgreSQL-Tabelle für strukturierte Fakten (Personen, Daten, Beziehungen)
-2. LLM-basierte Extraktion bei jedem Nachrichteneingang
-3. Kontext-Injection in alle Analyse-Schritte
-4. Periodische Kontext-Zusammenfassung (Daily Digest)
-
-### Empfohlene Prioritäten
-
-| Priorität | Maßnahme | Aufwand | Wirkung |
-|---|---|---|---|
-| **1** | RAG-Embeddings auf Sentence-Transformers umstellen | Niedrig | Hoch — sofort bessere Ähnlichkeitssuche |
-| **2** | Textnachrichten ebenfalls kontextuell anreichern | Mittel | Hoch — 90% der Nachrichten profitieren |
-| **3** | Chat-Export → Basis-Kontext Endpunkt | Mittel | Sehr hoch — initiales Weltwissen |
-| **4** | Entitäten-Extraktion + Fakten-Speicher pro Chat | Hoch | Sehr hoch — Pronomen-Auflösung, Personenwissen |
-| **5** | EverMemOS evaluieren/integrieren | Hoch | Sehr hoch — professionelles Kontextgedächtnis |
+| Status shows "Open WhatsApp Web" | Open `web.whatsapp.com` in a tab |
+| Status shows "Server not configured" | Set Server URL and API Key in the popup, click Save |
+| Status shows "Paused" | Toggle "Capture enabled" on |
+| Whitelisted shows "No" | The current chat name doesn't match any whitelist entry — check spelling |
+| Retry Queue growing | Backend may be unreachable — check Server URL and network |
+| Messages not appearing in dashboard | Verify API Key matches `RADAR_API_KEY` in backend `.env` |
 
 ---
 
-## Installation & Entwicklung
+## Deployment
 
-### Voraussetzungen
+### Prerequisites
 
-- Python 3.12+
-- Node.js (für Extension-Entwicklung, optional)
-- Docker & Docker Compose (für Deployment)
-- Chrome Browser (für Extension)
+- Docker & Docker Compose
+- Min. **6 GB RAM** (Elasticsearch + Milvus are memory-intensive)
+- Groq API key (Whisper transcription + LLM)
+- DeepInfra API key (EverMemOS embeddings + reranking)
 
-### Lokale Entwicklung (API)
-
-```bash
-cd radar-api
-
-# Dependencies installieren
-pip install -r requirements.txt
-
-# PostgreSQL + ChromaDB müssen laufen
-# Alternativ: docker compose up postgres chromadb -d (im deploy/ Verzeichnis)
-
-# API starten
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
-# API-Dokumentation
-open http://localhost:8000/docs
-```
-
-### Extension laden
-
-```bash
-# In Chrome:
-# 1. chrome://extensions/ öffnen
-# 2. "Entwicklermodus" aktivieren
-# 3. "Entpackte Erweiterung laden" → extension/ Verzeichnis wählen
-
-# Konfiguration im Extension-Popup:
-# - Server URL: http://localhost:8900 (oder Produktions-Domain)
-# - API Key: Wert von RADAR_API_KEY
-# - Whitelist: Kontaktnamen hinzufügen
-```
-
-### Produktions-Deployment
+### Quick Start
 
 ```bash
 cd deploy
 
-# Ersteinrichtung (Oracle Cloud ARM VM)
-bash setup.sh
-
-# Umgebungsvariablen konfigurieren
+# Configure environment
 cp .env.template .env
-nano .env  # Alle RADAR_* Variablen setzen
+nano .env  # Set all required keys (see Configuration Reference below)
 
-# Stack starten
+# Start the full stack (12 services)
 docker compose up -d
 
-# Logs überwachen
-docker compose logs -f radar-api
+# Watch logs
+docker compose logs -f radar-api evermemos
 
-# Ollama-Modelle laden (optional)
-docker compose exec ollama ollama pull llama3.1:8b
-
-# Health-Check
-curl https://your-domain.de/health
+# Health check
+curl http://localhost:8900/health
+# → {"status":"ok","service":"beziehungs-radar","memory":{"status":"ok","evermemos":"connected"}}
 ```
 
-### Datenbank
+### Bootstrap Context from Chat Export
+
+Feed a WhatsApp chat export into EverMemOS to build initial world knowledge:
 
 ```bash
-# PostgreSQL-Shell
+curl -X POST http://localhost:8900/api/context/init \
+  -H "Authorization: Bearer $RADAR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chat_id": "marike",
+    "chat_name": "Marike",
+    "export_text": "12.01.26, 14:30 - Marike: Romy hat am 18. Februar Geburtstag\n13.01.26, 09:15 - Marike: Sollen wir die Feier am 21. machen?"
+  }'
+```
+
+### Docker Services
+
+```
+WHATSORGA CORE (5 services):
+  caddy          — HTTPS reverse proxy (443/80)
+  radar-api      — Python FastAPI (8900:8000)
+  postgres       — PostgreSQL 16 (internal 5432)
+  chromadb       — ChromaDB 0.5.23 (internal 8000)
+  ollama         — Local LLMs (internal 11434, legacy)
+
+EVERMEMOS MEMORY STACK (7 services):
+  evermemos      — FastAPI memory service (8001)
+  mongodb        — Mongo 7.0 (documents, MemCells)
+  elasticsearch  — ES 8.11.0 (BM25 keyword search)
+  milvus-standalone — Milvus 2.5.2 (vector similarity)
+  milvus-etcd    — etcd 3.5.5 (Milvus metadata)
+  milvus-minio   — MinIO (Milvus object storage)
+  redis          — Redis 7.2 (cache, boundary detection)
+```
+
+### Database Access
+
+```bash
+# PostgreSQL shell
 docker compose exec postgres psql -U radar -d radar
 
-# Letzte Nachrichten anzeigen
+# Recent messages
 SELECT chat_name, sender, text, timestamp
 FROM messages ORDER BY timestamp DESC LIMIT 10;
 
-# Analyse-Ergebnisse
+# Analysis results
 SELECT m.sender, m.text, a.sentiment_score, a.marker_categories->>'dominant' as marker
 FROM messages m JOIN analysis a ON a.message_id = m.id
 ORDER BY m.timestamp DESC LIMIT 10;
-
-# Aktive Threads
-SELECT theme, status, array_length(message_ids, 1) as msg_count
-FROM threads WHERE status = 'active';
 ```
 
 ---
 
-## Konfiguration
+## Configuration Reference
 
-Alle Einstellungen verwenden den Prefix `RADAR_` (siehe `radar-api/app/config.py`):
+All radar-api settings use the `RADAR_` prefix (see `radar-api/app/config.py`):
 
-| Variable | Typ | Standard | Beschreibung |
+| Variable | Type | Default | Description |
 |---|---|---|---|
-| `RADAR_API_KEY` | str | "changeme" | Bearer-Token für Authentifizierung |
-| `RADAR_DATABASE_URL` | str | postgresql+asyncpg://... | PostgreSQL-Verbindung |
-| `RADAR_GROQ_API_KEY` | str | "" | Groq API-Key (Whisper + LLM) |
-| `RADAR_GEMINI_API_KEY` | str | "" | Gemini Fallback-LLM |
-| `RADAR_CHROMADB_URL` | str | http://chromadb:8000 | ChromaDB-Endpunkt |
-| `RADAR_OLLAMA_URL` | str | http://ollama:11434 | Lokales LLM |
-| `RADAR_OLLAMA_MODEL` | str | llama3.1:8b | Ollama-Modell |
-| `RADAR_CALDAV_URL` | str | "" | iCloud CalDAV-Server |
-| `RADAR_CALDAV_USERNAME` | str | "" | iCloud-E-Mail |
-| `RADAR_CALDAV_PASSWORD` | str | "" | App-spezifisches Passwort |
-| `RADAR_CALDAV_CALENDAR` | str | Beziehungs-Radar | Kalender-Name |
-| `RADAR_DOMAIN` | str | radar.localhost | Öffentliche Domain |
+| `RADAR_API_KEY` | str | "changeme" | Bearer token for authentication |
+| `RADAR_DATABASE_URL` | str | postgresql+asyncpg://... | PostgreSQL connection (async) |
+| `RADAR_DATABASE_URL_SYNC` | str | postgresql+psycopg2://... | PostgreSQL connection (sync) |
+| `RADAR_GROQ_API_KEY` | str | "" | Groq API key (Whisper + LLM) |
+| `RADAR_GEMINI_API_KEY` | str | "" | Gemini fallback LLM |
+| `RADAR_CHROMADB_URL` | str | http://chromadb:8000 | ChromaDB endpoint |
+| `RADAR_OLLAMA_URL` | str | http://ollama:11434 | Local LLM (legacy) |
+| `RADAR_CALDAV_URL` | str | "" | iCloud CalDAV server |
+| `RADAR_CALDAV_USERNAME` | str | "" | iCloud email |
+| `RADAR_CALDAV_PASSWORD` | str | "" | App-specific password |
+| `RADAR_CALDAV_CALENDAR` | str | Beziehungs-Radar | Calendar name |
+| `RADAR_EVERMEMOS_URL` | str | http://evermemos:8001 | EverMemOS API endpoint |
+| `RADAR_EVERMEMOS_ENABLED` | bool | true | Enable/disable semantic memory |
 
-### Extension-Konfiguration
+### EverMemOS Configuration
 
-Wird in Chromes `chrome.storage.local` gespeichert (über Popup-UI):
+These are set in Docker environment (not `RADAR_` prefixed):
 
-- **Server URL** — Backend-Adresse
-- **API Key** — Bearer-Token
-- **Whitelist** — Array von Kontaktnamen
-- **Capture Enabled** — Boolean für Aktivierung/Deaktivierung
+| Variable | Default | Description |
+|---|---|---|
+| `EVERMEMOS_LLM_MODEL` | meta-llama/llama-3.3-70b-instruct | LLM for MemCell extraction |
+| `EVERMEMOS_LLM_BASE_URL` | https://api.groq.com/openai/v1 | LLM API base URL |
+| `EVERMEMOS_DEEPINFRA_KEY` | — | DeepInfra API key (required for embeddings + reranking) |
+
+### Extension Configuration
+
+Stored in Chrome's `chrome.storage.local` (configured via popup UI):
+
+| Setting | Description |
+|---|---|
+| **Server URL** | Backend address (e.g. `https://radar.your-domain.de`) |
+| **API Key** | Bearer token matching `RADAR_API_KEY` |
+| **Whitelist** | Array of contact/group names to capture |
+| **Capture Enabled** | Boolean toggle for activation/deactivation |
+
+---
+
+## Development
+
+### Local API Development
+
+```bash
+cd radar-api
+pip install -r requirements.txt
+
+# PostgreSQL + ChromaDB must be running
+# Option: docker compose up postgres chromadb -d (from deploy/)
+
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# API docs
+open http://localhost:8000/docs
+```
+
+### Tests
+
+```bash
+cd radar-api
+pytest                                    # fast tests only
+pytest -m slow                            # slow tests (loads ML models)
+pytest tests/test_unified_engine.py       # single file
+pytest -k test_engine_regex               # single test by name
+```
+
+### Marker Registry Compilation
+
+```bash
+cd radar-api
+python -m scripts.compile_registry \
+  --markers-dir ../../Marker/WTME_ALL_Marker-LD3.4.1-5.1 \
+  --category-mapping data/category_mapping.yaml \
+  --output data/marker_registry_radar.json
+```
+
+The compiled registry (`data/marker_registry_radar.json`) is gitignored — must be compiled locally or during Docker build.
+
+### Extension Development
+
+Load unpacked in Chrome (`chrome://extensions/` → Developer mode → Load unpacked → select `extension/`). Changes to content scripts require clicking the refresh button on the extension card. Changes to `popup.js` take effect on next popup open.
