@@ -712,7 +712,7 @@ Alle Einstellungen verwenden den Prefix `RADAR_` (siehe `radar-api/app/config.py
 | `RADAR_OLLAMA_URL` | str | http://ollama:11434 | Lokales LLM |
 | `RADAR_OLLAMA_MODEL` | str | llama3.1:8b | Ollama-Modell |
 | `RADAR_CALDAV_URL` | str | "" | iCloud CalDAV-Server |
-| `RADAR_CALDAV_USERNAME` | str | "" | iCloud-Email |
+| `RADAR_CALDAV_USERNAME` | str | "" | iCloud-E-Mail |
 | `RADAR_CALDAV_PASSWORD` | str | "" | App-spezifisches Passwort |
 | `RADAR_CALDAV_CALENDAR` | str | Beziehungs-Radar | Kalender-Name |
 | `RADAR_DOMAIN` | str | radar.localhost | Öffentliche Domain |
