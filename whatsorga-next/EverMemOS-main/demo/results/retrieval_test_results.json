@@ -1,0 +1,4691 @@
+{
+  "test_time": "2025-11-16T01:35:19.017422",
+  "summary": {
+    "total_tests": 59,
+    "successful_tests": 59,
+    "failed_tests": 0,
+    "success_rate": "100.0%"
+  },
+  "test_results": [
+    {
+      "test_name": "episode_all_embedding",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "episode",
+      "memory_scope": "all",
+      "retrieval_mode": "embedding",
+      "count": 3,
+      "latency_ms": 5808.808088302612,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "episode",
+        "embedding_candidates": 3,
+        "total_latency_ms": 5808.808088302612,
+        "final_count": 3
+      },
+      "memories": [
+        {
+          "score": 0.4711667597293854,
+          "event_id": "691806af192e3b20f7ccfb7d",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {}
+        },
+        {
+          "score": 0.4664009213447571,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+          "evidence": "",
+          "metadata": {
+            "title": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "participants": [
+              "user_001",
+              "robot_001"
+            ],
+            "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "memcell_event_id_list": [
+              "691806af192e3b20f7ccfb7d"
+            ],
+            "extend": {
+              "memory_type": "episode_summary",
+              "ori_event_id": null,
+              "tags": null
+            }
+          }
+        },
+        {
+          "score": 0.45882031321525574,
+          "event_id": "691806ca192e3b20f7ccfb81",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "user 的北京旅行规划与返回后疲惫记录 (2025-08-26)",
+          "episode": "在2025年8月26日，user 咨询了下周北京旅行的建议，助理提供了故宫、天坛、颐和园、长城、胡同等景点的推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食的介绍。user 透露自己是四川人，最喜欢火锅，于是助理进一步推荐了高水准川味火锅店如小龙坎和大龙燚，以及融合川京风味的选项。随后，user 澄清希望根据重口味偏好推荐地道北京美食，助理据此建议爆肚、卤煮火烧、炒肝等浓郁内脏类菜肴，并提供辣化吃法。user 提到将与五六个朋友同行，偏好互动性强的团体项目，助理推荐了胡同沉浸式剧本杀、什刹海骑行、密室逃脱、京味文化体验和夜生活选项。user 针对胡同剧本杀和骑行项目询问注意事项，助理详细说明了预约、穿着、安全、路线和团体协调等实用建议。2025年9月5日，user 报告已从北京返回，行程活动密集、休息不足、饮食不规律导致极度疲惫，并表示第二天需上班，寻求调节建议。",
+          "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+          "evidence": "",
+          "metadata": {
+            "title": "user 的北京旅行规划与返回后疲惫记录 (2025-08-26)",
+            "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "participants": [
+              "user_001",
+              "robot_001"
+            ],
+            "subject": "user 的北京旅行规划与返回后疲惫记录 (2025-08-26)",
+            "memcell_event_id_list": [
+              "691806af192e3b20f7ccfb7d"
+            ],
+            "extend": {
+              "memory_type": "episode_summary",
+              "ori_event_id": null,
+              "tags": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "episode_all_bm25",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "episode",
+      "memory_scope": "all",
+      "retrieval_mode": "bm25",
+      "count": 3,
+      "latency_ms": 32.4249267578125,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "episode",
+        "bm25_candidates": 3,
+        "total_latency_ms": 32.4249267578125,
+        "final_count": 3
+      },
+      "memories": [
+        {
+          "score": 21.30173,
+          "event_id": "691806af192e3b20f7ccfb7d_episode",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "search_content": [
+            "用户北京旅行规划咨询与后续疲惫调节求助 (2025-08-26)",
+            "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至"
+          ],
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 20.86273,
+          "event_id": "691806ca192e3b20f7ccfb81",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577031+08:00",
+          "episode": "在2025年8月26日，user 咨询了下周北京旅行的建议，助理提供了故宫、天坛、颐和园、长城、胡同等景点的推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食的介绍。user 透露自己是四川人，最喜欢火锅，于是助理进一步推荐了高水准川味火锅店如小龙坎和大龙燚，以及融合川京风味的选项。随后，user 澄清希望根据重口味偏好推荐地道北京美食，助理据此建议爆肚、卤煮火烧、炒肝等浓郁内脏类菜肴，并提供辣化吃法。user 提到将与五六个朋友同行，偏好互动性强的团体项目，助理推荐了胡同沉浸式剧本杀、什刹海骑行、密室逃脱、京味文化体验和夜生活选项。user 针对胡同剧本杀和骑行项目询问注意事项，助理详细说明了预约、穿着、安全、路线和团体协调等实用建议。2025年9月5日，user 报告已从北京返回，行程活动密集、休息不足、饮食不规律导致极度疲惫，并表示第二天需上班，寻求调节建议。",
+          "search_content": [
+            "2025",
+            "26",
+            "user",
+            "咨询",
+            "下周",
+            "北京",
+            "旅行",
+            "建议",
+            "助理",
+            "提供",
+            "故宫",
+            "天坛",
+            "颐和园",
+            "长城",
+            "胡同",
+            "景点",
+            "推荐",
+            "烤鸭",
+            "炸酱面",
+            "火烧",
+            "北京",
+            "特色美食",
+            "介绍",
+            "user",
+            "透露",
+            "四川人",
+            "喜欢",
+            "火锅",
+            "助理",
+            "进一步",
+            "推荐",
+            "水准",
+            "川味",
+            "火锅店",
+            "小龙",
+            "大龙",
+            "融合",
+            "川京",
+            "风味",
+            "选项",
+            "user",
+            "澄清",
+            "希望",
+            "口味",
+            "偏好",
+            "推荐",
+            "地道",
+            "北京",
+            "美食",
+            "助理",
+            "建议",
+            "爆肚",
+            "火烧",
+            "炒肝",
+            "浓郁",
+            "内脏",
+            "菜肴",
+            "提供",
+            "辣化",
+            "吃法",
+            "user",
+            "提到",
+            "五六个",
+            "朋友",
+            "同行",
+            "偏好",
+            "互动性",
+            "团体",
+            "项目",
+            "助理",
+            "推荐",
+            "胡同",
+            "沉浸",
+            "剧本",
+            "什刹海",
+            "骑行",
+            "密室",
+            "逃脱",
+            "京味",
+            "文化",
+            "体验",
+            "夜生活",
+            "选项",
+            "user",
+            "胡同",
+            "剧本",
+            "骑行",
+            "项目",
+            "询问",
+            "注意事项",
+            "助理",
+            "详细",
+            "说明",
+            "预约",
+            "穿着",
+            "安全",
+            "路线",
+            "团体",
+            "协调",
+            "实用",
+            "建议",
+            "2025",
+            "user",
+            "报告",
+            "北京",
+            "返回",
+            "行程",
+            "活动",
+            "密集",
+            "休息",
+            "不足",
+            "饮食",
+            "规律",
+            "导致",
+            "极度",
+            "疲惫",
+            "表示",
+            "第二天",
+            "上班",
+            "寻求",
+            "调节",
+            "建议"
+          ],
+          "metadata": {
+            "memory_type": "episode_summary"
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 20.184086,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577031+08:00",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "search_content": [
+            "2025",
+            "26",
+            "对话",
+            "assistant",
+            "回应",
+            "用户",
+            "即将",
+            "前往",
+            "北京",
+            "旅游",
+            "查询",
+            "提供",
+            "全面",
+            "实用",
+            "建议",
+            "包括",
+            "故宫",
+            "天坛",
+            "颐和园",
+            "长城",
+            "必游",
+            "景点",
+            "推荐",
+            "烤鸭",
+            "炸酱面",
+            "火烧",
+            "北京",
+            "特色美食",
+            "交通",
+            "提示",
+            "天气",
+            "注意事项",
+            "用户",
+            "透露",
+            "四川人",
+            "喜欢",
+            "火锅",
+            "assistant",
+            "调整",
+            "推荐",
+            "最初",
+            "建议",
+            "水准",
+            "川味",
+            "火锅店",
+            "小龙",
+            "大龙",
+            "用户",
+            "澄清",
+            "口味",
+            "推荐",
+            "北京",
+            "特色美食",
+            "assistant",
+            "重新",
+            "聚焦",
+            "地道",
+            "选项",
+            "爆肚",
+            "火烧",
+            "炒肝",
+            "椒盐",
+            "鸭架",
+            "选择",
+            "强调",
+            "浓郁",
+            "风味",
+            "适配",
+            "用户",
+            "口味",
+            "偏好",
+            "提出",
+            "规划",
+            "口味",
+            "美食",
+            "路线",
+            "可能性",
+            "用户",
+            "表示",
+            "五六个",
+            "朋友",
+            "同行",
+            "喜欢",
+            "团体",
+            "项目",
+            "assistant",
+            "推荐",
+            "互动性",
+            "娱乐活动",
+            "包括",
+            "胡同",
+            "沉浸",
+            "剧本",
+            "什刹海",
+            "骑行",
+            "北京",
+            "主题",
+            "密室",
+            "逃脱",
+            "京味",
+            "文化",
+            "体验",
+            "夜生活",
+            "选项",
+            "听相声",
+            "KTV",
+            "提供",
+            "团体",
+            "协调",
+            "小贴士",
+            "用户",
+            "进一步",
+            "询问",
+            "胡同",
+            "剧本",
+            "骑行",
+            "注意事项",
+            "assistant",
+            "详细",
+            "阐述",
+            "预约",
+            "穿着",
+            "安全",
+            "路线",
+            "通用",
+            "建议",
+            "确保",
+            "小团体",
+            "顺利",
+            "体验"
+          ],
+          "metadata": {
+            "memory_type": "episode_summary"
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "episode_all_rrf",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "episode",
+      "memory_scope": "all",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 16610.459804534912,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "episode",
+        "embedding_candidates": 3,
+        "bm25_candidates": 3,
+        "total_latency_ms": 16610.459804534912,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806af192e3b20f7ccfb7d",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806af192e3b20f7ccfb7d_episode",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+          "evidence": "",
+          "metadata": {
+            "title": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "participants": [
+              "user_001",
+              "robot_001"
+            ],
+            "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "memcell_event_id_list": [
+              "691806af192e3b20f7ccfb7d"
+            ],
+            "extend": {
+              "memory_type": "episode_summary",
+              "ori_event_id": null,
+              "tags": null
+            }
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "episode_personal_embedding",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "episode",
+      "memory_scope": "personal",
+      "retrieval_mode": "embedding",
+      "count": 1,
+      "latency_ms": 562.8683567047119,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "episode",
+        "embedding_candidates": 1,
+        "total_latency_ms": 562.8683567047119,
+        "final_count": 1
+      },
+      "memories": [
+        {
+          "score": 0.4664009213447571,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+          "evidence": "",
+          "metadata": {
+            "title": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "participants": [
+              "user_001",
+              "robot_001"
+            ],
+            "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "memcell_event_id_list": [
+              "691806af192e3b20f7ccfb7d"
+            ],
+            "extend": {
+              "memory_type": "episode_summary",
+              "ori_event_id": null,
+              "tags": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "episode_personal_bm25",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "episode",
+      "memory_scope": "personal",
+      "retrieval_mode": "bm25",
+      "count": 1,
+      "latency_ms": 11.462211608886719,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "episode",
+        "bm25_candidates": 1,
+        "total_latency_ms": 11.462211608886719,
+        "final_count": 1
+      },
+      "memories": [
+        {
+          "score": 20.768034,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577031+08:00",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "search_content": [
+            "2025",
+            "26",
+            "对话",
+            "assistant",
+            "回应",
+            "用户",
+            "即将",
+            "前往",
+            "北京",
+            "旅游",
+            "查询",
+            "提供",
+            "全面",
+            "实用",
+            "建议",
+            "包括",
+            "故宫",
+            "天坛",
+            "颐和园",
+            "长城",
+            "必游",
+            "景点",
+            "推荐",
+            "烤鸭",
+            "炸酱面",
+            "火烧",
+            "北京",
+            "特色美食",
+            "交通",
+            "提示",
+            "天气",
+            "注意事项",
+            "用户",
+            "透露",
+            "四川人",
+            "喜欢",
+            "火锅",
+            "assistant",
+            "调整",
+            "推荐",
+            "最初",
+            "建议",
+            "水准",
+            "川味",
+            "火锅店",
+            "小龙",
+            "大龙",
+            "用户",
+            "澄清",
+            "口味",
+            "推荐",
+            "北京",
+            "特色美食",
+            "assistant",
+            "重新",
+            "聚焦",
+            "地道",
+            "选项",
+            "爆肚",
+            "火烧",
+            "炒肝",
+            "椒盐",
+            "鸭架",
+            "选择",
+            "强调",
+            "浓郁",
+            "风味",
+            "适配",
+            "用户",
+            "口味",
+            "偏好",
+            "提出",
+            "规划",
+            "口味",
+            "美食",
+            "路线",
+            "可能性",
+            "用户",
+            "表示",
+            "五六个",
+            "朋友",
+            "同行",
+            "喜欢",
+            "团体",
+            "项目",
+            "assistant",
+            "推荐",
+            "互动性",
+            "娱乐活动",
+            "包括",
+            "胡同",
+            "沉浸",
+            "剧本",
+            "什刹海",
+            "骑行",
+            "北京",
+            "主题",
+            "密室",
+            "逃脱",
+            "京味",
+            "文化",
+            "体验",
+            "夜生活",
+            "选项",
+            "听相声",
+            "KTV",
+            "提供",
+            "团体",
+            "协调",
+            "小贴士",
+            "用户",
+            "进一步",
+            "询问",
+            "胡同",
+            "剧本",
+            "骑行",
+            "注意事项",
+            "assistant",
+            "详细",
+            "阐述",
+            "预约",
+            "穿着",
+            "安全",
+            "路线",
+            "通用",
+            "建议",
+            "确保",
+            "小团体",
+            "顺利",
+            "体验"
+          ],
+          "metadata": {
+            "memory_type": "episode_summary"
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "episode_personal_rrf",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "episode",
+      "memory_scope": "personal",
+      "retrieval_mode": "rrf",
+      "count": 2,
+      "latency_ms": 3851.8218994140625,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "episode",
+        "embedding_candidates": 1,
+        "bm25_candidates": 1,
+        "total_latency_ms": 3851.8218994140625,
+        "final_count": 2
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+          "evidence": "",
+          "metadata": {
+            "title": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "participants": [
+              "user_001",
+              "robot_001"
+            ],
+            "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "memcell_event_id_list": [
+              "691806af192e3b20f7ccfb7d"
+            ],
+            "extend": {
+              "memory_type": "episode_summary",
+              "ori_event_id": null,
+              "tags": null
+            }
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577031+08:00",
+          "subject": "",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "memory_type": "episode_summary"
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "episode_group_embedding",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "episode",
+      "memory_scope": "group",
+      "retrieval_mode": "embedding",
+      "count": 1,
+      "latency_ms": 9349.64895248413,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "episode",
+        "embedding_candidates": 1,
+        "total_latency_ms": 9349.64895248413,
+        "final_count": 1
+      },
+      "memories": [
+        {
+          "score": 0.4711667597293854,
+          "event_id": "691806af192e3b20f7ccfb7d",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "test_name": "episode_group_bm25",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "episode",
+      "memory_scope": "group",
+      "retrieval_mode": "bm25",
+      "count": 1,
+      "latency_ms": 6.020069122314453,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "episode",
+        "bm25_candidates": 1,
+        "total_latency_ms": 6.020069122314453,
+        "final_count": 1
+      },
+      "memories": [
+        {
+          "score": 24.100784,
+          "event_id": "691806af192e3b20f7ccfb7d_episode",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "search_content": [
+            "用户北京旅行规划咨询与后续疲惫调节求助 (2025-08-26)",
+            "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至"
+          ],
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "episode_group_rrf",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "episode",
+      "memory_scope": "group",
+      "retrieval_mode": "rrf",
+      "count": 2,
+      "latency_ms": 10702.714920043945,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "episode",
+        "embedding_candidates": 1,
+        "bm25_candidates": 1,
+        "total_latency_ms": 10702.714920043945,
+        "final_count": 2
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806af192e3b20f7ccfb7d",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806af192e3b20f7ccfb7d_episode",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_all_embedding",
+      "status": "✅ 成功",
+      "query": "Beijing travel and food recommendation",
+      "data_source": "event_log",
+      "memory_scope": "all",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 5725.166797637939,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "event_log",
+        "embedding_candidates": 52,
+        "total_latency_ms": 5725.166797637939,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.8096177577972412,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.7835186719894409,
+          "event_id": "69180708192e3b20f7ccfba5",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant recommended Beijing-style cultural experiences.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.7803057432174683,
+          "event_id": "69180708192e3b20f7ccfbb7",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The user clarified that recommendations should be for Beijing特色美食 based on taste.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_all_bm25",
+      "status": "✅ 成功",
+      "query": "Beijing travel and food recommendation",
+      "data_source": "event_log",
+      "memory_scope": "all",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 11.902809143066406,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "event_log",
+        "bm25_candidates": 28,
+        "total_latency_ms": 11.902809143066406,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 6.438378,
+          "event_id": "69180708192e3b20f7ccfb9c",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant recommended options that fuse Sichuan and Beijing flavors.",
+          "search_content": [
+            "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb81",
+            "atomic_fact": "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 6.2725267,
+          "event_id": "69180708192e3b20f7ccfbbb",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The user indicated that they will travel with five or six friends.",
+          "search_content": [
+            "The user indicated that they will travel with five or six friends."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The user indicated that they will travel with five or six friends."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 6.215763,
+          "event_id": "69180708192e3b20f7ccfbb1",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo.",
+          "search_content": [
+            "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_all_rrf",
+      "status": "✅ 成功",
+      "query": "Beijing travel and food recommendation",
+      "data_source": "event_log",
+      "memory_scope": "all",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 1288.98024559021,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "event_log",
+        "embedding_candidates": 52,
+        "bm25_candidates": 28,
+        "total_latency_ms": 1288.98024559021,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfb9c",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "subject": "",
+          "episode": "The assistant recommended options that fuse Sichuan and Beijing flavors.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb81",
+            "atomic_fact": "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180708192e3b20f7ccfba5",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant recommended Beijing-style cultural experiences.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_personal_embedding",
+      "status": "✅ 成功",
+      "query": "Beijing travel and food recommendation",
+      "data_source": "event_log",
+      "memory_scope": "personal",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 819.7040557861328,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "event_log",
+        "embedding_candidates": 30,
+        "total_latency_ms": 819.7040557861328,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.8096177577972412,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.7803057432174683,
+          "event_id": "69180708192e3b20f7ccfbb7",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The user clarified that recommendations should be for Beijing特色美食 based on taste.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.7670591473579407,
+          "event_id": "69180708192e3b20f7ccfbae",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant responded to the user's query about an upcoming trip to Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_personal_bm25",
+      "status": "✅ 成功",
+      "query": "Beijing travel and food recommendation",
+      "data_source": "event_log",
+      "memory_scope": "personal",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 11.719942092895508,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "event_log",
+        "bm25_candidates": 14,
+        "total_latency_ms": 11.719942092895508,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 6.776432,
+          "event_id": "69180708192e3b20f7ccfbbb",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The user indicated that they will travel with five or six friends.",
+          "search_content": [
+            "The user indicated that they will travel with five or six friends."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The user indicated that they will travel with five or six friends."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 6.7196684,
+          "event_id": "69180708192e3b20f7ccfbb1",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo.",
+          "search_content": [
+            "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 5.981198,
+          "event_id": "69180708192e3b20f7ccfbb8",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant refocused on authentic Beijing options including burst belly, lǔ zhǔ huǒ shāo, fried liver, and pepper salt duck rack.",
+          "search_content": [
+            "The assistant refocused on authentic Beijing options including burst belly, lǔ zhǔ huǒ shāo, fried liver, and pepper salt duck rack."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The assistant refocused on authentic Beijing options including burst belly, lǔ zhǔ huǒ shāo, fried liver, and pepper salt duck rack."
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_personal_rrf",
+      "status": "✅ 成功",
+      "query": "Beijing travel and food recommendation",
+      "data_source": "event_log",
+      "memory_scope": "personal",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 830.4669857025146,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "event_log",
+        "embedding_candidates": 30,
+        "bm25_candidates": 14,
+        "total_latency_ms": 830.4669857025146,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfbbb",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "subject": "",
+          "episode": "The user indicated that they will travel with five or six friends.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The user indicated that they will travel with five or six friends."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180708192e3b20f7ccfbb7",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The user clarified that recommendations should be for Beijing特色美食 based on taste.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_group_embedding",
+      "status": "✅ 成功",
+      "query": "Beijing travel and food recommendation",
+      "data_source": "event_log",
+      "memory_scope": "group",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 822.202205657959,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "event_log",
+        "embedding_candidates": 52,
+        "total_latency_ms": 822.202205657959,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.8096177577972412,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.7835186719894409,
+          "event_id": "69180708192e3b20f7ccfba5",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant recommended Beijing-style cultural experiences.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.7803057432174683,
+          "event_id": "69180708192e3b20f7ccfbb7",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The user clarified that recommendations should be for Beijing特色美食 based on taste.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_group_bm25",
+      "status": "✅ 成功",
+      "query": "Beijing travel and food recommendation",
+      "data_source": "event_log",
+      "memory_scope": "group",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 16.91889762878418,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "event_log",
+        "bm25_candidates": 28,
+        "total_latency_ms": 16.91889762878418,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 6.46103,
+          "event_id": "69180708192e3b20f7ccfb9c",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant recommended options that fuse Sichuan and Beijing flavors.",
+          "search_content": [
+            "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb81",
+            "atomic_fact": "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 6.2989936,
+          "event_id": "69180708192e3b20f7ccfbbb",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The user indicated that they will travel with five or six friends.",
+          "search_content": [
+            "The user indicated that they will travel with five or six friends."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The user indicated that they will travel with five or six friends."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 6.24223,
+          "event_id": "69180708192e3b20f7ccfbb1",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo.",
+          "search_content": [
+            "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_group_rrf",
+      "status": "✅ 成功",
+      "query": "Beijing travel and food recommendation",
+      "data_source": "event_log",
+      "memory_scope": "group",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 588.6142253875732,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "event_log",
+        "embedding_candidates": 52,
+        "bm25_candidates": 28,
+        "total_latency_ms": 588.6142253875732,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfb9c",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "subject": "",
+          "episode": "The assistant recommended options that fuse Sichuan and Beijing flavors.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb81",
+            "atomic_fact": "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180708192e3b20f7ccfba5",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant recommended Beijing-style cultural experiences.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_all_embedding",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "semantic_memory",
+      "memory_scope": "all",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 630.2797794342041,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 10,
+        "total_latency_ms": 630.2797794342041,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.5340700149536133,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          }
+        },
+        {
+          "score": 0.4134120047092438,
+          "event_id": "69180705192e3b20f7ccfb87",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001团体出行时会优先选择互动性强的娱乐项目",
+          "summary": "",
+          "evidence": "与五六个朋友同行偏好互动项目",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          }
+        },
+        {
+          "score": 0.4094589054584503,
+          "event_id": "69180705192e3b20f7ccfb86",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001可能养成旅行前咨询实用注意事项的习惯",
+          "summary": "",
+          "evidence": "询问胡同剧本杀和骑行注意事项",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_all_bm25",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "semantic_memory",
+      "memory_scope": "all",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 13.875246047973633,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "semantic_memory",
+        "bm25_candidates": 8,
+        "total_latency_ms": 13.875246047973633,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 26.068586,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "search_content": [
+            "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+            "调整推荐爆肚炒肝等浓郁风味北京美食"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-08-26T00:00:00",
+            "duration_days": 365,
+            "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 18.787373,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "search_content": [
+            "robot_001未来旅游规划中注重交通和天气注意事项",
+            "提供北京旅游交通提示和天气注意事项"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-02-26T00:00:00",
+            "duration_days": 184,
+            "evidence": "提供北京旅游交通提示和天气注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-02-26T00:00:00"
+        },
+        {
+          "score": 11.724204,
+          "event_id": "69180705192e3b20f7ccfb8f",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001在下次出游会提前预约胡同剧本杀等沉浸式体验",
+          "search_content": [
+            "robot_001在下次出游会提前预约胡同剧本杀等沉浸式体验",
+            "推荐胡同沉浸式剧本杀并询问注意事项"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2025-11-26T00:00:00",
+            "duration_days": 92,
+            "evidence": "推荐胡同沉浸式剧本杀并询问注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2025-11-26T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_all_rrf",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "semantic_memory",
+      "memory_scope": "all",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 569.8099136352539,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 10,
+        "bm25_candidates": 8,
+        "total_latency_ms": 569.8099136352539,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-08-26T00:00:00",
+            "duration_days": 365,
+            "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180705192e3b20f7ccfb87",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001团体出行时会优先选择互动性强的娱乐项目",
+          "summary": "",
+          "evidence": "与五六个朋友同行偏好互动项目",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          },
+          "start_time": "2025-09-06T00:00:00",
+          "end_time": "2025-12-06T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_personal_embedding",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "semantic_memory",
+      "memory_scope": "personal",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 565.2480125427246,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 6,
+        "total_latency_ms": 565.2480125427246,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.5340700149536133,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          }
+        },
+        {
+          "score": 0.40900006890296936,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "summary": "",
+          "evidence": "提供北京旅游交通提示和天气注意事项",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          }
+        },
+        {
+          "score": 0.3986639976501465,
+          "event_id": "69180705192e3b20f7ccfb91",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会增加尝试什刹海骑行等户外团体活动的频率",
+          "summary": "",
+          "evidence": "推荐什刹海骑行作为团体娱乐",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_personal_bm25",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "semantic_memory",
+      "memory_scope": "personal",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 9.32931900024414,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "semantic_memory",
+        "bm25_candidates": 6,
+        "total_latency_ms": 9.32931900024414,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 26.652534,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "search_content": [
+            "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+            "调整推荐爆肚炒肝等浓郁风味北京美食"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-08-26T00:00:00",
+            "duration_days": 365,
+            "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 19.37132,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "search_content": [
+            "robot_001未来旅游规划中注重交通和天气注意事项",
+            "提供北京旅游交通提示和天气注意事项"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-02-26T00:00:00",
+            "duration_days": 184,
+            "evidence": "提供北京旅游交通提示和天气注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-02-26T00:00:00"
+        },
+        {
+          "score": 12.308151,
+          "event_id": "69180705192e3b20f7ccfb8f",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001在下次出游会提前预约胡同剧本杀等沉浸式体验",
+          "search_content": [
+            "robot_001在下次出游会提前预约胡同剧本杀等沉浸式体验",
+            "推荐胡同沉浸式剧本杀并询问注意事项"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2025-11-26T00:00:00",
+            "duration_days": 92,
+            "evidence": "推荐胡同沉浸式剧本杀并询问注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2025-11-26T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_personal_rrf",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "semantic_memory",
+      "memory_scope": "personal",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 573.8999843597412,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 6,
+        "bm25_candidates": 6,
+        "total_latency_ms": 573.8999843597412,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-08-26T00:00:00",
+            "duration_days": 365,
+            "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "summary": "",
+          "evidence": "提供北京旅游交通提示和天气注意事项",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-02-26T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_group_embedding",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "semantic_memory",
+      "memory_scope": "group",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 608.4890365600586,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 10,
+        "total_latency_ms": 608.4890365600586,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.5340700149536133,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          }
+        },
+        {
+          "score": 0.4134120047092438,
+          "event_id": "69180705192e3b20f7ccfb87",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001团体出行时会优先选择互动性强的娱乐项目",
+          "summary": "",
+          "evidence": "与五六个朋友同行偏好互动项目",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          }
+        },
+        {
+          "score": 0.4094589054584503,
+          "event_id": "69180705192e3b20f7ccfb86",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001可能养成旅行前咨询实用注意事项的习惯",
+          "summary": "",
+          "evidence": "询问胡同剧本杀和骑行注意事项",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_group_bm25",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "semantic_memory",
+      "memory_scope": "group",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 10.792016983032227,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "semantic_memory",
+        "bm25_candidates": 8,
+        "total_latency_ms": 10.792016983032227,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 26.092999,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "search_content": [
+            "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+            "调整推荐爆肚炒肝等浓郁风味北京美食"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-08-26T00:00:00",
+            "duration_days": 365,
+            "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 18.811785,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "search_content": [
+            "robot_001未来旅游规划中注重交通和天气注意事项",
+            "提供北京旅游交通提示和天气注意事项"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-02-26T00:00:00",
+            "duration_days": 184,
+            "evidence": "提供北京旅游交通提示和天气注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-02-26T00:00:00"
+        },
+        {
+          "score": 11.748615,
+          "event_id": "69180705192e3b20f7ccfb8f",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001在下次出游会提前预约胡同剧本杀等沉浸式体验",
+          "search_content": [
+            "robot_001在下次出游会提前预约胡同剧本杀等沉浸式体验",
+            "推荐胡同沉浸式剧本杀并询问注意事项"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2025-11-26T00:00:00",
+            "duration_days": 92,
+            "evidence": "推荐胡同沉浸式剧本杀并询问注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2025-11-26T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_group_rrf",
+      "status": "✅ 成功",
+      "query": "北京旅游美食推荐",
+      "data_source": "semantic_memory",
+      "memory_scope": "group",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 1709.1209888458252,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 10,
+        "bm25_candidates": 8,
+        "total_latency_ms": 1709.1209888458252,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-08-26T00:00:00",
+            "duration_days": 365,
+            "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180705192e3b20f7ccfb87",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001团体出行时会优先选择互动性强的娱乐项目",
+          "summary": "",
+          "evidence": "与五六个朋友同行偏好互动项目",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          },
+          "start_time": "2025-09-06T00:00:00",
+          "end_time": "2025-12-06T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "profile_group_rrf",
+      "status": "✅ 成功",
+      "query": "profile summary",
+      "data_source": "profile",
+      "memory_scope": "group",
+      "retrieval_mode": "rrf",
+      "count": 1,
+      "latency_ms": 2.86102294921875,
+      "metadata": {
+        "retrieval_mode": "direct",
+        "data_source": "profile",
+        "profile_count": 1,
+        "total_latency_ms": 2.86102294921875
+      },
+      "memories": [
+        {
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "profile": {
+            "memory_type": "profile",
+            "user_id": "robot_001",
+            "timestamp": null,
+            "ori_event_id_list": [],
+            "subject": null,
+            "summary": null,
+            "episode": null,
+            "group_id": "chat_user_001_assistant",
+            "participants": null,
+            "type": "Conversation",
+            "keywords": null,
+            "linked_entities": null,
+            "semantic_memories": null,
+            "extend": null,
+            "user_name": "robot_001",
+            "hard_skills": null,
+            "soft_skills": null,
+            "output_reasoning": "Updated based on travel consultation showing social and experiential preferences, food interests, and post-travel health needs from the conversation.",
+            "way_of_decision_making": [
+              {
+                "value": "Seeks practical advice for group activities",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ]
+              }
+            ],
+            "personality": [
+              {
+                "value": "Extraversion",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "High"
+              },
+              {
+                "value": "Openness",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "Medium"
+              },
+              {
+                "value": "Need for Belonging",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "High"
+              }
+            ],
+            "projects_participated": null,
+            "user_goal": null,
+            "work_responsibility": null,
+            "working_habit_preference": [
+              {
+                "value": "Prefers recovery after intense activities",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "Medium"
+              }
+            ],
+            "interests": [
+              {
+                "value": "Travel Interest",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "High"
+              },
+              {
+                "value": "Food Interest",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "High"
+              },
+              {
+                "value": "Gaming Interest",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "Medium"
+              },
+              {
+                "value": "Health Concern",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "Medium"
+              }
+            ],
+            "tendency": [
+              {
+                "value": "Practicality",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "High"
+              }
+            ],
+            "motivation_system": [
+              {
+                "value": "Need for Achievement",
+                "evidences": [],
+                "level": "Medium"
+              }
+            ],
+            "fear_system": null,
+            "value_system": [
+              {
+                "value": "Group enjoyment and shared experiences",
+                "evidences": []
+              }
+            ],
+            "humor_use": null,
+            "colloquialism": null,
+            "group_importance_evidence": null
+          },
+          "scenario": "assistant",
+          "confidence": 0.0,
+          "version": 1,
+          "cluster_ids": [
+            "cluster_000"
+          ],
+          "memcell_count": 1,
+          "last_updated_cluster": "cluster_000",
+          "updated_at": "2025-11-15T12:51:14.441000+08:00"
+        }
+      ]
+    },
+    {
+      "test_name": "episode_all_embedding",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "episode",
+      "memory_scope": "all",
+      "retrieval_mode": "embedding",
+      "count": 3,
+      "latency_ms": 821.3980197906494,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "episode",
+        "embedding_candidates": 3,
+        "total_latency_ms": 821.3980197906494,
+        "final_count": 3
+      },
+      "memories": [
+        {
+          "score": 0.4162159264087677,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+          "evidence": "",
+          "metadata": {
+            "title": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "participants": [
+              "user_001",
+              "robot_001"
+            ],
+            "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "memcell_event_id_list": [
+              "691806af192e3b20f7ccfb7d"
+            ],
+            "extend": {
+              "memory_type": "episode_summary",
+              "ori_event_id": null,
+              "tags": null
+            }
+          }
+        },
+        {
+          "score": 0.4025110900402069,
+          "event_id": "691806af192e3b20f7ccfb7d",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {}
+        },
+        {
+          "score": 0.3981037139892578,
+          "event_id": "691806ca192e3b20f7ccfb81",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "user 的北京旅行规划与返回后疲惫记录 (2025-08-26)",
+          "episode": "在2025年8月26日，user 咨询了下周北京旅行的建议，助理提供了故宫、天坛、颐和园、长城、胡同等景点的推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食的介绍。user 透露自己是四川人，最喜欢火锅，于是助理进一步推荐了高水准川味火锅店如小龙坎和大龙燚，以及融合川京风味的选项。随后，user 澄清希望根据重口味偏好推荐地道北京美食，助理据此建议爆肚、卤煮火烧、炒肝等浓郁内脏类菜肴，并提供辣化吃法。user 提到将与五六个朋友同行，偏好互动性强的团体项目，助理推荐了胡同沉浸式剧本杀、什刹海骑行、密室逃脱、京味文化体验和夜生活选项。user 针对胡同剧本杀和骑行项目询问注意事项，助理详细说明了预约、穿着、安全、路线和团体协调等实用建议。2025年9月5日，user 报告已从北京返回，行程活动密集、休息不足、饮食不规律导致极度疲惫，并表示第二天需上班，寻求调节建议。",
+          "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+          "evidence": "",
+          "metadata": {
+            "title": "user 的北京旅行规划与返回后疲惫记录 (2025-08-26)",
+            "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "participants": [
+              "user_001",
+              "robot_001"
+            ],
+            "subject": "user 的北京旅行规划与返回后疲惫记录 (2025-08-26)",
+            "memcell_event_id_list": [
+              "691806af192e3b20f7ccfb7d"
+            ],
+            "extend": {
+              "memory_type": "episode_summary",
+              "ori_event_id": null,
+              "tags": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "episode_all_bm25",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "episode",
+      "memory_scope": "all",
+      "retrieval_mode": "bm25",
+      "count": 3,
+      "latency_ms": 12.384891510009766,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "episode",
+        "bm25_candidates": 3,
+        "total_latency_ms": 12.384891510009766,
+        "final_count": 3
+      },
+      "memories": [
+        {
+          "score": 18.043987,
+          "event_id": "691806af192e3b20f7ccfb7d_episode",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "search_content": [
+            "用户北京旅行规划咨询与后续疲惫调节求助 (2025-08-26)",
+            "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至"
+          ],
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 15.136445,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577031+08:00",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "search_content": [
+            "2025",
+            "26",
+            "对话",
+            "assistant",
+            "回应",
+            "用户",
+            "即将",
+            "前往",
+            "北京",
+            "旅游",
+            "查询",
+            "提供",
+            "全面",
+            "实用",
+            "建议",
+            "包括",
+            "故宫",
+            "天坛",
+            "颐和园",
+            "长城",
+            "必游",
+            "景点",
+            "推荐",
+            "烤鸭",
+            "炸酱面",
+            "火烧",
+            "北京",
+            "特色美食",
+            "交通",
+            "提示",
+            "天气",
+            "注意事项",
+            "用户",
+            "透露",
+            "四川人",
+            "喜欢",
+            "火锅",
+            "assistant",
+            "调整",
+            "推荐",
+            "最初",
+            "建议",
+            "水准",
+            "川味",
+            "火锅店",
+            "小龙",
+            "大龙",
+            "用户",
+            "澄清",
+            "口味",
+            "推荐",
+            "北京",
+            "特色美食",
+            "assistant",
+            "重新",
+            "聚焦",
+            "地道",
+            "选项",
+            "爆肚",
+            "火烧",
+            "炒肝",
+            "椒盐",
+            "鸭架",
+            "选择",
+            "强调",
+            "浓郁",
+            "风味",
+            "适配",
+            "用户",
+            "口味",
+            "偏好",
+            "提出",
+            "规划",
+            "口味",
+            "美食",
+            "路线",
+            "可能性",
+            "用户",
+            "表示",
+            "五六个",
+            "朋友",
+            "同行",
+            "喜欢",
+            "团体",
+            "项目",
+            "assistant",
+            "推荐",
+            "互动性",
+            "娱乐活动",
+            "包括",
+            "胡同",
+            "沉浸",
+            "剧本",
+            "什刹海",
+            "骑行",
+            "北京",
+            "主题",
+            "密室",
+            "逃脱",
+            "京味",
+            "文化",
+            "体验",
+            "夜生活",
+            "选项",
+            "听相声",
+            "KTV",
+            "提供",
+            "团体",
+            "协调",
+            "小贴士",
+            "用户",
+            "进一步",
+            "询问",
+            "胡同",
+            "剧本",
+            "骑行",
+            "注意事项",
+            "assistant",
+            "详细",
+            "阐述",
+            "预约",
+            "穿着",
+            "安全",
+            "路线",
+            "通用",
+            "建议",
+            "确保",
+            "小团体",
+            "顺利",
+            "体验"
+          ],
+          "metadata": {
+            "memory_type": "episode_summary"
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 14.880798,
+          "event_id": "691806ca192e3b20f7ccfb81",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577031+08:00",
+          "episode": "在2025年8月26日，user 咨询了下周北京旅行的建议，助理提供了故宫、天坛、颐和园、长城、胡同等景点的推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食的介绍。user 透露自己是四川人，最喜欢火锅，于是助理进一步推荐了高水准川味火锅店如小龙坎和大龙燚，以及融合川京风味的选项。随后，user 澄清希望根据重口味偏好推荐地道北京美食，助理据此建议爆肚、卤煮火烧、炒肝等浓郁内脏类菜肴，并提供辣化吃法。user 提到将与五六个朋友同行，偏好互动性强的团体项目，助理推荐了胡同沉浸式剧本杀、什刹海骑行、密室逃脱、京味文化体验和夜生活选项。user 针对胡同剧本杀和骑行项目询问注意事项，助理详细说明了预约、穿着、安全、路线和团体协调等实用建议。2025年9月5日，user 报告已从北京返回，行程活动密集、休息不足、饮食不规律导致极度疲惫，并表示第二天需上班，寻求调节建议。",
+          "search_content": [
+            "2025",
+            "26",
+            "user",
+            "咨询",
+            "下周",
+            "北京",
+            "旅行",
+            "建议",
+            "助理",
+            "提供",
+            "故宫",
+            "天坛",
+            "颐和园",
+            "长城",
+            "胡同",
+            "景点",
+            "推荐",
+            "烤鸭",
+            "炸酱面",
+            "火烧",
+            "北京",
+            "特色美食",
+            "介绍",
+            "user",
+            "透露",
+            "四川人",
+            "喜欢",
+            "火锅",
+            "助理",
+            "进一步",
+            "推荐",
+            "水准",
+            "川味",
+            "火锅店",
+            "小龙",
+            "大龙",
+            "融合",
+            "川京",
+            "风味",
+            "选项",
+            "user",
+            "澄清",
+            "希望",
+            "口味",
+            "偏好",
+            "推荐",
+            "地道",
+            "北京",
+            "美食",
+            "助理",
+            "建议",
+            "爆肚",
+            "火烧",
+            "炒肝",
+            "浓郁",
+            "内脏",
+            "菜肴",
+            "提供",
+            "辣化",
+            "吃法",
+            "user",
+            "提到",
+            "五六个",
+            "朋友",
+            "同行",
+            "偏好",
+            "互动性",
+            "团体",
+            "项目",
+            "助理",
+            "推荐",
+            "胡同",
+            "沉浸",
+            "剧本",
+            "什刹海",
+            "骑行",
+            "密室",
+            "逃脱",
+            "京味",
+            "文化",
+            "体验",
+            "夜生活",
+            "选项",
+            "user",
+            "胡同",
+            "剧本",
+            "骑行",
+            "项目",
+            "询问",
+            "注意事项",
+            "助理",
+            "详细",
+            "说明",
+            "预约",
+            "穿着",
+            "安全",
+            "路线",
+            "团体",
+            "协调",
+            "实用",
+            "建议",
+            "2025",
+            "user",
+            "报告",
+            "北京",
+            "返回",
+            "行程",
+            "活动",
+            "密集",
+            "休息",
+            "不足",
+            "饮食",
+            "规律",
+            "导致",
+            "极度",
+            "疲惫",
+            "表示",
+            "第二天",
+            "上班",
+            "寻求",
+            "调节",
+            "建议"
+          ],
+          "metadata": {
+            "memory_type": "episode_summary"
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "episode_all_rrf",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "episode",
+      "memory_scope": "all",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 603.6899089813232,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "episode",
+        "embedding_candidates": 3,
+        "bm25_candidates": 3,
+        "total_latency_ms": 603.6899089813232,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+          "evidence": "",
+          "metadata": {
+            "title": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "participants": [
+              "user_001",
+              "robot_001"
+            ],
+            "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "memcell_event_id_list": [
+              "691806af192e3b20f7ccfb7d"
+            ],
+            "extend": {
+              "memory_type": "episode_summary",
+              "ori_event_id": null,
+              "tags": null
+            }
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806af192e3b20f7ccfb7d_episode",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "691806af192e3b20f7ccfb7d",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "episode_personal_embedding",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "episode",
+      "memory_scope": "personal",
+      "retrieval_mode": "embedding",
+      "count": 1,
+      "latency_ms": 551.9049167633057,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "episode",
+        "embedding_candidates": 1,
+        "total_latency_ms": 551.9049167633057,
+        "final_count": 1
+      },
+      "memories": [
+        {
+          "score": 0.4162159264087677,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+          "evidence": "",
+          "metadata": {
+            "title": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "participants": [
+              "user_001",
+              "robot_001"
+            ],
+            "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "memcell_event_id_list": [
+              "691806af192e3b20f7ccfb7d"
+            ],
+            "extend": {
+              "memory_type": "episode_summary",
+              "ori_event_id": null,
+              "tags": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "episode_personal_bm25",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "episode",
+      "memory_scope": "personal",
+      "retrieval_mode": "bm25",
+      "count": 1,
+      "latency_ms": 8.985042572021484,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "episode",
+        "bm25_candidates": 1,
+        "total_latency_ms": 8.985042572021484,
+        "final_count": 1
+      },
+      "memories": [
+        {
+          "score": 15.700975,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577031+08:00",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "search_content": [
+            "2025",
+            "26",
+            "对话",
+            "assistant",
+            "回应",
+            "用户",
+            "即将",
+            "前往",
+            "北京",
+            "旅游",
+            "查询",
+            "提供",
+            "全面",
+            "实用",
+            "建议",
+            "包括",
+            "故宫",
+            "天坛",
+            "颐和园",
+            "长城",
+            "必游",
+            "景点",
+            "推荐",
+            "烤鸭",
+            "炸酱面",
+            "火烧",
+            "北京",
+            "特色美食",
+            "交通",
+            "提示",
+            "天气",
+            "注意事项",
+            "用户",
+            "透露",
+            "四川人",
+            "喜欢",
+            "火锅",
+            "assistant",
+            "调整",
+            "推荐",
+            "最初",
+            "建议",
+            "水准",
+            "川味",
+            "火锅店",
+            "小龙",
+            "大龙",
+            "用户",
+            "澄清",
+            "口味",
+            "推荐",
+            "北京",
+            "特色美食",
+            "assistant",
+            "重新",
+            "聚焦",
+            "地道",
+            "选项",
+            "爆肚",
+            "火烧",
+            "炒肝",
+            "椒盐",
+            "鸭架",
+            "选择",
+            "强调",
+            "浓郁",
+            "风味",
+            "适配",
+            "用户",
+            "口味",
+            "偏好",
+            "提出",
+            "规划",
+            "口味",
+            "美食",
+            "路线",
+            "可能性",
+            "用户",
+            "表示",
+            "五六个",
+            "朋友",
+            "同行",
+            "喜欢",
+            "团体",
+            "项目",
+            "assistant",
+            "推荐",
+            "互动性",
+            "娱乐活动",
+            "包括",
+            "胡同",
+            "沉浸",
+            "剧本",
+            "什刹海",
+            "骑行",
+            "北京",
+            "主题",
+            "密室",
+            "逃脱",
+            "京味",
+            "文化",
+            "体验",
+            "夜生活",
+            "选项",
+            "听相声",
+            "KTV",
+            "提供",
+            "团体",
+            "协调",
+            "小贴士",
+            "用户",
+            "进一步",
+            "询问",
+            "胡同",
+            "剧本",
+            "骑行",
+            "注意事项",
+            "assistant",
+            "详细",
+            "阐述",
+            "预约",
+            "穿着",
+            "安全",
+            "路线",
+            "通用",
+            "建议",
+            "确保",
+            "小团体",
+            "顺利",
+            "体验"
+          ],
+          "metadata": {
+            "memory_type": "episode_summary"
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "episode_personal_rrf",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "episode",
+      "memory_scope": "personal",
+      "retrieval_mode": "rrf",
+      "count": 2,
+      "latency_ms": 578.0072212219238,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "episode",
+        "embedding_candidates": 1,
+        "bm25_candidates": 1,
+        "total_latency_ms": 578.0072212219238,
+        "final_count": 2
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+          "evidence": "",
+          "metadata": {
+            "title": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "summary": "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "participants": [
+              "user_001",
+              "robot_001"
+            ],
+            "subject": "assistant 提供北京旅游规划建议 (2025-08-26)",
+            "memcell_event_id_list": [
+              "691806af192e3b20f7ccfb7d"
+            ],
+            "extend": {
+              "memory_type": "episode_summary",
+              "ori_event_id": null,
+              "tags": null
+            }
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806ca192e3b20f7ccfb82",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577031+08:00",
+          "subject": "",
+          "episode": "在2025年8月26日的对话中，assistant 首先回应用户即将前往北京旅游的查询，提供全面的实用建议，包括故宫、天坛、颐和园、长城等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通提示和天气注意事项。随后，当用户透露自己是四川人并最喜欢火锅时，assistant 调整推荐，最初建议高水准川味火锅店如小龙坎和大龙燚，但用户澄清需基于口味推荐北京特色美食后，assistant 重新聚焦地道选项，如爆肚、卤煮火烧、炒肝和椒盐鸭架，这些选择强调浓郁风味以适配用户的重口味偏好，并提出规划重口味美食路线的可能性。接着，用户表示将与五六个朋友同行并喜欢团体项目，assistant 推荐互动性强的娱乐活动，包括胡同沉浸式剧本杀、什刹海骑行、老北京主题密室逃脱、京味文化体验和夜生活选项，如听相声或KTV，并提供团体协调小贴士。用户进一步询问胡同剧本杀和骑行注意事项时，assistant 详细阐述预约、穿着、安全、路线和通用建议，以确保6-8人小团体的顺利体验。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "memory_type": "episode_summary"
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "episode_group_embedding",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "episode",
+      "memory_scope": "group",
+      "retrieval_mode": "embedding",
+      "count": 1,
+      "latency_ms": 560.1699352264404,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "episode",
+        "embedding_candidates": 1,
+        "total_latency_ms": 560.1699352264404,
+        "final_count": 1
+      },
+      "memories": [
+        {
+          "score": 0.4025110900402069,
+          "event_id": "691806af192e3b20f7ccfb7d",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "test_name": "episode_group_bm25",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "episode",
+      "memory_scope": "group",
+      "retrieval_mode": "bm25",
+      "count": 1,
+      "latency_ms": 36.00192070007324,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "episode",
+        "bm25_candidates": 1,
+        "total_latency_ms": 36.00192070007324,
+        "final_count": 1
+      },
+      "memories": [
+        {
+          "score": 20.843042,
+          "event_id": "691806af192e3b20f7ccfb7d_episode",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "search_content": [
+            "用户北京旅行规划咨询与后续疲惫调节求助 (2025-08-26)",
+            "为用户提供北京旅游的景点推荐、特色美食建议以及适合团体娱乐项目的规划。",
+            "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至"
+          ],
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "episode_group_rrf",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "episode",
+      "memory_scope": "group",
+      "retrieval_mode": "rrf",
+      "count": 2,
+      "latency_ms": 566.1897659301758,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "episode",
+        "embedding_candidates": 1,
+        "bm25_candidates": 1,
+        "total_latency_ms": 566.1897659301758,
+        "final_count": 2
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806af192e3b20f7ccfb7d",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "691806af192e3b20f7ccfb7d_episode",
+          "user_id": "",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "subject": "",
+          "episode": "于2025年8月26日，用户咨询下周即将进行的北京旅游建议，助理提供了故宫、天坛、颐和园、长城、胡同等必游景点推荐，以及烤鸭、炸酱面、卤煮火烧等北京特色美食、交通和实用贴士如预约门票和天气注意事项。用户随后透露自己是四川人，最喜欢火锅，对助理提到的吃的东西感兴趣，要求根据口味推荐美食，助理于是推荐小龙坎老火锅、大龙燚等高水准川味火锅店，以及融合川京风味的涮肉和麻辣烫，并建议簋街等美食区。用户进一步说明实际需要北京特色美食推荐，助理调整为爆肚、卤煮火烧、炸酱面、烤鸭等地道选项，并提供川化吃法如加辣椒油，同时列出推荐店如门框胡同卤煮和姚记炒肝。用户表示将与五六个朋友一起旅行，喜欢大家一起玩的项目，助理推荐胡同沉浸式剧本杀如《北平往事》、什刹海胡同骑行、老北京主题密室逃脱如《末班车》、京味文化体验如德云社听相声，以及夜生活如簋街桌游，并提供团体出行小贴士如提前预约和交通协调。用户确认将尝试胡同沉浸式剧本杀和什刹海胡同骑行，询问注意事项，助理详细说明预约、穿着、时间预留、安全、路线如从什刹海站到鼓楼的骑行路径，以及通用建议如带身份证和零食。整个讨论聚焦于用户团体旅行的趣味性和本地特色体验，直至2025年9月5日，用户从北京返回，报告旅程活动密集、休息不足、饮食不规律导致极度疲惫，并提到第二天需上班，寻求调节建议。",
+          "summary": "",
+          "evidence": "",
+          "metadata": {},
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_all_embedding",
+      "status": "✅ 成功",
+      "query": "Beijing food and travel",
+      "data_source": "event_log",
+      "memory_scope": "all",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 566.0192966461182,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "event_log",
+        "embedding_candidates": 52,
+        "total_latency_ms": 566.0192966461182,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.7617666721343994,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.7270472645759583,
+          "event_id": "69180708192e3b20f7ccfba5",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant recommended Beijing-style cultural experiences.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.7090835571289062,
+          "event_id": "69180708192e3b20f7ccfbb7",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The user clarified that recommendations should be for Beijing特色美食 based on taste.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_all_bm25",
+      "status": "✅ 成功",
+      "query": "Beijing food and travel",
+      "data_source": "event_log",
+      "memory_scope": "all",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 8.198738098144531,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "event_log",
+        "bm25_candidates": 28,
+        "total_latency_ms": 8.198738098144531,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 6.4563966,
+          "event_id": "69180708192e3b20f7ccfb9c",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant recommended options that fuse Sichuan and Beijing flavors.",
+          "search_content": [
+            "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb81",
+            "atomic_fact": "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 6.29358,
+          "event_id": "69180708192e3b20f7ccfbbb",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The user indicated that they will travel with five or six friends.",
+          "search_content": [
+            "The user indicated that they will travel with five or six friends."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The user indicated that they will travel with five or six friends."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 6.2368164,
+          "event_id": "69180708192e3b20f7ccfbb1",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo.",
+          "search_content": [
+            "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_all_rrf",
+      "status": "✅ 成功",
+      "query": "Beijing food and travel",
+      "data_source": "event_log",
+      "memory_scope": "all",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 564.255952835083,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "event_log",
+        "embedding_candidates": 52,
+        "bm25_candidates": 28,
+        "total_latency_ms": 564.255952835083,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfb9c",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "subject": "",
+          "episode": "The assistant recommended options that fuse Sichuan and Beijing flavors.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb81",
+            "atomic_fact": "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180708192e3b20f7ccfba5",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant recommended Beijing-style cultural experiences.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_personal_embedding",
+      "status": "✅ 成功",
+      "query": "Beijing food and travel",
+      "data_source": "event_log",
+      "memory_scope": "personal",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 568.4399604797363,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "event_log",
+        "embedding_candidates": 30,
+        "total_latency_ms": 568.4399604797363,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.7617666721343994,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.7090835571289062,
+          "event_id": "69180708192e3b20f7ccfbb7",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The user clarified that recommendations should be for Beijing特色美食 based on taste.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.6898853778839111,
+          "event_id": "69180708192e3b20f7ccfbae",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant responded to the user's query about an upcoming trip to Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_personal_bm25",
+      "status": "✅ 成功",
+      "query": "Beijing food and travel",
+      "data_source": "event_log",
+      "memory_scope": "personal",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 8.594989776611328,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "event_log",
+        "bm25_candidates": 14,
+        "total_latency_ms": 8.594989776611328,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 6.776432,
+          "event_id": "69180708192e3b20f7ccfbbb",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The user indicated that they will travel with five or six friends.",
+          "search_content": [
+            "The user indicated that they will travel with five or six friends."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The user indicated that they will travel with five or six friends."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 6.7196684,
+          "event_id": "69180708192e3b20f7ccfbb1",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo.",
+          "search_content": [
+            "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 5.981198,
+          "event_id": "69180708192e3b20f7ccfbb8",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant refocused on authentic Beijing options including burst belly, lǔ zhǔ huǒ shāo, fried liver, and pepper salt duck rack.",
+          "search_content": [
+            "The assistant refocused on authentic Beijing options including burst belly, lǔ zhǔ huǒ shāo, fried liver, and pepper salt duck rack."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The assistant refocused on authentic Beijing options including burst belly, lǔ zhǔ huǒ shāo, fried liver, and pepper salt duck rack."
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_personal_rrf",
+      "status": "✅ 成功",
+      "query": "Beijing food and travel",
+      "data_source": "event_log",
+      "memory_scope": "personal",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 606.3070297241211,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "event_log",
+        "embedding_candidates": 30,
+        "bm25_candidates": 14,
+        "total_latency_ms": 606.3070297241211,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfbbb",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "subject": "",
+          "episode": "The user indicated that they will travel with five or six friends.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The user indicated that they will travel with five or six friends."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180708192e3b20f7ccfbb7",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The user clarified that recommendations should be for Beijing特色美食 based on taste.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_group_embedding",
+      "status": "✅ 成功",
+      "query": "Beijing food and travel",
+      "data_source": "event_log",
+      "memory_scope": "group",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 558.3178997039795,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "event_log",
+        "embedding_candidates": 52,
+        "total_latency_ms": 558.3178997039795,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.7617666721343994,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.7270472645759583,
+          "event_id": "69180708192e3b20f7ccfba5",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant recommended Beijing-style cultural experiences.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        },
+        {
+          "score": 0.7090835571289062,
+          "event_id": "69180708192e3b20f7ccfbb7",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The user clarified that recommendations should be for Beijing特色美食 based on taste.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_group_bm25",
+      "status": "✅ 成功",
+      "query": "Beijing food and travel",
+      "data_source": "event_log",
+      "memory_scope": "group",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 15.620946884155273,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "event_log",
+        "bm25_candidates": 28,
+        "total_latency_ms": 15.620946884155273,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 6.4790483,
+          "event_id": "69180708192e3b20f7ccfb9c",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant recommended options that fuse Sichuan and Beijing flavors.",
+          "search_content": [
+            "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb81",
+            "atomic_fact": "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 6.3200474,
+          "event_id": "69180708192e3b20f7ccfbbb",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The user indicated that they will travel with five or six friends.",
+          "search_content": [
+            "The user indicated that they will travel with five or six friends."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The user indicated that they will travel with five or six friends."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 6.2632837,
+          "event_id": "69180708192e3b20f7ccfbb1",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "episode": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo.",
+          "search_content": [
+            "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          ],
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "atomic_fact": "The assistant recommended Beijing特色美食 including roast duck, zhajiang noodles, and lǔ zhǔ huǒ shāo."
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "event_log_group_rrf",
+      "status": "✅ 成功",
+      "query": "Beijing food and travel",
+      "data_source": "event_log",
+      "memory_scope": "group",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 585.6571197509766,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "event_log",
+        "embedding_candidates": 52,
+        "bm25_candidates": 28,
+        "total_latency_ms": 585.6571197509766,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfbb2",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant provided transportation tips for Beijing.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180708192e3b20f7ccfb9c",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01.577000+08:00",
+          "subject": "",
+          "episode": "The assistant recommended options that fuse Sichuan and Beijing flavors.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "parent_episode_id": "691806ca192e3b20f7ccfb81",
+            "atomic_fact": "The assistant recommended options that fuse Sichuan and Beijing flavors."
+          },
+          "start_time": null,
+          "end_time": null
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180708192e3b20f7ccfba5",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-11-15T12:50:01",
+          "subject": "",
+          "episode": "The assistant recommended Beijing-style cultural experiences.",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "vector_model": "",
+            "extend": {}
+          },
+          "start_time": null,
+          "end_time": null
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_all_embedding",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "semantic_memory",
+      "memory_scope": "all",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 577.4409770965576,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 10,
+        "total_latency_ms": 577.4409770965576,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.5639542937278748,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          }
+        },
+        {
+          "score": 0.5160437226295471,
+          "event_id": "69180705192e3b20f7ccfb8b",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001出行时会提前预约团体活动确保协调顺利",
+          "summary": "",
+          "evidence": "助理说明胡同剧本杀预约和团体协调",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          }
+        },
+        {
+          "score": 0.500500500202179,
+          "event_id": "69180705192e3b20f7ccfb86",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001可能养成旅行前咨询实用注意事项的习惯",
+          "summary": "",
+          "evidence": "询问胡同剧本杀和骑行注意事项",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_all_bm25",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "semantic_memory",
+      "memory_scope": "all",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 11.680126190185547,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "semantic_memory",
+        "bm25_candidates": 8,
+        "total_latency_ms": 11.680126190185547,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 21.809732,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "search_content": [
+            "robot_001未来旅游规划中注重交通和天气注意事项",
+            "提供北京旅游交通提示和天气注意事项"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-02-26T00:00:00",
+            "duration_days": 184,
+            "evidence": "提供北京旅游交通提示和天气注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-02-26T00:00:00"
+        },
+        {
+          "score": 19.100666,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "search_content": [
+            "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+            "调整推荐爆肚炒肝等浓郁风味北京美食"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-08-26T00:00:00",
+            "duration_days": 365,
+            "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 5.9539037,
+          "event_id": "69180705192e3b20f7ccfb86",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-09-06T00:00:00",
+          "episode": "user_001可能养成旅行前咨询实用注意事项的习惯",
+          "search_content": [
+            "user_001可能养成旅行前咨询实用注意事项的习惯",
+            "询问胡同剧本杀和骑行注意事项"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb81",
+            "parent_episode_id": "691806ca192e3b20f7ccfb81",
+            "start_time": "2025-09-06T00:00:00",
+            "end_time": "2026-03-06T00:00:00",
+            "duration_days": 181,
+            "evidence": "询问胡同剧本杀和骑行注意事项"
+          },
+          "start_time": "2025-09-06T00:00:00",
+          "end_time": "2026-03-06T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_all_rrf",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "semantic_memory",
+      "memory_scope": "all",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 564.964771270752,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 10,
+        "bm25_candidates": 8,
+        "total_latency_ms": 564.964771270752,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "subject": "",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-02-26T00:00:00",
+            "duration_days": 184,
+            "evidence": "提供北京旅游交通提示和天气注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-02-26T00:00:00"
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180705192e3b20f7ccfb8b",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001出行时会提前预约团体活动确保协调顺利",
+          "summary": "",
+          "evidence": "助理说明胡同剧本杀预约和团体协调",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          },
+          "start_time": "2025-09-06T00:00:00",
+          "end_time": "2026-01-06T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_personal_embedding",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "semantic_memory",
+      "memory_scope": "personal",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 549.3440628051758,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 6,
+        "total_latency_ms": 549.3440628051758,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.5639542937278748,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          }
+        },
+        {
+          "score": 0.49621304869651794,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "summary": "",
+          "evidence": "提供北京旅游交通提示和天气注意事项",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          }
+        },
+        {
+          "score": 0.4750171899795532,
+          "event_id": "69180705192e3b20f7ccfb91",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会增加尝试什刹海骑行等户外团体活动的频率",
+          "summary": "",
+          "evidence": "推荐什刹海骑行作为团体娱乐",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_personal_bm25",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "semantic_memory",
+      "memory_scope": "personal",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 9.232759475708008,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "semantic_memory",
+        "bm25_candidates": 5,
+        "total_latency_ms": 9.232759475708008,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 22.374262,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "search_content": [
+            "robot_001未来旅游规划中注重交通和天气注意事项",
+            "提供北京旅游交通提示和天气注意事项"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-02-26T00:00:00",
+            "duration_days": 184,
+            "evidence": "提供北京旅游交通提示和天气注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-02-26T00:00:00"
+        },
+        {
+          "score": 19.665195,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "search_content": [
+            "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+            "调整推荐爆肚炒肝等浓郁风味北京美食"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-08-26T00:00:00",
+            "duration_days": 365,
+            "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 5.4099708,
+          "event_id": "69180705192e3b20f7ccfb96",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001旅行决策中会优先考虑6-8人小团体的协调贴士",
+          "search_content": [
+            "robot_001旅行决策中会优先考虑6-8人小团体的协调贴士",
+            "为五六个朋友提供团体协调小贴士"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2025-11-26T00:00:00",
+            "duration_days": 92,
+            "evidence": "为五六个朋友提供团体协调小贴士"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2025-11-26T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_personal_rrf",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "semantic_memory",
+      "memory_scope": "personal",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 566.8151378631592,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 6,
+        "bm25_candidates": 5,
+        "total_latency_ms": 566.8151378631592,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "subject": "",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-02-26T00:00:00",
+            "duration_days": 184,
+            "evidence": "提供北京旅游交通提示和天气注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-02-26T00:00:00"
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "summary": "",
+          "evidence": "提供北京旅游交通提示和天气注意事项",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-02-26T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_group_embedding",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "semantic_memory",
+      "memory_scope": "group",
+      "retrieval_mode": "embedding",
+      "count": 5,
+      "latency_ms": 563.8298988342285,
+      "metadata": {
+        "retrieval_mode": "embedding",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 10,
+        "total_latency_ms": 563.8298988342285,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.5639542937278748,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          }
+        },
+        {
+          "score": 0.5160437226295471,
+          "event_id": "69180705192e3b20f7ccfb8b",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001出行时会提前预约团体活动确保协调顺利",
+          "summary": "",
+          "evidence": "助理说明胡同剧本杀预约和团体协调",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          }
+        },
+        {
+          "score": 0.500500500202179,
+          "event_id": "69180705192e3b20f7ccfb86",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001可能养成旅行前咨询实用注意事项的习惯",
+          "summary": "",
+          "evidence": "询问胡同剧本杀和骑行注意事项",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_group_bm25",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "semantic_memory",
+      "memory_scope": "group",
+      "retrieval_mode": "bm25",
+      "count": 5,
+      "latency_ms": 8.708953857421875,
+      "metadata": {
+        "retrieval_mode": "bm25",
+        "data_source": "semantic_memory",
+        "bm25_candidates": 8,
+        "total_latency_ms": 8.708953857421875,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 21.834145,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "search_content": [
+            "robot_001未来旅游规划中注重交通和天气注意事项",
+            "提供北京旅游交通提示和天气注意事项"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-02-26T00:00:00",
+            "duration_days": 184,
+            "evidence": "提供北京旅游交通提示和天气注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-02-26T00:00:00"
+        },
+        {
+          "score": 19.125078,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "search_content": [
+            "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+            "调整推荐爆肚炒肝等浓郁风味北京美食"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-08-26T00:00:00",
+            "duration_days": 365,
+            "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 5.976556,
+          "event_id": "69180705192e3b20f7ccfb86",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-09-06T00:00:00",
+          "episode": "user_001可能养成旅行前咨询实用注意事项的习惯",
+          "search_content": [
+            "user_001可能养成旅行前咨询实用注意事项的习惯",
+            "询问胡同剧本杀和骑行注意事项"
+          ],
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb81",
+            "parent_episode_id": "691806ca192e3b20f7ccfb81",
+            "start_time": "2025-09-06T00:00:00",
+            "end_time": "2026-03-06T00:00:00",
+            "duration_days": 181,
+            "evidence": "询问胡同剧本杀和骑行注意事项"
+          },
+          "start_time": "2025-09-06T00:00:00",
+          "end_time": "2026-03-06T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "semantic_memory_group_rrf",
+      "status": "✅ 成功",
+      "query": "北京美食和旅游",
+      "data_source": "semantic_memory",
+      "memory_scope": "group",
+      "retrieval_mode": "rrf",
+      "count": 5,
+      "latency_ms": 583.3323001861572,
+      "metadata": {
+        "retrieval_mode": "rrf",
+        "data_source": "semantic_memory",
+        "embedding_candidates": 10,
+        "bm25_candidates": 8,
+        "total_latency_ms": 583.3323001861572,
+        "final_count": 5
+      },
+      "memories": [
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb95",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "robot_001会探索更多城市特色美食以匹配个人重口味偏好",
+          "summary": "",
+          "evidence": "调整推荐爆肚炒肝等浓郁风味北京美食",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb82"
+            }
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-08-26T00:00:00"
+        },
+        {
+          "score": 0.01639344262295082,
+          "event_id": "69180705192e3b20f7ccfb92",
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "2025-08-26T00:00:00",
+          "subject": "",
+          "episode": "robot_001未来旅游规划中注重交通和天气注意事项",
+          "summary": "",
+          "evidence": "",
+          "metadata": {
+            "source_episode_id": "691806ca192e3b20f7ccfb82",
+            "parent_episode_id": "691806ca192e3b20f7ccfb82",
+            "start_time": "2025-08-26T00:00:00",
+            "end_time": "2026-02-26T00:00:00",
+            "duration_days": 184,
+            "evidence": "提供北京旅游交通提示和天气注意事项"
+          },
+          "start_time": "2025-08-26T00:00:00",
+          "end_time": "2026-02-26T00:00:00"
+        },
+        {
+          "score": 0.016129032258064516,
+          "event_id": "69180705192e3b20f7ccfb8b",
+          "user_id": "user_001",
+          "group_id": "chat_user_001_assistant",
+          "timestamp": "",
+          "subject": "",
+          "episode": "user_001出行时会提前预约团体活动确保协调顺利",
+          "summary": "",
+          "evidence": "助理说明胡同剧本杀预约和团体协调",
+          "metadata": {
+            "vector_model": "",
+            "extend": {
+              "source_episode_id": "691806ca192e3b20f7ccfb81"
+            }
+          },
+          "start_time": "2025-09-06T00:00:00",
+          "end_time": "2026-01-06T00:00:00"
+        }
+      ]
+    },
+    {
+      "test_name": "profile_group_rrf",
+      "status": "✅ 成功",
+      "query": "profile summary",
+      "data_source": "profile",
+      "memory_scope": "group",
+      "retrieval_mode": "rrf",
+      "count": 1,
+      "latency_ms": 2.7315616607666016,
+      "metadata": {
+        "retrieval_mode": "direct",
+        "data_source": "profile",
+        "profile_count": 1,
+        "total_latency_ms": 2.7315616607666016
+      },
+      "memories": [
+        {
+          "user_id": "robot_001",
+          "group_id": "chat_user_001_assistant",
+          "profile": {
+            "memory_type": "profile",
+            "user_id": "robot_001",
+            "timestamp": null,
+            "ori_event_id_list": [],
+            "subject": null,
+            "summary": null,
+            "episode": null,
+            "group_id": "chat_user_001_assistant",
+            "participants": null,
+            "type": "Conversation",
+            "keywords": null,
+            "linked_entities": null,
+            "semantic_memories": null,
+            "extend": null,
+            "user_name": "robot_001",
+            "hard_skills": null,
+            "soft_skills": null,
+            "output_reasoning": "Updated based on travel consultation showing social and experiential preferences, food interests, and post-travel health needs from the conversation.",
+            "way_of_decision_making": [
+              {
+                "value": "Seeks practical advice for group activities",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ]
+              }
+            ],
+            "personality": [
+              {
+                "value": "Extraversion",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "High"
+              },
+              {
+                "value": "Openness",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "Medium"
+              },
+              {
+                "value": "Need for Belonging",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "High"
+              }
+            ],
+            "projects_participated": null,
+            "user_goal": null,
+            "work_responsibility": null,
+            "working_habit_preference": [
+              {
+                "value": "Prefers recovery after intense activities",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "Medium"
+              }
+            ],
+            "interests": [
+              {
+                "value": "Travel Interest",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "High"
+              },
+              {
+                "value": "Food Interest",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "High"
+              },
+              {
+                "value": "Gaming Interest",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "Medium"
+              },
+              {
+                "value": "Health Concern",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "Medium"
+              }
+            ],
+            "tendency": [
+              {
+                "value": "Practicality",
+                "evidences": [
+                  "2025-11-15|691806af192e3b20f7ccfb7d"
+                ],
+                "level": "High"
+              }
+            ],
+            "motivation_system": [
+              {
+                "value": "Need for Achievement",
+                "evidences": [],
+                "level": "Medium"
+              }
+            ],
+            "fear_system": null,
+            "value_system": [
+              {
+                "value": "Group enjoyment and shared experiences",
+                "evidences": []
+              }
+            ],
+            "humor_use": null,
+            "colloquialism": null,
+            "group_importance_evidence": null
+          },
+          "scenario": "assistant",
+          "confidence": 0.0,
+          "version": 1,
+          "cluster_ids": [
+            "cluster_000"
+          ],
+          "memcell_count": 1,
+          "last_updated_cluster": "cluster_000",
+          "updated_at": "2025-11-15T12:51:14.441000+08:00"
+        }
+      ]
+    }
+  ]
+}

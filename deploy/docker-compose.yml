@@ -127,6 +127,8 @@ services:
       MEMORY_LANGUAGE: de
       LOG_LEVEL: INFO
       ENV: prod
+    volumes:
+      - ./evermemos.env:/app/.env:ro
     command: ["uv", "run", "python", "src/bootstrap.py", "src/run.py", "--port", "8001"]
     depends_on:
       mongodb:

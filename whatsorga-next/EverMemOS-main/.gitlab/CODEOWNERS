@@ -1,0 +1,15 @@
+/data_format/ @chandler.zhang
+
+/src/infra_layer/ @chandler.zhang @libin.zhang001 @yeanhua
+
+/src/core/ @chandler.zhang
+/src/component/ @chandler.zhang
+/src/common_utils/ @chandler.zhang
+/src/devops_scripts/ @chandler.zhang
+/src/migrations/ @chandler.zhang
+
+/src/*.py @chandler.zhang
+
+/pyproject.toml @chandler.zhang
+
+/gitlab-ci.yml @jianhua.yao
