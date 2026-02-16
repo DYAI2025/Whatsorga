@@ -1,4 +1,4 @@
-// Beziehungs-Radar Content Script
+// WhatsOrga Content Script
 // Forked from What's That!? v2.7 — keeps DOM scanning, adds whitelist + server forwarding
 console.log('[Radar] Content script loaded');
 

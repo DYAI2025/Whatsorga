@@ -23,7 +23,7 @@ MIN_CONFIDENCE = 0.7
 VCALENDAR_TEMPLATE = """\
 BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Beziehungs-Radar//WhatsOrga//DE
+PRODID:-//WhatsOrga//WhatsOrga//DE
 BEGIN:VEVENT
 UID:{uid}
 DTSTART:{dtstart}

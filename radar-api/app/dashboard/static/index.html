@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Beziehungs-Radar Dashboard</title>
+  <title>WhatsOrga Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
     :root {
@@ -337,7 +337,7 @@
 <!-- Auth screen -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-box">
-    <h2>Beziehungs-Radar</h2>
+    <h2>WhatsOrga</h2>
     <input type="password" id="authKey" placeholder="API-Key eingeben">
     <input type="text" id="authChatId" placeholder="Chat-ID (z.B. Marike Stucke)">
     <button onclick="authenticate()">Verbinden</button>
@@ -347,7 +347,7 @@
 
 <!-- Main dashboard -->
 <header>
-  <h1>Beziehungs-Radar</h1>
+  <h1>WhatsOrga</h1>
   <div class="header-controls">
     <span id="chatLabel" style="font-size:13px;color:var(--text-dim)"></span>
     <select id="driftDays" onchange="loadDrift()">

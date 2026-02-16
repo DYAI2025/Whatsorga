@@ -1,4 +1,4 @@
-// Beziehungs-Radar Background Service Worker
+// WhatsOrga Background Service Worker
 // Receives messages from content.js, forwards to server with retry queue
 console.log('[Radar] Background service worker started');
 
