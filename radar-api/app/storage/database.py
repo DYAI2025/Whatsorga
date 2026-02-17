@@ -8,7 +8,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
 
-engine = create_async_engine(settings.database_url, echo=False)
+engine = create_async_engine(settings.database_url, echo=False, pool_size=10, max_overflow=20)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -76,6 +76,21 @@ class Termin(Base):
     participants = Column(JSONB, nullable=True)
     confidence = Column(Float, nullable=True)
     caldav_uid = Column(String, nullable=True)
+    category = Column(String, default="appointment")  # appointment | reminder | task
+    relevance = Column(String, default="shared")  # for_me | shared | partner_only | affects_me
+    status = Column(String, default="auto")  # auto | suggested | confirmed | rejected | skipped
+    reminder_config = Column(JSONB, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class TerminFeedback(Base):
+    __tablename__ = "termin_feedback"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    termin_id = Column(UUID(as_uuid=True), ForeignKey("termine.id"), nullable=False)
+    action = Column(String, nullable=False)  # confirmed | rejected | edited
+    correction = Column(JSONB, nullable=True)
+    reason = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 

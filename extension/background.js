@@ -26,9 +26,8 @@ startHeartbeat();
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   switch (msg.type) {
     case 'NEW_MESSAGES':
-      handleNewMessages(msg.data);
-      sendResponse({ ok: true });
-      break;
+      handleNewMessages(msg.data).then(result => sendResponse(result));
+      return true; // keep channel open for async response
 
     case 'GET_STATUS':
       sendResponse({
@@ -81,20 +80,21 @@ function forwardToContentScript(msg) {
 }
 
 async function handleNewMessages(messages) {
-  if (!Array.isArray(messages) || messages.length === 0) return;
+  if (!Array.isArray(messages) || messages.length === 0) return { ok: false };
 
   console.log(`[Radar] Received ${messages.length} new messages`);
 
   if (!serverUrl || !apiKey) {
     console.warn('[Radar] Server not configured, queuing messages');
     enqueue(messages);
-    return;
+    return { ok: false };
   }
 
-  const success = await sendToServer(messages);
-  if (!success) {
+  const result = await sendToServer(messages);
+  if (!result.ok) {
     enqueue(messages);
   }
+  return result;
 }
 
 async function sendToServer(messages) {
@@ -110,14 +110,19 @@ async function sendToServer(messages) {
 
     if (response.ok) {
       console.log(`[Radar] Sent ${messages.length} messages to server`);
-      return true;
+      return { ok: true };
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      console.error(`[Radar] Auth error ${response.status} - check API key`);
+      return { ok: false, authError: true };
     }
 
     console.warn(`[Radar] Server responded ${response.status}`);
-    return false;
+    return { ok: false };
   } catch (err) {
     console.warn('[Radar] Network error:', err.message);
-    return false;
+    return { ok: false };
   }
 }
 

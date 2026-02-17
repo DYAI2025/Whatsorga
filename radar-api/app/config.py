@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     caldav_username: str = ""
     caldav_password: str = ""
     caldav_calendar: str = "WhatsOrga"
+    caldav_suggest_calendar: str = "WhatsOrga ?"
+    termin_auto_confidence: float = 0.85
+    termin_user_name: str = "Ben"
 
     # EverMemOS (semantic context memory)
     evermemos_url: str = "http://evermemos:8001"
