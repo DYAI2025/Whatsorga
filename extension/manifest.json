@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WhatsOrga",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Captures WhatsApp messages from whitelisted contacts, analyzes them with AI, and syncs appointments to your calendar",
   "permissions": [
     "activeTab",

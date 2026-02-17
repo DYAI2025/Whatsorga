@@ -5,11 +5,12 @@ from datetime import datetime, timedelta
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.storage.database import get_session, Message, Analysis, DriftSnapshot, Thread, Termin, CaptureStats
+from app.storage.database import get_session, Message, Analysis, DriftSnapshot, Thread, Termin, TerminFeedback, CaptureStats
 from app.storage.rag_store import rag_store
 
 logger = logging.getLogger(__name__)
@@ -160,9 +161,85 @@ async def get_termine(
                 "participants": t.participants or [],
                 "confidence": t.confidence,
                 "caldav_synced": bool(t.caldav_uid),
+                "category": t.category or "appointment",
+                "relevance": t.relevance or "shared",
+                "status": t.status or "auto",
             }
             for t, _ in rows
         ],
+    }
+
+
+class FeedbackPayload(BaseModel):
+    action: str  # confirmed | rejected | edited
+    correction: dict | None = None  # for "edited": {"title": "...", "datetime": "..."}
+    reason: str | None = None
+
+
+@router.post("/termine/{termin_id}/feedback")
+async def submit_termin_feedback(
+    termin_id: str,
+    payload: FeedbackPayload,
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Submit feedback for an extracted termin (confirm/reject/edit).
+
+    - confirmed: Keeps the termin, updates status
+    - rejected: Marks as rejected, stored for learning
+    - edited: Applies corrections, stored for learning
+    """
+    import uuid as uuid_mod
+
+    # Validate action
+    if payload.action not in ("confirmed", "rejected", "edited"):
+        raise HTTPException(status_code=400, detail="action must be: confirmed, rejected, edited")
+
+    # Find the termin
+    try:
+        termin_uuid = uuid_mod.UUID(termin_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid termin ID")
+
+    result = await session.execute(
+        select(Termin).where(Termin.id == termin_uuid)
+    )
+    termin = result.scalar_one_or_none()
+    if not termin:
+        raise HTTPException(status_code=404, detail="Termin not found")
+
+    # Store feedback
+    feedback = TerminFeedback(
+        termin_id=termin_uuid,
+        action=payload.action,
+        correction=payload.correction,
+        reason=payload.reason,
+    )
+    session.add(feedback)
+
+    # Update termin status
+    termin.status = payload.action
+
+    # Apply corrections if edited
+    if payload.action == "edited" and payload.correction:
+        if "title" in payload.correction:
+            termin.title = payload.correction["title"]
+        if "datetime" in payload.correction:
+            try:
+                termin.datetime_ = datetime.fromisoformat(payload.correction["datetime"])
+            except ValueError:
+                pass
+        if "category" in payload.correction:
+            termin.category = payload.correction["category"]
+        if "relevance" in payload.correction:
+            termin.relevance = payload.correction["relevance"]
+
+    await session.commit()
+
+    return {
+        "termin_id": termin_id,
+        "action": payload.action,
+        "status": "ok",
     }
 
 
