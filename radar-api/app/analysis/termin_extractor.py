@@ -1,14 +1,11 @@
-"""Termin Extractor — context-aware appointment extraction from German WhatsApp text.
+"""Termin Extractor — multi-dimensional reasoning for German WhatsApp messages.
 
 LLM stack: Groq 70B (primary) → Gemini 2.5 Flash (fallback).
 No regex fallback — only LLMs understand context well enough.
 
-Features:
-- Chain-of-thought reasoning before JSON output
-- Conversation context (surrounding messages) for multi-message understanding
-- Existing termine awareness for duplicate detection and event updates
-- Multi-day event support (tournaments, festivals, trips)
-- Category, relevance, smart reminders, confidence, and reasoning
+Uses Structured Multi-Dimensional Reasoning (Tree-of-Thoughts inspired):
+The LLM evaluates each message across 6 dimensions before deciding,
+giving ToT-quality reasoning in a single LLM call.
 """
 
 import json
@@ -38,51 +35,70 @@ class ExtractedTermin:
     reasoning: str = ""
 
 
-SYSTEM_PROMPT = """Du bist ein intelligentes Termin-Analyse-System für {user_name}s WhatsApp-Chat mit seiner Partnerin Marike.
+SYSTEM_PROMPT = """Du bist ein tiefdenkendes Termin-Analyse-System für {user_name}s WhatsApp-Chat mit Partnerin Marike.
+Du analysierst NICHT oberflächlich — du denkst in DIMENSIONEN bevor du entscheidest.
 
-FAMILIEN-KONTEXT:
-- {user_name} und Marike sind ein Paar mit gemeinsamen Kindern: Enno und Romy
-- ALLE Kinder-Termine (Schule, Training, Abholen, Geburtstage, Arzt, Wettkämpfe, Turniere) betreffen BEIDE Eltern → "shared"
-- Wenn Marike über Enno/Romy schreibt, ist es IMMER "shared" (nicht "partner_only")
-- "partner_only" NUR für Marikes eigene persönliche Termine OHNE Bezug zu {user_name} oder den Kindern
+═══ FAMILIEN-KONTEXT ═══
+- {user_name} und Marike: Paar mit Kindern Enno und Romy
+- ALLE Kinder-Termine betreffen BEIDE Eltern → "shared"
+- "partner_only" NUR für Marikes rein persönliche Termine OHNE Familie
 
-KATEGORIEN:
-- "appointment": Fester Termin mit Datum (Arzt, Treffen, Training, Wettkampf, Turnier, Abholen, Geburtstag)
-- "reminder": Etwas mitbringen/kaufen/besorgen (konkreter Gegenstand)
+═══ MULTI-DIMENSIONALE ANALYSE ═══
+
+Du MUSST jede Nachricht durch diese 6 Dimensionen bewerten bevor du entscheidest:
+
+📅 DIMENSION 1 — ZEIT
+- Enthält die Nachricht ein konkretes Datum oder eine Uhrzeit?
+- Ist es ein Wochentag, ein relatives Datum ("morgen", "nächste Woche")?
+- ACHTUNG: Zahlen im Chat sind NICHT immer Uhrzeiten! "15:46" in einer Nachricht ist oft der Zeitstempel, nicht ein Termin.
+- Datum exakt übernehmen: "25.02." → 2026-02-25. Wochentage ab heute berechnen.
+
+🏠 DIMENSION 2 — FAMILIE & RELEVANZ
+- Betrifft es die Kinder? → "shared" (IMMER, egal wer schreibt)
+- Nur Marike persönlich (Yoga, Friseur, Freundinnen)? → "partner_only"
+- {user_name} muss etwas vorbereiten/wissen? → "affects_me"
+- Beide direkt beteiligt? → "shared"
+
+🎯 DIMENSION 3 — HANDLUNGSBEDARF
+- Muss jemand irgendwo HINGEHEN? → "appointment"
+- Muss etwas GEKAUFT/MITGEBRACHT werden? → "reminder"
+- Muss etwas VORBEREITET/ORGANISIERT werden? → "task"
+- Ist es nur INFORMATION ohne Handlung? → vielleicht kein Termin!
+
+🔄 DIMENSION 4 — KONTEXT & DUPLIKATE
+- Wurde dasselbe Thema in den vorherigen Nachrichten schon besprochen?
+- Existiert der Termin bereits in der DB-Liste? → NICHT nochmal extrahieren!
+- Ist es ein UPDATE (neue Uhrzeit, Absage)? → Extrahiere nur das Update
+- Wird das gleiche Event mehrfach erwähnt? → Nur EINMAL extrahieren
+
+📆 DIMENSION 5 — PLAUSIBILITÄT
+- Passt das Datum zum Kontext? (Turnier am Wochentag vs. Wochenende)
+- Multi-Tag-Event? (Turnier = oft Sa+So, Urlaub = mehrere Tage)
+- Wenn mehrere Daten genannt → pro Tag ein Eintrag
+- Zeitraum ("vom 15. bis 18.") → Starttag als Eintrag
+
+💭 DIMENSION 6 — INTENTION
+- Ist das WIRKLICH ein Termin, oder nur Smalltalk/Erzählung?
+- "Enno hatte gestern Training" → KEIN Termin (Vergangenheit!)
+- "Enno hat morgen Training" → Termin (Zukunft)
+- "Wollen wir mal wieder essen gehen?" → KEIN Termin (vage Idee)
+- "Lass uns Freitag essen gehen" → Termin (konkretes Datum)
+
+═══ KATEGORIEN ═══
+- "appointment": Fester Termin mit Datum (Arzt, Treffen, Training, Turnier, Abholen, Geburtstag)
+- "reminder": Konkreter Gegenstand mitbringen/kaufen/besorgen
 - "task": Aufgabe/Vorbereitung (packen, vorbereiten, organisieren)
 
-RELEVANZ:
-- "for_me": Nur {user_name} betrifft es
-- "shared": Beide beteiligt (inkl. ALLE Kinder-Termine!)
-- "partner_only": NUR Marikes persönliche Termine ohne Familie
-- "affects_me": {user_name} muss etwas vorbereiten/wissen
+═══ UHRZEITEN ═══
+- Mit Uhrzeit ("um 15 Uhr", "16:30", "ab 14 Uhr") → "all_day": false, "datetime": "YYYY-MM-DDTHH:MM"
+- Ohne Uhrzeit (Geburtstag, Feiertag, Turnier-Tag) → "all_day": true, "datetime": "YYYY-MM-DD"
 
-MULTI-TAG-EVENTS:
-- Turniere, Wettkämpfe, Festivals, Urlaube können MEHRERE TAGE umfassen
-- Wenn mehrere Daten für dasselbe Event genannt werden (z.B. "21.02. und 22.02."), erstelle EINEN Eintrag pro Tag
-- Wenn ein Zeitraum genannt wird (z.B. "vom 15. bis 18. März"), erstelle einen Eintrag für den Starttag
-
-UHRZEITEN — KRITISCH:
-- Wenn eine Uhrzeit genannt wird (z.B. "um 15 Uhr", "16:30", "ab 14 Uhr"), MUSS diese im datetime-Feld stehen
-- "all_day": false wenn eine Uhrzeit dabei ist → "datetime": "YYYY-MM-DDTHH:MM"
-- "all_day": true NUR wenn KEINE Uhrzeit genannt wird → "datetime": "YYYY-MM-DD"
-
-DATUMS-REGELN:
-- Verwende EXAKT das genannte Datum. "25.02." → 2026-02-25, NICHT 24. oder 26.!
-- Wochentage korrekt berechnen ab dem heutigen Datum
-- "nächsten Donnerstag" = der NÄCHSTE Donnerstag nach heute
-
-DUPLIKAT-ERKENNUNG:
-- Prüfe die BEREITS EXISTIERENDEN TERMINE (unten aufgelistet)
-- Wenn ein Termin mit gleichem/ähnlichem Titel am gleichen Tag bereits existiert → NICHT nochmal extrahieren
-- Wenn die Nachricht ein UPDATE zu einem bestehenden Termin ist (z.B. neue Uhrzeit), extrahiere mit dem aktualisierten Wert
-
-SMARTE ERINNERUNGEN (als iCal TRIGGER):
-- Einkauf: NICHT Sonntag (geschlossen in DE). Trigger: 1-2 Werktage vorher
-- Packen/Vorbereiten: Vorabend 18:00-20:00. Trigger: z.B. -PT14H
-- Fester Termin: -P1D und -PT2H
-- Arzttermin: -P7D, -P1D, -PT2H
-- Wettkampf/Turnier: -P3D, -P1D, -PT2H
+═══ SMARTE ERINNERUNGEN ═══
+- Einkauf: NICHT Sonntag. Trigger: 1-2 Werktage vorher
+- Packen/Vorbereiten: Vorabend. Trigger: -PT14H
+- Termin: -P1D und -PT2H
+- Arzt: -P7D, -P1D, -PT2H
+- Turnier/Wettkampf: -P3D, -P1D, -PT2H
 
 {existing_termine}
 
@@ -94,33 +110,45 @@ USER_PROMPT = """Heute ist {today} ({weekday}).
 
 {conversation_context}
 
-AKTUELLE NACHRICHT von {sender} (diese analysieren):
+═══ AKTUELLE NACHRICHT von {sender} ═══
 "{text}"
 
-AUFGABE: Analysiere die aktuelle Nachricht IM KONTEXT der umgebenden Nachrichten.
-Denke Schritt für Schritt:
-1. Enthält die Nachricht einen konkreten Termin, eine Aufgabe oder Erinnerung?
-2. Wenn ja: Welches Datum/Uhrzeit? Wer ist beteiligt? Existiert der Termin schon?
-3. Ist es ein neuer Termin oder ein Update zu einem bestehenden?
-4. Welche Kategorie und Relevanz?
+═══ ANALYSE ═══
 
-Wenn die Nachricht nur Alltagschat ist, antworte: []
-Wenn ein Termin bereits in der EXISTIERENDE-TERMINE-Liste steht, antworte: []
+Bewerte die Nachricht dimensional:
 
-Format als JSON-Array:
+SCHRITT 1 — DIMENSIONEN (kurz, je 1 Zeile):
+📅 Zeit: [Gibt es ein konkretes Datum/Uhrzeit? Welches?]
+🏠 Familie: [Wer ist betroffen? Relevanz?]
+🎯 Handlung: [Muss jemand etwas TUN?]
+🔄 Kontext: [Schon besprochen? Duplikat? Update?]
+📆 Plausibilität: [Macht das Datum Sinn?]
+💭 Intention: [Echter Termin oder nur Erwähnung/Smalltalk?]
+
+SCHRITT 2 — HYPOTHESEN:
+H1: [Es ist ein Termin weil...]
+H2: [Es ist KEIN Termin weil...]
+H3: [Es ist ein Update/Duplikat weil...] (optional)
+
+SCHRITT 3 — ENTSCHEIDUNG:
+Gewählte Hypothese: H[X] weil [Begründung]
+
+SCHRITT 4 — ERGEBNIS:
+Wenn H1 gewählt, JSON-Array mit Termin(en).
+Wenn H2/H3 gewählt: []
+
+Format pro Termin:
 [{{
-  "title": "Kurze, klare Beschreibung",
-  "datetime": "YYYY-MM-DDTHH:MM oder YYYY-MM-DD bei all_day",
+  "title": "Kurze Beschreibung",
+  "datetime": "YYYY-MM-DDTHH:MM oder YYYY-MM-DD",
   "all_day": true/false,
-  "participants": ["Name1"],
+  "participants": ["Name"],
   "confidence": 0.0-1.0,
   "category": "appointment|reminder|task",
   "relevance": "for_me|shared|partner_only|affects_me",
   "reminders": [{{"trigger": "-P1D", "description": "..."}}],
-  "reasoning": "Ausführliche Begründung: Was wurde erkannt, warum diese Einstufung, ist es neu oder Duplikat?"
-}}]
-
-NUR JSON-Array ausgeben, kein weiterer Text."""
+  "reasoning": "Zusammenfassung der Dimensionen-Analyse und Entscheidung"
+}}]"""
 
 
 WEEKDAYS_DE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
@@ -142,7 +170,7 @@ async def extract_termine(
     if not _might_contain_date(text):
         return []
 
-    # LLM cascade: Groq → Gemini (no regex fallback — too error-prone)
+    # LLM cascade: Groq → Gemini
     results = await _extract_via_groq(text, sender, timestamp, feedback_examples, memory_context, conversation_context, existing_termine)
     if results is not None:
         return results
@@ -158,15 +186,15 @@ async def extract_termine(
 def _might_contain_date(text: str) -> bool:
     """Quick check if text might contain date/time or task references."""
     patterns = [
-        r'\d{1,2}\.\d{1,2}\.',  # 14.02. (needs trailing dot to distinguish from decimals)
+        r'\d{1,2}\.\d{1,2}\.',  # 14.02.
         r'\d{1,2}:\d{2}',  # 10:00, 14:30
         r'(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)',
         r'(morgen|übermorgen|nächste|kommende)',
         r'(januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember)',
         r'(termin|treffen|arzt|zahnarzt|kinderarzt|meeting|verabredung|training|geburtstag)',
         r'(abholen|hort|schule|kita|wettkampf|turnier|meisterschaft)',
-        r'um \d{1,2}\s*(uhr)?',  # "um 10", "um 14 uhr"
-        r'ab \d{1,2}\s*(uhr)?',  # "ab 14 Uhr"
+        r'um \d{1,2}\s*(uhr)?',
+        r'ab \d{1,2}\s*(uhr)?',
         r'(mitbring|kaufen|einkauf|besorgen|pack|vorbereiten)',
     ]
     text_lower = text.lower()
@@ -195,7 +223,7 @@ def _build_prompts(
 
     existing_block = ""
     if existing_termine:
-        existing_block = f"\nBEREITS EXISTIERENDE TERMINE (nicht nochmal extrahieren!):\n{existing_termine}"
+        existing_block = f"\nBEREITS EXISTIERENDE TERMINE (NICHT nochmal extrahieren!):\n{existing_termine}"
 
     system = SYSTEM_PROMPT.format(
         user_name=user_name,
@@ -209,7 +237,7 @@ def _build_prompts(
 
     conv_block = ""
     if conversation_context:
-        conv_block = f"KONVERSATIONS-KONTEXT (vorherige Nachrichten):\n{conversation_context}\n"
+        conv_block = f"KONVERSATIONS-VERLAUF (vorherige Nachrichten, chronologisch):\n{conversation_context}\n"
 
     user = USER_PROMPT.format(
         today=today,
@@ -223,11 +251,24 @@ def _build_prompts(
 
 
 def _parse_extraction_response(response_text: str, sender: str) -> list[ExtractedTermin] | None:
-    """Universal parser that handles JSON array and {"termine": [...]} wrapper."""
+    """Parse LLM response — handles reasoning text followed by JSON array.
+
+    The ToT-style prompt produces reasoning steps before the JSON.
+    We extract the JSON array from anywhere in the response.
+    """
     if not response_text:
         return []
 
     response_text = response_text.strip()
+
+    # Log the reasoning steps (everything before JSON) for transparency
+    json_start = response_text.find("[")
+    if json_start > 0:
+        reasoning_text = response_text[:json_start].strip()
+        if reasoning_text:
+            # Log first 500 chars of reasoning for debugging
+            logger.debug(f"LLM reasoning: {reasoning_text[:500]}")
+
     parsed = None
 
     # 1. Try {"termine": [...]} wrapper
@@ -238,7 +279,7 @@ def _parse_extraction_response(response_text: str, sender: str) -> list[Extracte
         except json.JSONDecodeError:
             pass
 
-    # 2. Try raw JSON array
+    # 2. Try raw JSON array (handles reasoning text before [])
     if parsed is None:
         array_match = re.search(r'\[.*\]', response_text, re.DOTALL)
         if array_match:
@@ -311,7 +352,7 @@ async def _extract_via_groq(
     system_prompt, user_prompt = _build_prompts(text, sender, timestamp, feedback_examples, memory_context, conversation_context, existing_termine)
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=45.0) as client:
             resp = await client.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={
@@ -324,7 +365,7 @@ async def _extract_via_groq(
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
-                    "temperature": 0.1,
+                    "temperature": 0.2,
                     "max_tokens": 2048,
                 },
             )
@@ -334,12 +375,12 @@ async def _extract_via_groq(
                 return None
 
             response_text = resp.json()["choices"][0]["message"]["content"]
-            logger.debug(f"Groq raw response: {response_text[:500]}")
+            logger.debug(f"Groq raw response: {response_text[:800]}")
             results = _parse_extraction_response(response_text, sender)
 
             if results is not None:
                 for r in results:
-                    logger.info(f"Groq: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, rel={r.relevance}) — {r.reasoning[:200]}")
+                    logger.info(f"Groq: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}) — {r.reasoning[:300]}")
                 if not results:
                     logger.info(f"Groq: no termine in '{text[:60]}...'")
             return results
@@ -366,12 +407,12 @@ async def _extract_via_gemini(
     combined_prompt = f"{system_prompt}\n\n{user_prompt}"
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=45.0) as client:
             resp = await client.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={settings.gemini_api_key}",
                 json={
                     "contents": [{"parts": [{"text": combined_prompt}]}],
-                    "generationConfig": {"temperature": 0.1, "maxOutputTokens": 2048},
+                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 2048},
                 },
             )
 
@@ -384,12 +425,12 @@ async def _extract_via_gemini(
                 return []
 
             response_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            logger.debug(f"Gemini raw response: {response_text[:500]}")
+            logger.debug(f"Gemini raw response: {response_text[:800]}")
             results = _parse_extraction_response(response_text, sender)
 
             if results is not None:
                 for r in results:
-                    logger.info(f"Gemini: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, rel={r.relevance}) — {r.reasoning[:200]}")
+                    logger.info(f"Gemini: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}) — {r.reasoning[:300]}")
                 if not results:
                     logger.info(f"Gemini: no termine in '{text[:60]}...'")
             return results
