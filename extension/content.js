@@ -10,13 +10,25 @@ class RadarTracker {
     this.currentChat = { id: 'unknown', name: 'Unknown' };
     this._scanTimer = null;
     this._audioBlobCache = new Map();
-    this.messageQueue = new MessageQueue(); // NEW
-    this._retryTimer = null; // NEW
+    this.messageQueue = new MessageQueue();
+    this._retryTimer = null;
+
+    // Watchdog state
+    this._currentMainEl = null;
+    this._mainObserver = null;
+    this._audioObserver = null;
+    this._lastScanTime = 0;
+    this._lastChatName = null;
+    this._reconnectCount = 0;
+    this._watchdogInterval = null;
+    this._observerActive = false;
+
     this.init();
   }
 
   async init() {
     await this.loadConfig();
+    await this._loadSentMessageIds();
     this.waitForWhatsApp();
 
     // Start retry scheduler (every 10 seconds)
@@ -24,6 +36,9 @@ class RadarTracker {
       this.processPendingQueue();
       this.messageQueue.cleanup();
     }, 10000);
+
+    // Start watchdog (every 5 seconds)
+    this._watchdogInterval = setInterval(() => this.watchdog(), 5000);
 
     // Listen for config changes from popup
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -36,7 +51,10 @@ class RadarTracker {
           enabled: this.enabled,
           currentChat: this.currentChat,
           isWhitelisted: this.isChatWhitelisted(),
-          sentCount: this.sentMessageIds.size
+          sentCount: this.sentMessageIds.size,
+          observerActive: this._observerActive,
+          lastScanAge: this._lastScanTime ? Math.round((Date.now() - this._lastScanTime) / 1000) : null,
+          reconnectCount: this._reconnectCount
         });
       }
       return true;
@@ -50,49 +68,102 @@ class RadarTracker {
     console.log(`[Radar] Config: enabled=${this.enabled}, whitelist=[${this.whitelist.join(', ')}]`);
   }
 
-  // --- WhatsApp readiness (from What's That!?) ---
+  // --- sentMessageIds persistence ---
 
-  waitForWhatsApp(attempts = 0) {
-    if (!chrome?.runtime?.id) return;
-
-    const main = document.querySelector('#main');
-    const messages = document.querySelectorAll('[data-pre-plain-text]');
-
-    if (main && messages.length > 0) {
-      console.log('[Radar] WhatsApp ready');
-      this.scanMessages();
-      this.setupObserver();
-    } else if (attempts < 15) {
-      setTimeout(() => this.waitForWhatsApp(attempts + 1), 2000);
-    } else {
-      console.log('[Radar] Timeout waiting for WhatsApp');
+  async _loadSentMessageIds() {
+    try {
+      const data = await chrome.storage.local.get(['sentMessageIds']);
+      const ids = data.sentMessageIds || [];
+      this.sentMessageIds = new Set(ids);
+      console.log(`[Radar] Loaded ${this.sentMessageIds.size} sent message IDs from storage`);
+    } catch (e) {
+      console.log(`[Radar] Failed to load sentMessageIds: ${e.message}`);
     }
   }
 
-  setupObserver() {
-    const mainContainer = document.querySelector('#main');
-    if (!mainContainer) return;
-
-    const observer = new MutationObserver(() => {
-      if (!chrome?.runtime?.id) { observer.disconnect(); return; }
-      this.scheduleScan();
-    });
-
-    observer.observe(mainContainer, { childList: true, subtree: true });
-    this.setupAudioObserver();
+  async _saveSentMessageIds() {
+    try {
+      let ids = Array.from(this.sentMessageIds);
+      // Rolling window: keep only the most recent 5000
+      if (ids.length > 5000) {
+        ids = ids.slice(ids.length - 5000);
+        this.sentMessageIds = new Set(ids);
+      }
+      await chrome.storage.local.set({ sentMessageIds: ids });
+    } catch (e) {
+      console.log(`[Radar] Failed to save sentMessageIds: ${e.message}`);
+    }
   }
 
-  setupAudioObserver() {
-    const mainContainer = document.querySelector('#main');
-    if (!mainContainer) return;
+  // --- Watchdog: permanent health check loop ---
 
-    const observer = new MutationObserver((mutations) => {
-      if (!chrome?.runtime?.id) { observer.disconnect(); return; }
+  watchdog() {
+    if (!chrome?.runtime?.id) return;
 
+    const mainEl = document.querySelector('#main');
+
+    // 1. Is #main present?
+    if (!mainEl) {
+      if (this._observerActive) {
+        console.log('[Radar] Watchdog: #main gone, observer orphaned');
+        this._disconnectObservers();
+      }
+      return;
+    }
+
+    // 2. Has #main changed (new DOM reference)?
+    if (mainEl !== this._currentMainEl) {
+      console.log('[Radar] Watchdog: #main changed, reconnecting observer');
+      this._reconnectCount++;
+      this._setupObservers(mainEl);
+    }
+
+    // 3. Has chat name changed?
+    const chatInfo = this.getCurrentChatInfo();
+    if (chatInfo.name !== this._lastChatName && chatInfo.name !== 'Unknown') {
+      console.log(`[Radar] Watchdog: chat changed from "${this._lastChatName}" to "${chatInfo.name}"`);
+      this._lastChatName = chatInfo.name;
+      this.currentChat = chatInfo;
+      this.scheduleScan();
+    }
+
+    // 4. Force-scan safety net every 30s
+    if (Date.now() - this._lastScanTime > 30000) {
+      console.log('[Radar] Watchdog: force-scan (30s safety net)');
+      this.scheduleScan();
+    }
+  }
+
+  _disconnectObservers() {
+    if (this._mainObserver) {
+      this._mainObserver.disconnect();
+      this._mainObserver = null;
+    }
+    if (this._audioObserver) {
+      this._audioObserver.disconnect();
+      this._audioObserver = null;
+    }
+    this._observerActive = false;
+    this._currentMainEl = null;
+  }
+
+  _setupObservers(mainEl) {
+    // Disconnect old observers first
+    this._disconnectObservers();
+
+    // Main message observer
+    this._mainObserver = new MutationObserver(() => {
+      if (!chrome?.runtime?.id) { this._disconnectObservers(); return; }
+      this.scheduleScan();
+    });
+    this._mainObserver.observe(mainEl, { childList: true, subtree: true });
+
+    // Audio observer
+    this._audioObserver = new MutationObserver((mutations) => {
+      if (!chrome?.runtime?.id) { this._disconnectObservers(); return; }
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (!(node instanceof HTMLElement)) continue;
-          // Check if the added node is an <audio> or contains one
           const audioEls = node.tagName === 'AUDIO' ? [node] : node.querySelectorAll?.('audio') || [];
           for (const audioEl of audioEls) {
             if (audioEl.src) {
@@ -102,8 +173,40 @@ class RadarTracker {
         }
       }
     });
+    this._audioObserver.observe(mainEl, { childList: true, subtree: true });
 
-    observer.observe(mainContainer, { childList: true, subtree: true });
+    this._currentMainEl = mainEl;
+    this._observerActive = true;
+    console.log('[Radar] Observers attached to #main');
+  }
+
+  // --- WhatsApp readiness (initial setup, watchdog takes over) ---
+
+  waitForWhatsApp(attempts = 0) {
+    if (!chrome?.runtime?.id) return;
+
+    const main = document.querySelector('#main');
+    const messages = document.querySelectorAll('[data-pre-plain-text]');
+
+    if (main && messages.length > 0) {
+      console.log('[Radar] WhatsApp ready');
+      this._setupObservers(main);
+      this.scanMessages();
+    } else if (attempts < 15) {
+      setTimeout(() => this.waitForWhatsApp(attempts + 1), 2000);
+    } else {
+      console.log('[Radar] Initial wait timeout — watchdog will keep trying');
+    }
+  }
+
+  // Legacy methods kept for compatibility but routed through new system
+  setupObserver() {
+    const mainEl = document.querySelector('#main');
+    if (mainEl) this._setupObservers(mainEl);
+  }
+
+  setupAudioObserver() {
+    // Now handled by _setupObservers
   }
 
   async _captureBlobImmediately(audioEl) {
@@ -188,6 +291,8 @@ class RadarTracker {
   async scanMessages() {
     if (!this.enabled) { console.log('[Radar] Scan skipped: disabled'); return; }
 
+    this._lastScanTime = Date.now();
+
     this.currentChat = this.getCurrentChatInfo();
     console.log('[Radar] Current chat:', this.currentChat.name, '| Whitelisted:', this.isChatWhitelisted());
     if (!this.isChatWhitelisted()) return;
@@ -238,6 +343,7 @@ class RadarTracker {
 
     if (newMessages.length > 0) {
       newMessages.forEach(m => this.sentMessageIds.add(m.messageId));
+      this._saveSentMessageIds();
       this.sendToAPI(newMessages);
     }
   }
@@ -327,7 +433,7 @@ class RadarTracker {
     return null;
   }
 
-  // --- Audio extraction (NEW) ---
+  // --- Audio extraction ---
 
   async extractAudioInfo(element) {
     const row = element.closest('[role="row"]') || element;

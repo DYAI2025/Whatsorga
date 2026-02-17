@@ -99,6 +99,21 @@ document.addEventListener('DOMContentLoaded', async () => {
           document.getElementById('currentChat').textContent = response.currentChat?.name || '--';
           document.getElementById('isWhitelisted').textContent = response.isWhitelisted ? 'Yes' : 'No';
           document.getElementById('sentCount').textContent = response.sentCount || 0;
+
+          // Observer status
+          const obsEl = document.getElementById('observerStatus');
+          if (response.observerActive) {
+            const reconLabel = response.reconnectCount > 0 ? ` (${response.reconnectCount}x)` : '';
+            obsEl.textContent = `Active${reconLabel}`;
+            obsEl.style.color = '#4caf50';
+          } else if (response.lastScanAge !== null) {
+            obsEl.textContent = 'Reconnecting';
+            obsEl.style.color = '#ff9800';
+          } else {
+            obsEl.textContent = 'Waiting';
+            obsEl.style.color = '#9e9e9e';
+          }
+
           setStatus(response.enabled ? 'success' : 'warning',
                     response.enabled ? 'Capturing' : 'Paused');
         }

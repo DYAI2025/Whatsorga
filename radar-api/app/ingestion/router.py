@@ -19,7 +19,6 @@ from sqlalchemy import select
 from app.analysis.unified_engine import engine as marker_engine
 from app.analysis.sentiment_tracker import score_sentiment
 from app.analysis.weaver import process_message_context
-from app.analysis.termin_extractor import extract_termine
 from app.analysis.semantic_transcriber import enrich_transcript
 from app.outputs.caldav_sync import sync_termin_to_calendar
 from app.storage.database import Termin
@@ -146,21 +145,28 @@ async def ingest_messages(
 
                 # ── Context-aware Termin extraction + CalDAV sync ──
                 try:
-                    # Use EverMemOS context for better termin extraction
                     termine = await extract_termine_with_context(
                         text, msg.sender, ts, msg.chatId, msg.chatName,
+                        session=session,
                     )
                     for t in termine:
                         termin_dt = datetime.fromisoformat(t.datetime_str) if t.datetime_str else None
                         if not termin_dt:
                             continue
 
-                        # Sync to Apple Calendar
-                        caldav_uid = await sync_termin_to_calendar(
-                            t.title, termin_dt, t.participants, t.confidence, text,
+                        # Sync to Apple Calendar (dual-calendar routing)
+                        caldav_uid, termin_status = await sync_termin_to_calendar(
+                            title=t.title,
+                            dt=termin_dt,
+                            participants=t.participants,
+                            confidence=t.confidence,
+                            source_text=text,
+                            relevance=t.relevance,
+                            reminders=t.reminders,
+                            context_note=t.context_note,
                         )
 
-                        # Store in DB
+                        # Store in DB with new fields
                         db_termin = Termin(
                             message_id=db_msg.id,
                             title=t.title,
@@ -168,6 +174,10 @@ async def ingest_messages(
                             participants=t.participants,
                             confidence=t.confidence,
                             caldav_uid=caldav_uid,
+                            category=t.category,
+                            relevance=t.relevance,
+                            status=termin_status,
+                            reminder_config=t.reminders if t.reminders else None,
                         )
                         session.add(db_termin)
                 except Exception as e:

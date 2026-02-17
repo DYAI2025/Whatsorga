@@ -20,6 +20,8 @@ services:
     ports:
       - "443:443"
       - "80:80"
+    environment:
+      RADAR_DOMAIN: ${RADAR_DOMAIN:-radar.localhost}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -98,9 +100,9 @@ services:
       - "8001:8001"
     environment:
       LLM_PROVIDER: openai
-      LLM_MODEL: ${EVERMEMOS_LLM_MODEL:-meta-llama/llama-3.3-70b-instruct}
-      LLM_BASE_URL: ${EVERMEMOS_LLM_BASE_URL:-https://api.groq.com/openai/v1}
-      LLM_API_KEY: ${RADAR_GROQ_API_KEY}
+      LLM_MODEL: ${EVERMEMOS_LLM_MODEL:-meta-llama/Llama-3.3-70B-Instruct}
+      LLM_BASE_URL: ${EVERMEMOS_LLM_BASE_URL:-https://api.deepinfra.com/v1/openai}
+      LLM_API_KEY: ${EVERMEMOS_DEEPINFRA_KEY}
       LLM_TEMPERATURE: "0.3"
       LLM_MAX_TOKENS: "32768"
       DEEPINFRA_API_KEY: ${EVERMEMOS_DEEPINFRA_KEY:-}
