@@ -501,45 +501,33 @@ class RadarTracker {
     const messages = batch.map(item => item.message);
 
     try {
-      const config = await chrome.storage.local.get(['serverUrl', 'apiKey']);
-      const apiUrl = config.serverUrl || 'http://localhost:8900';
-      const apiKey = config.apiKey || 'changeme';
-
-      const response = await fetch(`${apiUrl}/api/ingest`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({ messages })
+      // Route through background service worker (bypasses WhatsApp Web CSP)
+      const response = await chrome.runtime.sendMessage({
+        type: 'NEW_MESSAGES',
+        data: messages
       });
 
-      if (response.ok) {
-        // Mark all as confirmed (synchronous - no await)
+      if (response?.ok) {
         for (const item of batch) {
           this.messageQueue.markConfirmed(item.id);
         }
-        console.log(`[Radar] Confirmed ${batch.length} messages`);
-      } else if (response.status === 401 || response.status === 403) {
-        // Auth error - stop retrying: remove messages from queue
+        console.log(`[Radar] Confirmed ${batch.length} messages via background`);
+      } else if (response?.authError) {
         for (const item of batch) {
           this.messageQueue.markConfirmed(item.id);
         }
-        console.error('[Radar] Auth error - check API key; dropping current batch from queue');
-        return;
+        console.error('[Radar] Auth error - check API key');
       } else {
-        // Server error - increment retry (synchronous - no await)
         for (const item of batch) {
           this.messageQueue.incrementRetry(item.id);
         }
-        console.warn(`[Radar] Server error ${response.status}, will retry`);
+        console.warn('[Radar] Background send failed, will retry');
       }
     } catch (error) {
-      // Network error - increment retry (synchronous - no await)
       for (const item of batch) {
         this.messageQueue.incrementRetry(item.id);
       }
-      console.warn('[Radar] Network error, will retry:', error.message);
+      console.warn('[Radar] Background message error, will retry:', error.message);
     }
   }
 }

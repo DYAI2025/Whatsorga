@@ -243,6 +243,120 @@ async def submit_termin_feedback(
     }
 
 
+@router.get("/pipeline/{chat_id}")
+async def get_pipeline(
+    chat_id: str,
+    limit: int = Query(default=20, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Get recent termin extractions with full processing metadata for pipeline view."""
+    result = await session.execute(
+        select(Termin, Message.text, Message.sender, Message.timestamp)
+        .join(Message, Termin.message_id == Message.id)
+        .where(Message.chat_id == chat_id)
+        .order_by(desc(Termin.created_at))
+        .limit(limit)
+    )
+    rows = result.all()
+
+    return {
+        "chat_id": chat_id,
+        "pipeline": [
+            {
+                "id": str(t.id),
+                "title": t.title,
+                "datetime": t.datetime_.isoformat() if t.datetime_ else None,
+                "participants": t.participants or [],
+                "confidence": t.confidence,
+                "category": t.category or "appointment",
+                "relevance": t.relevance or "shared",
+                "status": t.status or "auto",
+                "reminders": t.reminder_config or [],
+                "caldav_synced": bool(t.caldav_uid),
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+                # Source message
+                "source_text": (msg_text or "")[:300],
+                "source_sender": msg_sender,
+                "source_timestamp": msg_ts.isoformat() if msg_ts else None,
+            }
+            for t, msg_text, msg_sender, msg_ts in rows
+        ],
+    }
+
+
+@router.get("/drift-markers/{chat_id}")
+async def get_drift_markers(
+    chat_id: str,
+    days: int = Query(default=30, ge=1, le=365),
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Get combined sentiment + dominant markers per day for colored chart dots."""
+    since = datetime.utcnow() - timedelta(days=days)
+
+    # Get daily sentiment + markers in one query
+    result = await session.execute(
+        select(
+            func.date(Message.timestamp).label("date"),
+            func.avg(Analysis.sentiment_score).label("avg_sentiment"),
+            func.count(Message.id).label("message_count"),
+            Analysis.marker_categories,
+        )
+        .join(Analysis, Analysis.message_id == Message.id)
+        .where(and_(Message.chat_id == chat_id, Message.timestamp >= since))
+        .group_by(func.date(Message.timestamp), Analysis.marker_categories)
+        .order_by(func.date(Message.timestamp))
+    )
+    rows = result.all()
+
+    # Aggregate per day: sentiment + total marker counts
+    day_data: dict[str, dict] = {}
+    for r in rows:
+        date_str = str(r.date)
+        if date_str not in day_data:
+            day_data[date_str] = {
+                "date": date_str,
+                "avg_sentiment": 0,
+                "message_count": 0,
+                "marker_totals": {},
+                "_sentiment_sum": 0,
+                "_sentiment_count": 0,
+            }
+        d = day_data[date_str]
+        d["message_count"] += r.message_count
+        d["_sentiment_sum"] += (r.avg_sentiment or 0) * r.message_count
+        d["_sentiment_count"] += r.message_count
+
+        # Accumulate marker counts from categories
+        if r.marker_categories and isinstance(r.marker_categories, dict):
+            cats = r.marker_categories.get("categories", {})
+            if isinstance(cats, dict):
+                for marker, score in cats.items():
+                    d["marker_totals"][marker] = d["marker_totals"].get(marker, 0) + (score if isinstance(score, (int, float)) else 1)
+
+    # Finalize
+    data_points = []
+    for date_str in sorted(day_data.keys()):
+        d = day_data[date_str]
+        avg = d["_sentiment_sum"] / d["_sentiment_count"] if d["_sentiment_count"] else 0
+        # Find dominant marker
+        dominant = max(d["marker_totals"], key=d["marker_totals"].get) if d["marker_totals"] else None
+        data_points.append({
+            "date": date_str,
+            "avg_sentiment": round(avg, 3),
+            "message_count": d["message_count"],
+            "dominant_marker": dominant,
+            "markers": d["marker_totals"],
+        })
+
+    return {
+        "chat_id": chat_id,
+        "days": days,
+        "data": data_points,
+    }
+
+
 @router.get("/search")
 async def search_messages(
     q: str = Query(..., min_length=2),

@@ -45,7 +45,7 @@ RELEVANZ für {user_name}:
 
 SMARTE ERINNERUNGEN (als iCal TRIGGER):
 - Einkauf/Besorgen: NICHT Sonntag setzen (Geschäfte geschlossen in DE), stattdessen Samstag oder Freitag. Trigger: 1-2 Werktage vorher
-- Packen/Vorbereiten: Vorabend zwischen 18:00-20:00. Trigger: -PT{stunden_bis_vorabend}H
+- Packen/Vorbereiten: Vorabend zwischen 18:00-20:00. Trigger: z.B. -PT14H (14 Stunden vorher)
 - Fester Termin: 1 Tag vorher + 2 Stunden vorher. Trigger: -P1D und -PT2H
 - Arzttermin/Wichtig: Zusätzlich 1 Woche vorher. Trigger: -P7D, -P1D, -PT2H
 

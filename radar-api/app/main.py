@@ -75,3 +75,11 @@ async def dashboard_page():
     if index.exists():
         return FileResponse(str(index))
     return {"error": "Dashboard not built yet"}
+
+
+@app.get("/dashboard/{page}")
+async def dashboard_subpage(page: str):
+    html = STATIC_DIR / f"{page}.html"
+    if html.exists():
+        return FileResponse(str(html))
+    return {"error": f"Page '{page}' not found"}

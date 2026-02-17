@@ -182,6 +182,11 @@
       margin-top: 8px;
     }
 
+    .nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 0; }
+    .nav a { color: var(--text-dim); text-decoration: none; padding: 10px 16px; font-size: 13px; font-weight: 500; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .nav a:hover { color: var(--text); }
+    .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
     .loading {
       text-align: center;
       padding: 40px;
@@ -258,7 +263,7 @@
 
 <!-- Main content -->
 <header>
-  <h1>Interactive Charts Demo - Recharts</h1>
+  <h1>Charts - WhatsOrga</h1>
   <div class="header-controls">
     <span id="chatLabel" style="font-size:13px;color:var(--text-dim)"></span>
     <select id="daysSelect" onchange="window.loadChartData()">
@@ -270,6 +275,12 @@
     <button onclick="window.loadChartData()">Aktualisieren</button>
   </div>
 </header>
+<nav class="nav">
+  <a href="/dashboard">Dashboard</a>
+  <a href="/dashboard/pipeline">Pipeline</a>
+  <a href="/dashboard/charts" class="active">Charts</a>
+  <a href="/dashboard/monitoring">Monitoring</a>
+</nav>
 
 <div class="container">
   <div class="card">
