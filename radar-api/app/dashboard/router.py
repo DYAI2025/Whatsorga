@@ -243,6 +243,37 @@ async def submit_termin_feedback(
     }
 
 
+@router.delete("/termine/all")
+async def kill_switch_termine(
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Kill switch: delete ALL termine from DB and clear both CalDAV calendars."""
+    from app.outputs.caldav_sync import delete_all_calendar_events
+
+    # Delete from DB (feedback first due to FK)
+    feedback_result = await session.execute(
+        select(func.count(TerminFeedback.id))
+    )
+    feedback_count = feedback_result.scalar() or 0
+
+    await session.execute(TerminFeedback.__table__.delete())
+    termin_result = await session.execute(select(func.count(Termin.id)))
+    termin_count = termin_result.scalar() or 0
+    await session.execute(Termin.__table__.delete())
+    await session.commit()
+
+    # Clear CalDAV calendars
+    caldav_results = await delete_all_calendar_events()
+
+    logger.info(f"Kill switch: deleted {termin_count} termine, {feedback_count} feedback, CalDAV: {caldav_results}")
+    return {
+        "deleted_termine": termin_count,
+        "deleted_feedback": feedback_count,
+        "caldav_cleared": caldav_results,
+    }
+
+
 @router.get("/pipeline/{chat_id}")
 async def get_pipeline(
     chat_id: str,

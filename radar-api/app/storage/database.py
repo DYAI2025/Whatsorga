@@ -80,6 +80,7 @@ class Termin(Base):
     relevance = Column(String, default="shared")  # for_me | shared | partner_only | affects_me
     status = Column(String, default="auto")  # auto | suggested | confirmed | rejected | skipped
     reminder_config = Column(JSONB, nullable=True)
+    all_day = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 

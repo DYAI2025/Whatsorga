@@ -162,6 +162,7 @@ async def ingest_messages(
                             confidence=t.confidence,
                             source_text=text,
                             relevance=t.relevance,
+                            all_day=t.all_day,
                             reminders=t.reminders,
                             context_note=t.context_note,
                         )
@@ -178,6 +179,7 @@ async def ingest_messages(
                             relevance=t.relevance,
                             status=termin_status,
                             reminder_config=t.reminders if t.reminders else None,
+                            all_day=t.all_day,
                         )
                         session.add(db_termin)
                 except Exception as e:

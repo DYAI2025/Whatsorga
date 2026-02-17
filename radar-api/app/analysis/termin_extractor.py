@@ -21,13 +21,14 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ExtractedTermin:
     title: str
-    datetime_str: str  # ISO format
+    datetime_str: str  # ISO format or YYYY-MM-DD for all-day
     participants: list[str]
     confidence: float  # 0.0 - 1.0
     category: str = "appointment"  # appointment | reminder | task
     relevance: str = "shared"  # for_me | shared | partner_only | affects_me
     reminders: list[dict] = field(default_factory=list)
     context_note: str = ""
+    all_day: bool = False
 
 
 SYSTEM_PROMPT = """Du bist ein Termin-Extraktions-System für deutschsprachige WhatsApp-Nachrichten aus der Perspektive von {user_name}.
@@ -64,6 +65,7 @@ Format pro Eintrag:
 [{{
   "title": "Kurze Beschreibung",
   "datetime": "YYYY-MM-DDTHH:MM",
+  "all_day": false,
   "participants": ["Name1"],
   "confidence": 0.0-1.0,
   "category": "appointment|reminder|task",
@@ -71,6 +73,14 @@ Format pro Eintrag:
   "reminders": [{{"trigger": "-P1D", "description": "Morgen: ..."}}, {{"trigger": "-PT2H", "description": "In 2h: ..."}}],
   "context_note": "Warum dieser Termin extrahiert wurde"
 }}]
+
+WICHTIGE REGELN:
+- "all_day": true wenn KEINE Uhrzeit genannt wird (Geburtstag, Feiertag, Urlaub, ganztägiges Event)
+- "all_day": false wenn eine Uhrzeit dabei ist
+- Bei "all_day": true ist "datetime" nur das Datum: "YYYY-MM-DD" (OHNE Uhrzeit)
+- Geburtstage IMMER als all_day: true
+- Datums-Berechnung GENAU prüfen: Wenn heute {today} ({weekday}) ist, dann ist Mittwoch = der nächste Mittwoch ab heute
+- NIEMALS einen Tag abziehen! Das Datum muss EXAKT dem genannten Datum entsprechen
 
 NUR JSON-Array ausgeben, kein weiterer Text."""
 
@@ -206,15 +216,23 @@ def _parse_extraction_response(response_text: str, sender: str) -> list[Extracte
         if not isinstance(reminders, list):
             reminders = []
 
+        # Detect all-day events
+        all_day = bool(item.get("all_day", False))
+        dt_str = item.get("datetime", "")
+        # If datetime has no time component (YYYY-MM-DD only), treat as all-day
+        if dt_str and "T" not in dt_str and len(dt_str) == 10:
+            all_day = True
+
         results.append(ExtractedTermin(
             title=item.get("title", "Termin"),
-            datetime_str=item.get("datetime", ""),
+            datetime_str=dt_str,
             participants=item.get("participants", [sender]),
             confidence=float(item.get("confidence", 0.5)),
             category=item.get("category", "appointment"),
             relevance=relevance,
             reminders=reminders,
             context_note=item.get("context_note", ""),
+            all_day=all_day,
         ))
 
     return results
