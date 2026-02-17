@@ -1,8 +1,14 @@
-"""Termin Extractor — extracts dates/appointments from German WhatsApp text.
+"""Termin Extractor — context-aware appointment extraction from German WhatsApp text.
 
 LLM stack: Groq 70B (primary) → Gemini 2.5 Flash (fallback).
 No regex fallback — only LLMs understand context well enough.
-Extracts category, relevance, smart reminders, confidence, and reasoning.
+
+Features:
+- Chain-of-thought reasoning before JSON output
+- Conversation context (surrounding messages) for multi-message understanding
+- Existing termine awareness for duplicate detection and event updates
+- Multi-day event support (tournaments, festivals, trips)
+- Category, relevance, smart reminders, confidence, and reasoning
 """
 
 import json
@@ -32,64 +38,86 @@ class ExtractedTermin:
     reasoning: str = ""
 
 
-SYSTEM_PROMPT = """Du bist ein intelligentes Termin-System für die WhatsApp-Kommunikation zwischen {user_name} und seiner Partnerin Marike.
+SYSTEM_PROMPT = """Du bist ein intelligentes Termin-Analyse-System für {user_name}s WhatsApp-Chat mit seiner Partnerin Marike.
 
 FAMILIEN-KONTEXT:
 - {user_name} und Marike sind ein Paar mit gemeinsamen Kindern: Enno und Romy
-- Alle Kinder-Termine (Schule, Training, Abholen, Geburtstage, Arzt) betreffen BEIDE Eltern
-- Wenn Marike schreibt "Enno hat Training" oder "Romy abholen", muss {user_name} das oft organisieren/wissen
-- Termine die nur Marikes eigene Aktivitäten betreffen (Yoga, Friseur, Treffen mit Freundinnen OHNE {user_name}) = "partner_only"
+- ALLE Kinder-Termine (Schule, Training, Abholen, Geburtstage, Arzt, Wettkämpfe, Turniere) betreffen BEIDE Eltern → "shared"
+- Wenn Marike über Enno/Romy schreibt, ist es IMMER "shared" (nicht "partner_only")
+- "partner_only" NUR für Marikes eigene persönliche Termine OHNE Bezug zu {user_name} oder den Kindern
 
 KATEGORIEN:
-- "appointment": Fester Termin mit Datum/Uhrzeit (Arzt, Treffen, Training, Abholen)
-- "reminder": Etwas mitbringen/kaufen/besorgen
+- "appointment": Fester Termin mit Datum (Arzt, Treffen, Training, Wettkampf, Turnier, Abholen, Geburtstag)
+- "reminder": Etwas mitbringen/kaufen/besorgen (konkreter Gegenstand)
 - "task": Aufgabe/Vorbereitung (packen, vorbereiten, organisieren)
 
 RELEVANZ:
 - "for_me": Nur {user_name} betrifft es
-- "shared": Beide beteiligt (inkl. Kinder-Termine!)
-- "partner_only": NUR Marikes eigene Termine ohne Bezug zu {user_name} oder den Kindern
+- "shared": Beide beteiligt (inkl. ALLE Kinder-Termine!)
+- "partner_only": NUR Marikes persönliche Termine ohne Familie
 - "affects_me": {user_name} muss etwas vorbereiten/wissen
+
+MULTI-TAG-EVENTS:
+- Turniere, Wettkämpfe, Festivals, Urlaube können MEHRERE TAGE umfassen
+- Wenn mehrere Daten für dasselbe Event genannt werden (z.B. "21.02. und 22.02."), erstelle EINEN Eintrag pro Tag
+- Wenn ein Zeitraum genannt wird (z.B. "vom 15. bis 18. März"), erstelle einen Eintrag für den Starttag
 
 UHRZEITEN — KRITISCH:
 - Wenn eine Uhrzeit genannt wird (z.B. "um 15 Uhr", "16:30", "ab 14 Uhr"), MUSS diese im datetime-Feld stehen
-- "all_day": false wenn eine Uhrzeit dabei ist, "datetime": "YYYY-MM-DDTHH:MM"
-- "all_day": true NUR wenn KEINE Uhrzeit genannt wird (Geburtstag, Feiertag, ganztägig)
-- Bei all_day: true ist datetime nur "YYYY-MM-DD"
+- "all_day": false wenn eine Uhrzeit dabei ist → "datetime": "YYYY-MM-DDTHH:MM"
+- "all_day": true NUR wenn KEINE Uhrzeit genannt wird → "datetime": "YYYY-MM-DD"
 
 DATUMS-REGELN:
-- Verwende EXAKT das genannte Datum. Wenn "25.02." gesagt wird → 2026-02-25, NICHT 24. oder 26.!
+- Verwende EXAKT das genannte Datum. "25.02." → 2026-02-25, NICHT 24. oder 26.!
 - Wochentage korrekt berechnen ab dem heutigen Datum
+- "nächsten Donnerstag" = der NÄCHSTE Donnerstag nach heute
+
+DUPLIKAT-ERKENNUNG:
+- Prüfe die BEREITS EXISTIERENDEN TERMINE (unten aufgelistet)
+- Wenn ein Termin mit gleichem/ähnlichem Titel am gleichen Tag bereits existiert → NICHT nochmal extrahieren
+- Wenn die Nachricht ein UPDATE zu einem bestehenden Termin ist (z.B. neue Uhrzeit), extrahiere mit dem aktualisierten Wert
 
 SMARTE ERINNERUNGEN (als iCal TRIGGER):
 - Einkauf: NICHT Sonntag (geschlossen in DE). Trigger: 1-2 Werktage vorher
 - Packen/Vorbereiten: Vorabend 18:00-20:00. Trigger: z.B. -PT14H
 - Fester Termin: -P1D und -PT2H
 - Arzttermin: -P7D, -P1D, -PT2H
+- Wettkampf/Turnier: -P3D, -P1D, -PT2H
+
+{existing_termine}
 
 {feedback_examples}
 
 {memory_context}"""
 
 USER_PROMPT = """Heute ist {today} ({weekday}).
-Nachricht von {sender}:
+
+{conversation_context}
+
+AKTUELLE NACHRICHT von {sender} (diese analysieren):
 "{text}"
 
-Analysiere diese Nachricht im Kontext der Beziehung von Ben und Marike.
-Extrahiere Termine, Aufgaben und Erinnerungen als JSON-Array.
-Wenn kein Termin enthalten ist: []
+AUFGABE: Analysiere die aktuelle Nachricht IM KONTEXT der umgebenden Nachrichten.
+Denke Schritt für Schritt:
+1. Enthält die Nachricht einen konkreten Termin, eine Aufgabe oder Erinnerung?
+2. Wenn ja: Welches Datum/Uhrzeit? Wer ist beteiligt? Existiert der Termin schon?
+3. Ist es ein neuer Termin oder ein Update zu einem bestehenden?
+4. Welche Kategorie und Relevanz?
 
-Format pro Eintrag:
+Wenn die Nachricht nur Alltagschat ist, antworte: []
+Wenn ein Termin bereits in der EXISTIERENDE-TERMINE-Liste steht, antworte: []
+
+Format als JSON-Array:
 [{{
   "title": "Kurze, klare Beschreibung",
   "datetime": "YYYY-MM-DDTHH:MM oder YYYY-MM-DD bei all_day",
-  "all_day": false,
+  "all_day": true/false,
   "participants": ["Name1"],
   "confidence": 0.0-1.0,
   "category": "appointment|reminder|task",
   "relevance": "for_me|shared|partner_only|affects_me",
   "reminders": [{{"trigger": "-P1D", "description": "..."}}],
-  "reasoning": "Kurze Begründung warum extrahiert und wie eingestuft"
+  "reasoning": "Ausführliche Begründung: Was wurde erkannt, warum diese Einstufung, ist es neu oder Duplikat?"
 }}]
 
 NUR JSON-Array ausgeben, kein weiterer Text."""
@@ -104,6 +132,8 @@ async def extract_termine(
     timestamp: datetime,
     feedback_examples: str = "",
     memory_context: str = "",
+    conversation_context: str = "",
+    existing_termine: str = "",
 ) -> list[ExtractedTermin]:
     """Extract appointments from message text using LLM cascade (no regex fallback)."""
     if not text or len(text) < 10:
@@ -113,15 +143,14 @@ async def extract_termine(
         return []
 
     # LLM cascade: Groq → Gemini (no regex fallback — too error-prone)
-    results = await _extract_via_groq(text, sender, timestamp, feedback_examples, memory_context)
+    results = await _extract_via_groq(text, sender, timestamp, feedback_examples, memory_context, conversation_context, existing_termine)
     if results is not None:
         return results
 
-    results = await _extract_via_gemini(text, sender, timestamp, feedback_examples, memory_context)
+    results = await _extract_via_gemini(text, sender, timestamp, feedback_examples, memory_context, conversation_context, existing_termine)
     if results is not None:
         return results
 
-    # No Ollama, no regex — if both LLMs fail, skip
     logger.info(f"No LLM available for termin extraction, skipping: '{text[:60]}...'")
     return []
 
@@ -135,7 +164,7 @@ def _might_contain_date(text: str) -> bool:
         r'(morgen|übermorgen|nächste|kommende)',
         r'(januar|februar|märz|april|mai|juni|juli|august|september|oktober|november|dezember)',
         r'(termin|treffen|arzt|zahnarzt|kinderarzt|meeting|verabredung|training|geburtstag)',
-        r'(abholen|hort|schule|kita|wettkampf)',
+        r'(abholen|hort|schule|kita|wettkampf|turnier|meisterschaft)',
         r'um \d{1,2}\s*(uhr)?',  # "um 10", "um 14 uhr"
         r'ab \d{1,2}\s*(uhr)?',  # "ab 14 Uhr"
         r'(mitbring|kaufen|einkauf|besorgen|pack|vorbereiten)',
@@ -150,6 +179,8 @@ def _build_prompts(
     timestamp: datetime,
     feedback_examples: str = "",
     memory_context: str = "",
+    conversation_context: str = "",
+    existing_termine: str = "",
 ) -> tuple[str, str]:
     """Build system and user prompts for LLM extraction."""
     user_name = settings.termin_user_name
@@ -162,19 +193,30 @@ def _build_prompts(
     if memory_context:
         memory_block = f"\nKONTEXT AUS GEDÄCHTNIS:\n{memory_context}"
 
+    existing_block = ""
+    if existing_termine:
+        existing_block = f"\nBEREITS EXISTIERENDE TERMINE (nicht nochmal extrahieren!):\n{existing_termine}"
+
     system = SYSTEM_PROMPT.format(
         user_name=user_name,
         feedback_examples=feedback_block,
         memory_context=memory_block,
+        existing_termine=existing_block,
     )
 
     today = timestamp.strftime("%Y-%m-%d")
     weekday = WEEKDAYS_DE[timestamp.weekday()]
+
+    conv_block = ""
+    if conversation_context:
+        conv_block = f"KONVERSATIONS-KONTEXT (vorherige Nachrichten):\n{conversation_context}\n"
+
     user = USER_PROMPT.format(
         today=today,
         weekday=weekday,
         sender=sender,
         text=text,
+        conversation_context=conv_block,
     )
 
     return system, user
@@ -259,12 +301,14 @@ async def _extract_via_groq(
     timestamp: datetime,
     feedback_examples: str = "",
     memory_context: str = "",
+    conversation_context: str = "",
+    existing_termine: str = "",
 ) -> list[ExtractedTermin] | None:
     """Use Groq llama-3.3-70b-versatile for extraction (primary)."""
     if not settings.groq_api_key:
         return None
 
-    system_prompt, user_prompt = _build_prompts(text, sender, timestamp, feedback_examples, memory_context)
+    system_prompt, user_prompt = _build_prompts(text, sender, timestamp, feedback_examples, memory_context, conversation_context, existing_termine)
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -281,7 +325,7 @@ async def _extract_via_groq(
                         {"role": "user", "content": user_prompt},
                     ],
                     "temperature": 0.1,
-                    "max_tokens": 1024,
+                    "max_tokens": 2048,
                 },
             )
 
@@ -295,7 +339,7 @@ async def _extract_via_groq(
 
             if results is not None:
                 for r in results:
-                    logger.info(f"Groq: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, rel={r.relevance}) — {r.reasoning}")
+                    logger.info(f"Groq: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, rel={r.relevance}) — {r.reasoning[:200]}")
                 if not results:
                     logger.info(f"Groq: no termine in '{text[:60]}...'")
             return results
@@ -311,12 +355,14 @@ async def _extract_via_gemini(
     timestamp: datetime,
     feedback_examples: str = "",
     memory_context: str = "",
+    conversation_context: str = "",
+    existing_termine: str = "",
 ) -> list[ExtractedTermin] | None:
     """Use Gemini 2.5 Flash as fallback LLM."""
     if not settings.gemini_api_key:
         return None
 
-    system_prompt, user_prompt = _build_prompts(text, sender, timestamp, feedback_examples, memory_context)
+    system_prompt, user_prompt = _build_prompts(text, sender, timestamp, feedback_examples, memory_context, conversation_context, existing_termine)
     combined_prompt = f"{system_prompt}\n\n{user_prompt}"
 
     try:
@@ -325,7 +371,7 @@ async def _extract_via_gemini(
                 f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={settings.gemini_api_key}",
                 json={
                     "contents": [{"parts": [{"text": combined_prompt}]}],
-                    "generationConfig": {"temperature": 0.1, "maxOutputTokens": 1024},
+                    "generationConfig": {"temperature": 0.1, "maxOutputTokens": 2048},
                 },
             )
 
@@ -343,7 +389,7 @@ async def _extract_via_gemini(
 
             if results is not None:
                 for r in results:
-                    logger.info(f"Gemini: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, rel={r.relevance}) — {r.reasoning}")
+                    logger.info(f"Gemini: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, rel={r.relevance}) — {r.reasoning[:200]}")
                 if not results:
                     logger.info(f"Gemini: no termine in '{text[:60]}...'")
             return results
