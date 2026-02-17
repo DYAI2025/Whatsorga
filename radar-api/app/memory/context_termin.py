@@ -1,58 +1,57 @@
-"""Context-aware Termin Extractor — uses EverMemOS memory to resolve pronouns,
-dates, and implicit references in appointment extraction.
+"""Context-aware Termin Extractor — uses EverMemOS memory and feedback history
+to improve appointment extraction with pronoun resolution and learning.
 
-This wraps the existing termin_extractor.py and enriches LLM prompts with
-recalled context from EverMemOS before extracting appointments.
-
-Example:
-    Message: "Kannst du an ihrem Geburtstag Süßigkeiten-Tüten mitbringen?"
-    Without context → Termin: unknown date, unknown person
-    With context   → Termin: 21.02. (Romys Feier), 8 Süßigkeiten-Tüten
-
-This is the module that solves the "Marike/Romy-Problem".
+Wraps termin_extractor.py and enriches LLM prompts with:
+1. Recalled context from EverMemOS (persons, facts, events)
+2. Recent feedback examples (rejected/edited termine for learning)
 """
 
 import logging
 from datetime import datetime
 
-from app.memory.evermemos_client import recall_for_termin, MemoryContext
-from app.analysis.termin_extractor import extract_termine as _extract_raw
+from sqlalchemy import select, desc, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.memory.evermemos_client import recall_for_termin
+from app.analysis.termin_extractor import extract_termine
+from app.storage.database import TerminFeedback, Termin
 
 logger = logging.getLogger(__name__)
 
 
-# ─── Enhanced LLM prompt template ────────────────────────────────────────────
+async def _get_recent_feedback(session: AsyncSession, limit: int = 10) -> str:
+    """Load recent rejected/edited feedback as learning examples for the LLM prompt."""
+    try:
+        result = await session.execute(
+            select(TerminFeedback, Termin.title, Termin.category, Termin.relevance)
+            .join(Termin, TerminFeedback.termin_id == Termin.id)
+            .where(or_(
+                TerminFeedback.action == "rejected",
+                TerminFeedback.action == "edited",
+            ))
+            .order_by(desc(TerminFeedback.created_at))
+            .limit(limit)
+        )
+        rows = result.all()
 
-CONTEXT_TERMIN_PROMPT = """Du bist ein Termin-Extraktions-System für deutschsprachige WhatsApp-Nachrichten.
+        if not rows:
+            return ""
 
-{memory_context}
+        lines = []
+        for feedback, title, category, relevance in rows:
+            if feedback.action == "rejected":
+                reason = feedback.reason or "kein Grund angegeben"
+                lines.append(f'- "{title}" ({category}/{relevance}) wurde ABGELEHNT: {reason}')
+            elif feedback.action == "edited":
+                correction = feedback.correction or {}
+                changes = ", ".join(f"{k}: {v}" for k, v in correction.items())
+                lines.append(f'- "{title}" wurde KORRIGIERT: {changes}')
 
-AKTUELLE NACHRICHT:
-Sender: {sender}
-Zeitpunkt: {timestamp}
-Text: "{text}"
+        return "\n".join(lines)
 
-AUFGABE:
-1. Löse alle Pronomen auf ("ihrem" → wer genau? Nutze den Kontext oben)
-2. Bestimme das exakte Datum (unterscheide z.B. Geburtstag vs. Geburtstagsfeier)
-3. Extrahiere alle Termine, Aufgaben und Erinnerungen
-4. Ordne Teilnehmer und Mengenangaben aus dem Kontext zu
-
-Antworte als JSON-Array:
-[{{
-  "title": "Beschreibung der Aufgabe/des Termins",
-  "datetime": "YYYY-MM-DDTHH:MM:SS",
-  "participants": ["Name1", "Name2"],
-  "confidence": 0.0-1.0,
-  "resolved_references": {{
-    "pronouns": {{"ihrem": "Romy"}},
-    "implicit_dates": {{"Geburtstag": "2026-02-18", "Feier": "2026-02-21"}}
-  }},
-  "context_used": "Kurze Erklärung welcher Kontext half"
-}}]
-
-Wenn keine Termine erkannt werden: []
-"""
+    except Exception as e:
+        logger.debug(f"Failed to load feedback examples: {e}")
+        return ""
 
 
 async def extract_termine_with_context(
@@ -61,93 +60,39 @@ async def extract_termine_with_context(
     timestamp: datetime,
     chat_id: str,
     chat_name: str = "",
+    session: AsyncSession | None = None,
 ) -> list:
-    """Extract appointments using EverMemOS context for disambiguation.
+    """Extract appointments using EverMemOS context and feedback learning.
 
     Flow:
     1. Recall relevant context from EverMemOS (persons, facts, events)
-    2. If context found → use enriched LLM prompt for extraction
-    3. If no context   → fall back to raw extraction (existing behavior)
-
-    Returns the same TerminResult objects as the original extractor.
+    2. Load recent feedback examples for learning
+    3. Pass both to the LLM extractor for enriched extraction
+    4. Fall back to raw extraction if context unavailable
     """
-
-    # Step 1: Try to recall context from EverMemOS
-    memory_ctx = await recall_for_termin(text, chat_id, sender)
-
-    if memory_ctx.has_context:
-        logger.info(
-            f"Termin extraction with {len(memory_ctx.raw_memories)} memory items "
-            f"for: '{text[:60]}...'"
-        )
-        # Step 2: Use context-enriched extraction
-        return await _extract_with_context(text, sender, timestamp, memory_ctx)
-    else:
-        # Step 3: Fallback to existing extraction (no context available)
-        logger.debug("No EverMemOS context available, using raw extraction")
-        return await _extract_raw(text, sender, timestamp)
-
-
-async def _extract_with_context(
-    text: str,
-    sender: str,
-    timestamp: datetime,
-    ctx: MemoryContext,
-) -> list:
-    """Run LLM termin extraction with injected memory context.
-
-    Uses Groq/Gemini (same as existing extractor) but with enriched prompts.
-    """
-    # For now, inject context into the existing extraction pipeline
-    # by prepending context to the text that gets analyzed.
-    #
-    # The enriched text gives the LLM everything it needs:
-    context_block = ctx.as_prompt_block()
-    enriched_text = f"{context_block}\n\nNachricht: {text}"
-
-    # Use the existing extractor with the enriched text
-    # This ensures backward compatibility while adding context
+    # Build memory context string
+    memory_context = ""
     try:
-        results = await _extract_raw(enriched_text, sender, timestamp)
-
-        # Log what context helped with
-        if results:
+        memory_ctx = await recall_for_termin(text, chat_id, sender)
+        if memory_ctx.has_context:
+            memory_context = memory_ctx.as_prompt_block()
             logger.info(
-                f"Context-enriched extraction found {len(results)} Termine "
-                f"(context had {len(ctx.profiles)} profiles, {len(ctx.facts)} facts)"
+                f"Termin extraction with {len(memory_ctx.raw_memories)} memory items "
+                f"for: '{text[:60]}...'"
             )
-
-        return results
-
     except Exception as e:
-        logger.warning(f"Context-enriched extraction failed, falling back: {e}")
-        return await _extract_raw(text, sender, timestamp)
+        logger.debug(f"EverMemOS recall for termin (non-fatal): {e}")
 
+    # Build feedback examples string
+    feedback_examples = ""
+    if session:
+        feedback_examples = await _get_recent_feedback(session)
 
-async def enrich_text_with_context(
-    text: str,
-    chat_id: str,
-    sender: str,
-) -> tuple[str, MemoryContext]:
-    """Enrich any text with EverMemOS context.
-
-    Used by the semantic_transcriber and other analysis modules
-    to get context for any message, not just appointments.
-
-    Returns (enriched_text, context) tuple.
-    """
-    from app.memory.evermemos_client import recall
-
-    ctx = await recall(
-        query=text,
-        chat_id=chat_id,
-        user_id=sender,
-        top_k=10,
+    # Use the enriched extractor with context + feedback
+    return await extract_termine(
+        text=text,
+        sender=sender,
+        timestamp=timestamp,
+        feedback_examples=feedback_examples,
+        memory_context=memory_context,
     )
-
-    if ctx.has_context:
-        context_block = ctx.as_prompt_block()
-        enriched = f"{context_block}\n\n{text}"
-        return enriched, ctx
-
-    return text, ctx

@@ -330,6 +330,25 @@
       font-size: 14px;
     }
     .auth-error { color: var(--negative); font-size: 13px; margin-top: 8px; }
+
+    .nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      gap: 0;
+    }
+    .nav a {
+      color: var(--text-dim);
+      text-decoration: none;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .nav a:hover { color: var(--text); }
+    .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -359,6 +378,13 @@
     <button onclick="refreshAll()">Aktualisieren</button>
   </div>
 </header>
+
+<nav class="nav">
+  <a href="/dashboard" class="active">Dashboard</a>
+  <a href="/dashboard/pipeline">Pipeline</a>
+  <a href="/dashboard/charts">Charts</a>
+  <a href="/dashboard/monitoring">Monitoring</a>
+</nav>
 
 <div class="grid">
   <!-- Overview stats -->
@@ -398,6 +424,7 @@
     <div class="chart-container">
       <canvas id="driftChart"></canvas>
     </div>
+    <div id="markerLegend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
   </div>
 
   <!-- Marker heatmap -->
@@ -506,7 +533,7 @@ async function loadOverview() {
 async function loadDrift() {
   const days = document.getElementById('driftDays').value;
   try {
-    const data = await apiFetch(`/api/drift/${encodeURIComponent(CHAT_ID)}?days=${days}`);
+    const data = await apiFetch(`/api/drift-markers/${encodeURIComponent(CHAT_ID)}?days=${days}`);
     renderDriftChart(data.data);
   } catch (e) {
     console.error('Drift error:', e);
@@ -521,6 +548,15 @@ function renderDriftChart(points) {
   const sentiments = points.map(p => p.avg_sentiment);
   const counts = points.map(p => p.message_count);
 
+  const pointColors = points.map(p => {
+    if (p.dominant_marker && MARKER_COLORS[p.dominant_marker]) {
+      return MARKER_COLORS[p.dominant_marker];
+    }
+    return '#6366f1';
+  });
+
+  const pointRadii = points.map(p => p.dominant_marker ? 6 : 3);
+
   driftChart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -529,9 +565,12 @@ function renderDriftChart(points) {
         {
           label: 'Stimmung',
           data: sentiments,
-          borderColor: '#6366f1',
-          backgroundColor: '#6366f133',
-          fill: true,
+          borderColor: '#6366f188',
+          pointBackgroundColor: pointColors,
+          pointBorderColor: pointColors,
+          pointRadius: pointRadii,
+          pointHoverRadius: 8,
+          fill: false,
           tension: 0.3,
           yAxisID: 'y',
         },
@@ -544,6 +583,7 @@ function renderDriftChart(points) {
           tension: 0.3,
           yAxisID: 'y1',
           borderDash: [4, 4],
+          pointRadius: 0,
         },
       ],
     },
@@ -572,9 +612,33 @@ function renderDriftChart(points) {
       },
       plugins: {
         legend: { labels: { color: '#e4e4e7' } },
+        tooltip: {
+          callbacks: {
+            afterBody: function(context) {
+              const idx = context[0].dataIndex;
+              const point = points[idx];
+              if (!point.markers || Object.keys(point.markers).length === 0) return '';
+              const lines = ['', 'Marker:'];
+              const sorted = Object.entries(point.markers).sort((a, b) => b[1] - a[1]);
+              for (const [marker, count] of sorted.slice(0, 5)) {
+                lines.push(`  ${marker}: ${count}`);
+              }
+              return lines.join('\n');
+            }
+          }
+        },
       },
     },
   });
+
+  // Populate marker legend
+  const legendEl = document.getElementById('markerLegend');
+  const usedMarkers = new Set(points.map(p => p.dominant_marker).filter(Boolean));
+  legendEl.innerHTML = Array.from(usedMarkers).map(m =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim)">
+      <span style="width:8px;height:8px;border-radius:50%;background:${MARKER_COLORS[m]||'#6366f1'}"></span>${m}
+    </span>`
+  ).join('');
 }
 
 async function loadMarkers() {
