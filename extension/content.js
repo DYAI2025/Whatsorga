@@ -524,6 +524,12 @@ class RadarTracker {
         console.warn('[Radar] Background send failed, will retry');
       }
     } catch (error) {
+      // Service worker channel closed — don't burn retries, just wait and retry
+      if (error.message?.includes('message channel closed')) {
+        console.warn('[Radar] Service worker inactive, retrying in 3s...');
+        setTimeout(() => this.processPendingQueue(), 3000);
+        return;
+      }
       for (const item of batch) {
         this.messageQueue.incrementRetry(item.id);
       }

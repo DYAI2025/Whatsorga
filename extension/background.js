@@ -159,8 +159,8 @@ async function processRetryQueue() {
   const failed = [];
 
   for (const item of toProcess) {
-    const success = await sendToServer(item.messages);
-    if (!success) {
+    const result = await sendToServer(item.messages);
+    if (!result.ok) {
       item.attempts++;
       if (item.attempts < RETRY_DELAYS.length + 2) {
         failed.push(item);
