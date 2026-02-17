@@ -79,8 +79,9 @@ WICHTIGE REGELN:
 - "all_day": false wenn eine Uhrzeit dabei ist
 - Bei "all_day": true ist "datetime" nur das Datum: "YYYY-MM-DD" (OHNE Uhrzeit)
 - Geburtstage IMMER als all_day: true
-- Datums-Berechnung GENAU prüfen: Wenn heute {today} ({weekday}) ist, dann ist Mittwoch = der nächste Mittwoch ab heute
-- NIEMALS einen Tag abziehen! Das Datum muss EXAKT dem genannten Datum entsprechen
+- DATUMS-BERECHNUNG: Wenn ein explizites Datum genannt wird (z.B. "25.02"), VERWENDE EXAKT dieses Datum. Rechne NICHT um, ziehe NICHTS ab!
+- Wenn "Mittwoch 25.02." gesagt wird, ist das Datum 2026-02-25 (NICHT der 24. oder 26.!)
+- Kinder-Termine (Enno, Romy etc.) sind IMMER "shared" oder "affects_me", NICHT "partner_only" — Kinder betreffen beide Eltern
 
 NUR JSON-Array ausgeben, kein weiterer Text."""
 
