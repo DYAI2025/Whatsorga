@@ -345,7 +345,18 @@ def _parse_extraction_response(response_text: str, sender: str) -> list[Extracte
                 continue
 
     if parsed is None:
-        # Log the response for debugging when parse fails
+        # Check if response just says "no termin" without JSON brackets
+        # This happens when Gemini responds in natural language without []
+        no_termin_hints = [
+            "kein termin", "keine termine", "kein relevanter",
+            "kein konkretes datum", "kein datum", "kein handlungsbedarf",
+            "es ist kein termin", "nicht relevant",
+        ]
+        response_lower = response_text.lower()
+        if any(hint in response_lower for hint in no_termin_hints):
+            logger.debug(f"LLM says no termine (no JSON brackets): {response_text[:200]}")
+            return []
+
         logger.warning(f"Failed to parse LLM response (no JSON array found): {response_text[:300]}...")
         return None
 
@@ -462,20 +473,20 @@ async def _extract_via_gemini(
         return None
 
     system_prompt, user_prompt = _build_prompts(text, sender, timestamp, feedback_examples, memory_context, conversation_context, existing_termine)
-    combined_prompt = f"{system_prompt}\n\n{user_prompt}"
 
     try:
         async with httpx.AsyncClient(timeout=45.0) as client:
             resp = await client.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={settings.gemini_api_key}",
                 json={
-                    "contents": [{"parts": [{"text": combined_prompt}]}],
+                    "system_instruction": {"parts": [{"text": system_prompt}]},
+                    "contents": [{"parts": [{"text": user_prompt}]}],
                     "generationConfig": {"temperature": 0.2, "maxOutputTokens": 2048},
                 },
             )
 
             if resp.status_code != 200:
-                logger.warning(f"Gemini termin error: {resp.status_code}")
+                logger.warning(f"Gemini termin error: {resp.status_code} {resp.text[:200]}")
                 return None
 
             candidates = resp.json().get("candidates", [])
@@ -486,11 +497,16 @@ async def _extract_via_gemini(
             logger.debug(f"Gemini raw response: {response_text[:800]}")
             results = _parse_extraction_response(response_text, sender)
 
-            if results is not None:
-                for r in results:
-                    logger.info(f"Gemini: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}) — {r.reasoning[:300]}")
-                if not results:
-                    logger.info(f"Gemini: no termine in '{text[:60]}...'")
+            if results is None:
+                # Gemini responded but we couldn't parse JSON — treat as "no termine"
+                # not "LLM unavailable" (which would be misleading)
+                logger.info(f"Gemini: unparseable response for '{text[:60]}...': {response_text[:200]}")
+                return []
+
+            for r in results:
+                logger.info(f"Gemini: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}) — {r.reasoning[:300]}")
+            if not results:
+                logger.info(f"Gemini: no termine in '{text[:60]}...'")
             return results
 
     except Exception as e:
