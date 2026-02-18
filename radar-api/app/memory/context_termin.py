@@ -107,7 +107,7 @@ async def _get_existing_termine(
             if t.all_day:
                 dt_str = t.datetime_.strftime("%Y-%m-%d") + " (ganztägig)"
             lines.append(
-                f"- {t.title} | {dt_str} | {t.category} | {t.relevance} | conf={t.confidence}"
+                f"- ID={t.id} | {t.title} | {dt_str} | {t.category} | {t.relevance} | conf={t.confidence}"
             )
 
         return "\n".join(lines)
@@ -254,13 +254,29 @@ async def extract_termine_with_context(
         existing_termine=existing_termine,
     )
 
-    # 6. Post-filter: remove duplicates that the LLM missed
+    # 6. Post-filter and validation
     if session and results:
         filtered = []
         for t in results:
             try:
+                # For update/cancel: validate that the referenced termin exists
+                if t.action in ("update", "cancel") and t.updates_termin_id:
+                    existing = await session.get(Termin, t.updates_termin_id)
+                    if not existing:
+                        logger.warning(f"Update/cancel references non-existent termin ID: {t.updates_termin_id}")
+                        # Treat as create if update target doesn't exist
+                        if t.action == "update":
+                            t.action = "create"
+                            t.updates_termin_id = None
+                        else:
+                            continue  # Skip cancel of non-existent termin
+                    else:
+                        filtered.append(t)
+                        continue
+
+                # For create: check for duplicates
                 termin_dt = datetime.fromisoformat(t.datetime_str) if t.datetime_str else None
-                if termin_dt and await _is_duplicate(session, t.title, termin_dt, chat_id):
+                if termin_dt and t.action == "create" and await _is_duplicate(session, t.title, termin_dt, chat_id):
                     logger.info(f"Post-filter removed duplicate: '{t.title}' @ {t.datetime_str}")
                     continue
                 filtered.append(t)

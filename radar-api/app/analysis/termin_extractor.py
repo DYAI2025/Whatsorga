@@ -33,6 +33,8 @@ class ExtractedTermin:
     context_note: str = ""
     all_day: bool = False
     reasoning: str = ""
+    action: str = "create"  # create | update | cancel
+    updates_termin_id: str | None = None  # UUID of existing termin to update/cancel
 
 
 SYSTEM_PROMPT = """Du bist ein tiefdenkendes Termin-Analyse-System für {user_name}s WhatsApp-Chat mit Partnerin Marike.
@@ -68,11 +70,14 @@ Du MUSST jede Nachricht durch diese 6 Dimensionen bewerten bevor du entscheidest
 - Muss etwas VORBEREITET/ORGANISIERT werden? → "task"
 - Ist es nur INFORMATION ohne Handlung? → vielleicht kein Termin!
 
-🔄 DIMENSION 4 — KONTEXT & DUPLIKATE
+🔄 DIMENSION 4 — KONTEXT, DUPLIKATE & UPDATES
 - Wurde dasselbe Thema in den vorherigen Nachrichten schon besprochen?
-- Existiert der Termin bereits in der DB-Liste? → NICHT nochmal extrahieren!
-- Ist es ein UPDATE (neue Uhrzeit, Absage)? → Extrahiere nur das Update
+- Existiert der Termin bereits in der DB-Liste? → Prüfe ob UPDATE oder DUPLIKAT:
+  • DUPLIKAT: Gleicher Termin, keine neuen Infos → NICHT nochmal extrahieren, leeres Array []
+  • UPDATE: Gleicher Termin, ABER neue/geänderte Infos (neue Uhrzeit, Absage, Ort) → action="update" mit updates_termin_id
+  • ABSAGE: Termin fällt aus / wird abgesagt → action="cancel" mit updates_termin_id
 - Wird das gleiche Event mehrfach erwähnt? → Nur EINMAL extrahieren
+- WICHTIG: Bei Updates/Absagen die ID aus der EXISTIERENDE-TERMINE-Liste verwenden!
 
 📆 DIMENSION 5 — PLAUSIBILITÄT
 - Passt das Datum zum Kontext? (Turnier am Wochentag vs. Wochenende)
@@ -129,19 +134,24 @@ SCHRITT 1 — DIMENSIONEN (kurz, je 1 Zeile):
 💭 Intention: [Echter Termin oder nur Erwähnung/Smalltalk?]
 
 SCHRITT 2 — HYPOTHESEN:
-H1: [Es ist ein Termin weil...]
+H1: [Es ist ein NEUER Termin weil...]
 H2: [Es ist KEIN Termin weil...]
-H3: [Es ist ein Update/Duplikat weil...] (optional)
+H3: [Es ist ein UPDATE eines bestehenden Termins weil...]
+H4: [Es ist eine ABSAGE eines bestehenden Termins weil...]
 
 SCHRITT 3 — ENTSCHEIDUNG:
 Gewählte Hypothese: H[X] weil [Begründung]
 
 SCHRITT 4 — ERGEBNIS:
-Wenn H1 gewählt, JSON-Array mit Termin(en).
-Wenn H2/H3 gewählt: []
+H1 → action="create", neuer Termin
+H2 → leeres Array []
+H3 → action="update", updates_termin_id=ID des bestehenden Termins
+H4 → action="cancel", updates_termin_id=ID des bestehenden Termins
 
 Format pro Termin:
 [{{
+  "action": "create|update|cancel",
+  "updates_termin_id": "ID aus EXISTIERENDE TERMINE (nur bei update/cancel)",
   "title": "Kurze Beschreibung",
   "datetime": "YYYY-MM-DDTHH:MM oder YYYY-MM-DD",
   "all_day": true/false,
@@ -388,6 +398,10 @@ def _parse_extraction_response(response_text: str, sender: str) -> list[Extracte
             logger.warning(f"Added default time 09:00 to non-all-day termin: '{item.get('title')}'")
 
         reasoning = item.get("reasoning", item.get("context_note", ""))
+        action = item.get("action", "create")
+        if action not in ("create", "update", "cancel"):
+            action = "create"
+        updates_id = item.get("updates_termin_id")
 
         results.append(ExtractedTermin(
             title=item.get("title", "Termin"),
@@ -400,6 +414,8 @@ def _parse_extraction_response(response_text: str, sender: str) -> list[Extracte
             context_note=item.get("context_note", reasoning),
             all_day=all_day,
             reasoning=reasoning,
+            action=action,
+            updates_termin_id=updates_id,
         ))
 
     return results
@@ -449,7 +465,7 @@ async def _extract_via_groq(
 
             if results is not None:
                 for r in results:
-                    logger.info(f"Groq: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}) — {r.reasoning[:300]}")
+                    logger.info(f"Groq: [{r.action}] '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}{f', updates={r.updates_termin_id}' if r.updates_termin_id else ''}) — {r.reasoning[:300]}")
                 if not results:
                     logger.info(f"Groq: no termine in '{text[:60]}...'")
             return results
@@ -504,7 +520,7 @@ async def _extract_via_gemini(
                 return []
 
             for r in results:
-                logger.info(f"Gemini: '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}) — {r.reasoning[:300]}")
+                logger.info(f"Gemini: [{r.action}] '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}{f', updates={r.updates_termin_id}' if r.updates_termin_id else ''}) — {r.reasoning[:300]}")
             if not results:
                 logger.info(f"Gemini: no termine in '{text[:60]}...'")
             return results

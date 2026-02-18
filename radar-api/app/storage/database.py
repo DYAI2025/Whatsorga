@@ -78,7 +78,7 @@ class Termin(Base):
     caldav_uid = Column(String, nullable=True)
     category = Column(String, default="appointment")  # appointment | reminder | task
     relevance = Column(String, default="shared")  # for_me | shared | partner_only | affects_me
-    status = Column(String, default="auto")  # auto | suggested | confirmed | rejected | skipped
+    status = Column(String, default="auto")  # auto | suggested | confirmed | rejected | skipped | cancelled
     reminder_config = Column(JSONB, nullable=True)
     all_day = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)

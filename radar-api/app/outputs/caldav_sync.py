@@ -236,6 +236,130 @@ async def sync_termin_to_calendar(
         return None, status
 
 
+def _update_event_sync(
+    caldav_uid: str,
+    title: str,
+    dt: datetime,
+    participants: list[str],
+    source_text: str,
+    calendar_name: str,
+    all_day: bool = False,
+    reminders: list[dict] | None = None,
+    context_note: str = "",
+) -> str:
+    """Update an existing CalDAV event by replacing it with new data (synchronous)."""
+    cal = _get_calendar(calendar_name)
+
+    if all_day:
+        dtstart = dt.strftime("%Y%m%d")
+        dtend = (dt + timedelta(days=1)).strftime("%Y%m%d")
+    else:
+        dtstart = dt.strftime("%Y%m%dT%H%M%S")
+        dtend = (dt + timedelta(hours=1)).strftime("%Y%m%dT%H%M%S")
+
+    description = f"Erkannt aus WhatsApp\\nTeilnehmer: {', '.join(participants)}"
+    if context_note:
+        safe_note = context_note[:200].replace("\n", "\\n").replace(",", "\\,")
+        description += f"\\nKontext: {safe_note}"
+    if source_text:
+        safe_text = source_text[:200].replace("\n", "\\n").replace(",", "\\,")
+        description += f"\\nOriginal: {safe_text}"
+
+    # Reuse the same UID so CalDAV replaces the event
+    vcal = _build_vcalendar(
+        uid=caldav_uid,
+        dtstart=dtstart,
+        dtend=dtend,
+        summary=title,
+        description=description,
+        all_day=all_day,
+        reminders=reminders,
+    )
+
+    cal.save_event(vcal)
+    event_type = "all-day" if all_day else f"at {dt}"
+    logger.info(f"CalDAV event UPDATED in '{calendar_name}': '{title}' {event_type} (uid={caldav_uid})")
+    return caldav_uid
+
+
+def _delete_event_sync(caldav_uid: str, calendar_name: str) -> bool:
+    """Delete a single CalDAV event by UID (synchronous)."""
+    cal = _get_calendar(calendar_name)
+    try:
+        event = cal.event_by_url(f"{cal.url}{caldav_uid}.ics")
+        event.delete()
+        logger.info(f"CalDAV event DELETED from '{calendar_name}': uid={caldav_uid}")
+        return True
+    except Exception:
+        # Fallback: search all events for matching UID
+        try:
+            for event in cal.events():
+                if caldav_uid in str(event.data):
+                    event.delete()
+                    logger.info(f"CalDAV event DELETED (by search) from '{calendar_name}': uid={caldav_uid}")
+                    return True
+        except Exception as e2:
+            logger.warning(f"CalDAV delete fallback failed: {e2}")
+    logger.warning(f"CalDAV event not found for delete: uid={caldav_uid}")
+    return False
+
+
+async def update_termin_in_calendar(
+    caldav_uid: str,
+    title: str,
+    dt: datetime,
+    participants: list[str],
+    confidence: float,
+    source_text: str = "",
+    relevance: str = "shared",
+    all_day: bool = False,
+    reminders: list[dict] | None = None,
+    context_note: str = "",
+) -> tuple[str | None, str]:
+    """Update an existing calendar event. Returns (caldav_uid, status)."""
+    if not settings.caldav_url or not settings.caldav_username:
+        return caldav_uid, "auto"
+
+    auto_threshold = settings.termin_auto_confidence
+    calendar_name = settings.caldav_calendar if confidence >= auto_threshold else settings.caldav_suggest_calendar
+    status = "auto" if confidence >= auto_threshold else "suggested"
+
+    event_title = f"[Info] {title}" if relevance == "affects_me" else title
+
+    try:
+        loop = asyncio.get_event_loop()
+        uid = await loop.run_in_executor(
+            None, _update_event_sync,
+            caldav_uid, event_title, dt, participants, source_text,
+            calendar_name, all_day, reminders, context_note,
+        )
+        return uid, status
+    except Exception as e:
+        logger.error(f"CalDAV update error: {e}")
+        return caldav_uid, status
+
+
+async def delete_termin_from_calendar(caldav_uid: str) -> bool:
+    """Delete a single calendar event by UID."""
+    if not settings.caldav_url or not settings.caldav_username or not caldav_uid:
+        return False
+
+    try:
+        loop = asyncio.get_event_loop()
+        # Try both calendars
+        for cal_name in [settings.caldav_calendar, settings.caldav_suggest_calendar]:
+            try:
+                deleted = await loop.run_in_executor(None, _delete_event_sync, caldav_uid, cal_name)
+                if deleted:
+                    return True
+            except Exception:
+                continue
+        return False
+    except Exception as e:
+        logger.error(f"CalDAV delete error: {e}")
+        return False
+
+
 def _delete_all_events_sync(calendar_name: str) -> int:
     """Delete all WhatsOrga events from a calendar (synchronous)."""
     cal = _get_calendar(calendar_name)

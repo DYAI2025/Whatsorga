@@ -20,7 +20,7 @@ from app.analysis.unified_engine import engine as marker_engine
 from app.analysis.sentiment_tracker import score_sentiment
 from app.analysis.weaver import process_message_context
 from app.analysis.semantic_transcriber import enrich_transcript
-from app.outputs.caldav_sync import sync_termin_to_calendar
+from app.outputs.caldav_sync import sync_termin_to_calendar, update_termin_in_calendar, delete_termin_from_calendar
 from app.storage.database import Termin
 from app.memory import evermemos_client
 from app.memory.context_termin import extract_termine_with_context
@@ -154,34 +154,57 @@ async def ingest_messages(
                         if not termin_dt:
                             continue
 
-                        # Sync to Apple Calendar (dual-calendar routing)
-                        caldav_uid, termin_status = await sync_termin_to_calendar(
-                            title=t.title,
-                            dt=termin_dt,
-                            participants=t.participants,
-                            confidence=t.confidence,
-                            source_text=text,
-                            relevance=t.relevance,
-                            all_day=t.all_day,
-                            reminders=t.reminders,
-                            context_note=t.context_note,
-                        )
+                        if t.action == "cancel" and t.updates_termin_id:
+                            # ── CANCEL: Remove existing termin ──
+                            existing = await session.get(Termin, t.updates_termin_id)
+                            if existing:
+                                if existing.caldav_uid:
+                                    await delete_termin_from_calendar(existing.caldav_uid)
+                                existing.status = "cancelled"
+                                logger.info(f"Termin CANCELLED: '{existing.title}' (id={existing.id})")
 
-                        # Store in DB with new fields
-                        db_termin = Termin(
-                            message_id=db_msg.id,
-                            title=t.title,
-                            datetime_=termin_dt,
-                            participants=t.participants,
-                            confidence=t.confidence,
-                            caldav_uid=caldav_uid,
-                            category=t.category,
-                            relevance=t.relevance,
-                            status=termin_status,
-                            reminder_config=t.reminders if t.reminders else None,
-                            all_day=t.all_day,
-                        )
-                        session.add(db_termin)
+                        elif t.action == "update" and t.updates_termin_id:
+                            # ── UPDATE: Modify existing termin ──
+                            existing = await session.get(Termin, t.updates_termin_id)
+                            if existing:
+                                existing.title = t.title
+                                existing.datetime_ = termin_dt
+                                existing.participants = t.participants
+                                existing.confidence = t.confidence
+                                existing.category = t.category
+                                existing.relevance = t.relevance
+                                existing.all_day = t.all_day
+                                existing.reminder_config = t.reminders if t.reminders else None
+                                if existing.caldav_uid:
+                                    await update_termin_in_calendar(
+                                        caldav_uid=existing.caldav_uid,
+                                        title=t.title, dt=termin_dt,
+                                        participants=t.participants, confidence=t.confidence,
+                                        source_text=text, relevance=t.relevance,
+                                        all_day=t.all_day, reminders=t.reminders,
+                                        context_note=t.context_note,
+                                    )
+                                logger.info(f"Termin UPDATED: '{t.title}' @ {t.datetime_str} (id={existing.id})")
+
+                        else:
+                            # ── CREATE: New termin ──
+                            caldav_uid, termin_status = await sync_termin_to_calendar(
+                                title=t.title, dt=termin_dt,
+                                participants=t.participants, confidence=t.confidence,
+                                source_text=text, relevance=t.relevance,
+                                all_day=t.all_day, reminders=t.reminders,
+                                context_note=t.context_note,
+                            )
+                            db_termin = Termin(
+                                message_id=db_msg.id,
+                                title=t.title, datetime_=termin_dt,
+                                participants=t.participants, confidence=t.confidence,
+                                caldav_uid=caldav_uid, category=t.category,
+                                relevance=t.relevance, status=termin_status,
+                                reminder_config=t.reminders if t.reminders else None,
+                                all_day=t.all_day,
+                            )
+                            session.add(db_termin)
                 except Exception as e:
                     logger.warning(f"Termin extraction error (non-fatal): {e}")
 
