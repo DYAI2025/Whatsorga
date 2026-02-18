@@ -12,7 +12,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import httpx
 
@@ -49,9 +49,12 @@ Du MUSST jede Nachricht durch diese 6 Dimensionen bewerten bevor du entscheidest
 
 📅 DIMENSION 1 — ZEIT
 - Enthält die Nachricht ein konkretes Datum oder eine Uhrzeit?
-- Ist es ein Wochentag, ein relatives Datum ("morgen", "nächste Woche")?
 - ACHTUNG: Zahlen im Chat sind NICHT immer Uhrzeiten! "15:46" in einer Nachricht ist oft der Zeitstempel, nicht ein Termin.
-- Datum exakt übernehmen: "25.02." → 2026-02-25. Wochentage ab heute berechnen.
+- Datum exakt übernehmen: "25.02." → 2026-02-25
+- Bei Wochentagen: NICHT selbst rechnen! Nutze die KALENDER-TABELLE unten!
+- Bei "morgen", "übermorgen": Relativ zu heute berechnen
+
+{calendar_table}
 
 🏠 DIMENSION 2 — FAMILIE & RELEVANZ
 - Betrifft es die Kinder? → "shared" (IMMER, egal wer schreibt)
@@ -152,6 +155,36 @@ Format pro Termin:
 
 
 WEEKDAYS_DE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+MONTHS_DE = ["Januar", "Februar", "März", "April", "Mai", "Juni",
+             "Juli", "August", "September", "Oktober", "November", "Dezember"]
+
+
+def _build_calendar_table(timestamp: datetime) -> str:
+    """Build a 3-week calendar lookup table so the LLM never needs to calculate dates.
+
+    This eliminates the #1 source of errors: LLMs can't do weekday arithmetic.
+    Instead of 'Mittwoch = ???', the LLM just looks up: Mittwoch = 18.02.2026
+    """
+    # Find Monday of current week
+    monday = timestamp - timedelta(days=timestamp.weekday())
+
+    lines = ["KALENDER-TABELLE (Wochentag → Datum):"]
+    for week_offset, label in [(0, "DIESE WOCHE"), (1, "NÄCHSTE WOCHE"), (2, "ÜBERNÄCHSTE WOCHE")]:
+        week_start = monday + timedelta(weeks=week_offset)
+        days = []
+        for d in range(7):
+            day = week_start + timedelta(days=d)
+            day_name = WEEKDAYS_DE[day.weekday()][:2]  # Mo, Di, Mi, ...
+            days.append(f"{day_name} {day.strftime('%d.%m.')}")
+        lines.append(f"  {label}: {' | '.join(days)}")
+
+    # Also add "morgen" and "übermorgen" for convenience
+    morgen = timestamp + timedelta(days=1)
+    ubermorgen = timestamp + timedelta(days=2)
+    lines.append(f'  "morgen" = {WEEKDAYS_DE[morgen.weekday()]} {morgen.strftime("%d.%m.%Y")}')
+    lines.append(f'  "übermorgen" = {WEEKDAYS_DE[ubermorgen.weekday()]} {ubermorgen.strftime("%d.%m.%Y")}')
+
+    return "\n".join(lines)
 
 
 async def extract_termine(
@@ -225,11 +258,14 @@ def _build_prompts(
     if existing_termine:
         existing_block = f"\nBEREITS EXISTIERENDE TERMINE (NICHT nochmal extrahieren!):\n{existing_termine}"
 
+    calendar_table = _build_calendar_table(timestamp)
+
     system = SYSTEM_PROMPT.format(
         user_name=user_name,
         feedback_examples=feedback_block,
         memory_context=memory_block,
         existing_termine=existing_block,
+        calendar_table=calendar_table,
     )
 
     today = timestamp.strftime("%Y-%m-%d")
@@ -279,16 +315,38 @@ def _parse_extraction_response(response_text: str, sender: str) -> list[Extracte
         except json.JSONDecodeError:
             pass
 
-    # 2. Try raw JSON array (handles reasoning text before [])
+    # 2. Try to find the JSON result array in the response.
+    #    ToT reasoning often contains [...] brackets (markdown, nested arrays)
+    #    Strategy: find all top-level [...] candidates, try each from last to first,
+    #    accept only if it looks like a termin array (empty or has "title"/"datetime" keys).
     if parsed is None:
-        array_match = re.search(r'\[.*\]', response_text, re.DOTALL)
-        if array_match:
+        all_starts = [m.start() for m in re.finditer(r'\[', response_text)]
+        for start in reversed(all_starts):
+            # Try greedy match from this position (captures nested arrays)
+            candidate = response_text[start:]
+            bracket_match = re.match(r'\[.*\]', candidate, re.DOTALL)
+            if not bracket_match:
+                continue
             try:
-                parsed = json.loads(array_match.group())
+                candidate_parsed = json.loads(bracket_match.group())
+                if not isinstance(candidate_parsed, list):
+                    continue
+                # Accept empty arrays (= no termin found)
+                if len(candidate_parsed) == 0:
+                    parsed = candidate_parsed
+                    break
+                # Accept if items look like termine (have title or datetime)
+                if isinstance(candidate_parsed[0], dict) and (
+                    "title" in candidate_parsed[0] or "datetime" in candidate_parsed[0]
+                ):
+                    parsed = candidate_parsed
+                    break
             except json.JSONDecodeError:
-                return None
+                continue
 
     if parsed is None:
+        # Log the response for debugging when parse fails
+        logger.warning(f"Failed to parse LLM response (no JSON array found): {response_text[:300]}...")
         return None
 
     if not isinstance(parsed, list):

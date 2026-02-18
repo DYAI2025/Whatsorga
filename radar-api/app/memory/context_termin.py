@@ -25,12 +25,13 @@ async def _get_conversation_context(
     session: AsyncSession,
     chat_id: str,
     timestamp: datetime,
-    limit: int = 5,
+    limit: int = 10,
 ) -> str:
     """Load surrounding messages for conversation context.
 
-    Returns the 5 messages before the current one in the same chat,
-    so the LLM can understand multi-message conversations.
+    Returns the 10 messages before the current one in the same chat,
+    so the LLM can understand multi-message conversations and infer
+    dates from context (e.g. Kontrabass pickup is on the same day as school).
     """
     try:
         result = await session.execute(
