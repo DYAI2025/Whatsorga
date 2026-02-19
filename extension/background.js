@@ -10,18 +10,11 @@ let apiKey = '';
 let retryQueue = [];
 let retryTimer = null;
 
-// Heartbeat tracking
-let heartbeatState = {
-  chatCounts: {}, // { chatId: messageCount }
-  lastBeat: null,
-  timer: null
-};
-
 // Load config on startup
 loadServerConfig();
 
-// Initialize heartbeat on extension load
-startHeartbeat();
+// Use chrome.alarms for heartbeat (survives MV3 service worker suspension)
+chrome.alarms.create('heartbeat', { periodInMinutes: 1 });
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   switch (msg.type) {
@@ -55,9 +48,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       break;
 
     case 'MESSAGE_CAPTURED':
-      // Track messages for heartbeat
-      const { chatId } = msg;
-      heartbeatState.chatCounts[chatId] = (heartbeatState.chatCounts[chatId] || 0) + 1;
+      // Track messages for heartbeat (persisted to survive worker restarts)
+      chrome.storage.local.get(['heartbeatCounts'], (data) => {
+        const counts = data.heartbeatCounts || {};
+        counts[msg.chatId] = (counts[msg.chatId] || 0) + 1;
+        chrome.storage.local.set({ heartbeatCounts: counts });
+      });
       sendResponse({ ok: true });
       break;
   }
@@ -159,8 +155,8 @@ async function processRetryQueue() {
   const failed = [];
 
   for (const item of toProcess) {
-    const success = await sendToServer(item.messages);
-    if (!success) {
+    const result = await sendToServer(item.messages);
+    if (!result.ok) {
       item.attempts++;
       if (item.attempts < RETRY_DELAYS.length + 2) {
         failed.push(item);
@@ -178,40 +174,46 @@ async function processRetryQueue() {
   }
 }
 
-function startHeartbeat() {
-  // Send heartbeat every 60 seconds
-  heartbeatState.timer = setInterval(async () => {
+// Handle alarms (survives service worker suspension)
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'heartbeat') {
     await sendHeartbeat();
-  }, 60000);
-}
+  }
+});
 
 async function sendHeartbeat() {
-  if (!serverUrl || !apiKey) return;
+  // Always reload config fresh — worker may have been suspended and lost state
+  const config = await chrome.storage.local.get(['serverUrl', 'apiKey', 'heartbeatCounts']);
+  const url = config.serverUrl || '';
+  const key = config.apiKey || '';
+  const counts = config.heartbeatCounts || {};
+
+  if (!url || !key) return;
+
+  const chatIds = Object.keys(counts).filter(id => counts[id] > 0);
+  if (chatIds.length === 0) return;
 
   try {
-    // Send heartbeat for each tracked chat
-    for (const [chatId, count] of Object.entries(heartbeatState.chatCounts)) {
-      if (count === 0) continue;
-
-      await fetch(`${serverUrl}/api/heartbeat`, {
+    for (const chatId of chatIds) {
+      await fetch(`${url}/api/heartbeat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${key}`
         },
         body: JSON.stringify({
           chatId,
-          messageCount: count,
+          messageCount: counts[chatId],
           queueSize: retryQueue.length,
           timestamp: new Date().toISOString()
         })
       });
 
-      console.log(`[Radar Heartbeat] Sent for ${chatId}: ${count} messages`);
-      heartbeatState.chatCounts[chatId] = 0; // Reset counter
+      console.log(`[Radar Heartbeat] Sent for ${chatId}: ${counts[chatId]} messages`);
+      counts[chatId] = 0;
     }
 
-    heartbeatState.lastBeat = new Date().toISOString();
+    await chrome.storage.local.set({ heartbeatCounts: counts });
   } catch (error) {
     console.error('[Radar Heartbeat] Error:', error);
   }

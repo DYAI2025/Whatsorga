@@ -361,7 +361,7 @@ class RadarTracker {
   }
 
   extractSenderName(element, prePlainText) {
-    // From data-pre-plain-text: "[14:23, 10.2.2026] Marike Stucke: "
+    // From data-pre-plain-text: "[14:23, 10.2.2026] Contact Name: "
     const match = prePlainText.match(/\]\s*([^:]+):/);
     if (match) return match[1].trim();
 

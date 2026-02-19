@@ -119,8 +119,15 @@ def _create_event_sync(
     cal = _get_calendar(calendar_name)
 
     uid = f"radar-{uuid.uuid4()}@whatsorga"
-    dtstart = dt.strftime("%Y%m%dT%H%M%S")
-    dtend = (dt + timedelta(hours=1)).strftime("%Y%m%dT%H%M%S")
+
+    if all_day:
+        # All-day: DATE format YYYYMMDD, end = start + 1 day
+        dtstart = dt.strftime("%Y%m%d")
+        dtend = (dt + timedelta(days=1)).strftime("%Y%m%d")
+    else:
+        # Timed: local time format (TZID handles timezone)
+        dtstart = dt.strftime("%Y%m%dT%H%M%S")
+        dtend = (dt + timedelta(hours=1)).strftime("%Y%m%dT%H%M%S")
 
     description = f"Erkannt aus WhatsApp\\nTeilnehmer: {', '.join(participants)}"
     if context_note:
@@ -156,10 +163,8 @@ async def sync_termin_to_calendar(
 ) -> tuple[str | None, str]:
     """Route termin to the appropriate calendar based on confidence and relevance.
 
-    Returns (caldav_uid, status) tuple:
-    - status: "auto" | "suggested" | "skipped"
+    Returns (caldav_uid, status) tuple.
     """
-    # Skip partner-only events
     if relevance == "partner_only":
         logger.info(f"Skipping partner-only termin: '{title}'")
         return None, "skipped"

@@ -42,9 +42,9 @@ class MessageQueue {
       item.retryCount++;
       item.lastAttempt = new Date().toISOString();
 
-      // After 3 retries, mark as failed and remove
-      if (item.retryCount >= 3) {
-        console.error('[Radar Queue] Message failed after 3 retries:', item.id);
+      // After 5 retries, mark as failed and remove
+      if (item.retryCount >= 5) {
+        console.error('[Radar Queue] Message failed after 5 retries:', item.id);
         const index = queue.indexOf(item);
         queue.splice(index, 1);
       }

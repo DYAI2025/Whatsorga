@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ExtractedTermin:
     title: str
-    datetime_str: str  # ISO format
+    datetime_str: str  # ISO format YYYY-MM-DDTHH:MM or YYYY-MM-DD for all-day
     participants: list[str]
     confidence: float  # 0.0 - 1.0
     category: str = "appointment"  # appointment | reminder | task
@@ -29,6 +29,7 @@ class ExtractedTermin:
     reminders: list[dict] = field(default_factory=list)
     context_note: str = ""
 
+═══ ANALYSE ═══
 
 SYSTEM_PROMPT = """Du bist ein Termin-Extraktions-System für deutschsprachige WhatsApp-Nachrichten aus der Perspektive von {user_name}.
 
@@ -111,7 +112,7 @@ async def extract_termine(
 def _might_contain_date(text: str) -> bool:
     """Quick check if text might contain date/time or task references."""
     patterns = [
-        r'\d{1,2}\.\d{1,2}',  # 14.02, 10.2.2026
+        r'\d{1,2}\.\d{1,2}\.',  # 14.02.
         r'\d{1,2}:\d{2}',  # 10:00, 14:30
         r'(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)',
         r'(morgen|übermorgen|nächste|kommende)',
@@ -332,19 +333,26 @@ Heute ist {today}. Nachricht von {sender}:
 JSON-Array:"""
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=45.0) as client:
             resp = await client.post(
-                f"{settings.ollama_url}/api/generate",
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.groq_api_key}",
+                    "Content-Type": "application/json",
+                },
                 json={
-                    "model": settings.ollama_model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {"temperature": 0.1},
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "temperature": 0.2,
+                    "max_tokens": 2048,
                 },
             )
 
             if resp.status_code != 200:
-                logger.warning(f"Ollama error: {resp.status_code}")
+                logger.warning(f"Groq termin error: {resp.status_code} {resp.text[:200]}")
                 return None
 
             response_text = resp.json().get("response", "").strip()
@@ -365,11 +373,8 @@ JSON-Array:"""
                 ))
             return results
 
-    except json.JSONDecodeError:
-        logger.warning("Ollama returned invalid JSON for termin extraction")
-        return []
     except Exception as e:
-        logger.warning(f"Ollama termin extraction error: {e}")
+        logger.warning(f"Groq termin extraction error: {e}")
         return None
 
 
@@ -379,20 +384,18 @@ def _extract_via_regex(
     """Fallback: extract dates via German regex patterns."""
     results = []
 
-    # Pattern: "am 14.02. um 10:00" or "14.2. 10 Uhr"
-    date_time_pattern = re.compile(
-        r'(\d{1,2})\.(\d{1,2})\.?(\d{2,4})?\s*'
-        r'(?:um\s+)?(\d{1,2})[:\.]?(\d{2})?\s*(?:uhr)?',
-        re.IGNORECASE
-    )
+    system_prompt, user_prompt = _build_prompts(text, sender, timestamp, feedback_examples, memory_context, conversation_context, existing_termine)
 
-    for m in date_time_pattern.finditer(text):
-        day, month = int(m.group(1)), int(m.group(2))
-        year = int(m.group(3)) if m.group(3) else timestamp.year
-        if year < 100:
-            year += 2000
-        hour = int(m.group(4))
-        minute = int(m.group(5)) if m.group(5) else 0
+    try:
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            resp = await client.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={settings.gemini_api_key}",
+                json={
+                    "system_instruction": {"parts": [{"text": system_prompt}]},
+                    "contents": [{"parts": [{"text": user_prompt}]}],
+                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 2048},
+                },
+            )
 
         try:
             dt = datetime(year, month, day, hour, minute)
@@ -409,26 +412,26 @@ def _extract_via_regex(
         except ValueError:
             continue
 
-    # Pattern: "morgen um 10"
-    tomorrow_pattern = re.compile(
-        r'morgen\s+(?:um\s+)?(\d{1,2})[:\.]?(\d{2})?\s*(?:uhr)?',
-        re.IGNORECASE
-    )
-    for m in tomorrow_pattern.finditer(text):
-        hour = int(m.group(1))
-        minute = int(m.group(2)) if m.group(2) else 0
-        dt = timestamp + timedelta(days=1)
-        dt = dt.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            candidates = resp.json().get("candidates", [])
+            if not candidates:
+                return []
 
-        start = max(0, m.start() - 30)
-        end = min(len(text), m.end() + 30)
-        context = text[start:end].strip()
+            response_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            logger.debug(f"Gemini raw response: {response_text[:800]}")
+            results = _parse_extraction_response(response_text, sender)
 
-        results.append(ExtractedTermin(
-            title=context[:60],
-            datetime_str=dt.strftime("%Y-%m-%dT%H:%M"),
-            participants=[sender],
-            confidence=0.5,
-        ))
+            if results is None:
+                # Gemini responded but we couldn't parse JSON — treat as "no termine"
+                # not "LLM unavailable" (which would be misleading)
+                logger.info(f"Gemini: unparseable response for '{text[:60]}...': {response_text[:200]}")
+                return []
 
-    return results
+            for r in results:
+                logger.info(f"Gemini: [{r.action}] '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}{f', updates={r.updates_termin_id}' if r.updates_termin_id else ''}) — {r.reasoning[:300]}")
+            if not results:
+                logger.info(f"Gemini: no termine in '{text[:60]}...'")
+            return results
+
+    except Exception as e:
+        logger.warning(f"Gemini termin extraction error: {e}")
+        return None

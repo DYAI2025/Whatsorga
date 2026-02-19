@@ -20,7 +20,7 @@ from app.analysis.unified_engine import engine as marker_engine
 from app.analysis.sentiment_tracker import score_sentiment
 from app.analysis.weaver import process_message_context
 from app.analysis.semantic_transcriber import enrich_transcript
-from app.outputs.caldav_sync import sync_termin_to_calendar
+from app.outputs.caldav_sync import sync_termin_to_calendar, update_termin_in_calendar, delete_termin_from_calendar
 from app.storage.database import Termin
 from app.memory import evermemos_client
 from app.memory.context_termin import extract_termine_with_context
