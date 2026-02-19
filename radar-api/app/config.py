@@ -30,7 +30,10 @@ class Settings(BaseSettings):
     caldav_calendar: str = "WhatsOrga"
     caldav_suggest_calendar: str = "WhatsOrga ?"
     termin_auto_confidence: float = 0.85
-    termin_user_name: str = "Ben"
+    termin_user_name: str = ""
+    termin_partner_name: str = ""
+    termin_children_names: str = ""  # comma-separated
+    termin_family_context: str = ""  # custom family context for LLM prompt
 
     # EverMemOS (semantic context memory)
     evermemos_url: str = "http://evermemos:8001"

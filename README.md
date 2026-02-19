@@ -103,9 +103,9 @@ Text → Termin extractor → No date recognized ("ihrem" = who?) → No appoint
 ```
 Text → EverMemOS memorize()
      → EverMemOS recall("Termine Geburtstage: Kannst du an ihrem...")
-       → Context: "Romy = daughter, birthday: 18.02., party: 21.02., 8 guests"
+       → Context: "Child = daughter, birthday: 18.02., party: 21.02., 8 guests"
      → Context-enriched termin extractor:
-       → "ihrem" = Romy's
+       → "ihrem" = Child's
        → Date: 21.02. (party, not birthday)
        → Task: "Süßigkeiten-Tüten für 8 Gäste"
        → CalDAV → Apple Calendar
@@ -221,7 +221,7 @@ After analysis, the message is stored in EverMemOS for persistent context memory
 | `recall_for_termin()` | (composed) | Specialized recall for appointment extraction with pronoun resolution |
 
 **New capabilities via EverMemOS:**
-- **Pronoun resolution**: "ihrem" → Romy, because EverMemOS knows the relationship graph
+- **Pronoun resolution**: "ihrem" → Child, because EverMemOS knows the relationship graph
 - **Temporal logic**: Birthday (18.02.) vs. party (21.02.), because facts are stored
 - **Quantity inference**: "Süßigkeiten-Tüten für ihre Gäste" → 8, because guest count is known
 - **Learning profiles**: Each message enriches person knowledge further
@@ -262,8 +262,8 @@ After analysis, the message is stored in EverMemOS for persistent context memory
 ### Example: Text message "Ich vermisse dich"
 
 ```
-1. Extension: DOM scraping → {sender: "Marike", text: "Ich vermisse dich", chat: "Marike"}
-2. Whitelist check: "Marike" → in queue
+1. Extension: DOM scraping → {sender: "Partner", text: "Ich vermisse dich", chat: "Partner"}
+2. Whitelist check: "Partner" → in queue
 3. background.js → POST /api/ingest
 
 4. Backend:
@@ -449,9 +449,9 @@ curl -X POST http://localhost:8900/api/context/init \
   -H "Authorization: Bearer $RADAR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "chat_id": "marike",
-    "chat_name": "Marike",
-    "export_text": "12.01.26, 14:30 - Marike: Romy hat am 18. Februar Geburtstag\n13.01.26, 09:15 - Marike: Sollen wir die Feier am 21. machen?"
+    "chat_id": "partner",
+    "chat_name": "Partner",
+    "export_text": "12.01.26, 14:30 - Partner: Kind hat am 18. Februar Geburtstag\n13.01.26, 09:15 - Partner: Sollen wir die Feier am 21. machen?"
   }'
 ```
 

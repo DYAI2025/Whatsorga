@@ -37,13 +37,13 @@ class ExtractedTermin:
     updates_termin_id: str | None = None  # UUID of existing termin to update/cancel
 
 
-SYSTEM_PROMPT = """Du bist ein tiefdenkendes Termin-Analyse-System für {user_name}s WhatsApp-Chat mit Partnerin Marike.
+SYSTEM_PROMPT = """Du bist ein tiefdenkendes Termin-Analyse-System für {user_name}s WhatsApp-Chat mit Partner/in {partner_name}.
 Du analysierst NICHT oberflächlich — du denkst in DIMENSIONEN bevor du entscheidest.
 
 ═══ FAMILIEN-KONTEXT ═══
-- {user_name} und Marike: Paar mit Kindern Enno und Romy
+{family_context}
 - ALLE Kinder-Termine betreffen BEIDE Eltern → "shared"
-- "partner_only" NUR für Marikes rein persönliche Termine OHNE Familie
+- "partner_only" NUR für rein persönliche Termine des Partners OHNE Familie
 
 ═══ MULTI-DIMENSIONALE ANALYSE ═══
 
@@ -60,7 +60,7 @@ Du MUSST jede Nachricht durch diese 6 Dimensionen bewerten bevor du entscheidest
 
 🏠 DIMENSION 2 — FAMILIE & RELEVANZ
 - Betrifft es die Kinder? → "shared" (IMMER, egal wer schreibt)
-- Nur Marike persönlich (Yoga, Friseur, Freundinnen)? → "partner_only"
+- Nur Partner/in persönlich (Yoga, Friseur, Freunde)? → "partner_only"
 - {user_name} muss etwas vorbereiten/wissen? → "affects_me"
 - Beide direkt beteiligt? → "shared"
 
@@ -87,8 +87,8 @@ Du MUSST jede Nachricht durch diese 6 Dimensionen bewerten bevor du entscheidest
 
 💭 DIMENSION 6 — INTENTION
 - Ist das WIRKLICH ein Termin, oder nur Smalltalk/Erzählung?
-- "Enno hatte gestern Training" → KEIN Termin (Vergangenheit!)
-- "Enno hat morgen Training" → Termin (Zukunft)
+- "Kind hatte gestern Training" → KEIN Termin (Vergangenheit!)
+- "Kind hat morgen Training" → Termin (Zukunft)
 - "Wollen wir mal wieder essen gehen?" → KEIN Termin (vage Idee)
 - "Lass uns Freitag essen gehen" → Termin (konkretes Datum)
 
@@ -254,7 +254,17 @@ def _build_prompts(
     existing_termine: str = "",
 ) -> tuple[str, str]:
     """Build system and user prompts for LLM extraction."""
-    user_name = settings.termin_user_name
+    user_name = settings.termin_user_name or "User"
+    partner_name = settings.termin_partner_name or "Partner"
+    children = settings.termin_children_names or ""
+
+    # Build family context from config
+    if settings.termin_family_context:
+        family_ctx = settings.termin_family_context
+    else:
+        family_ctx = f"- {user_name} und {partner_name}: Paar"
+        if children:
+            family_ctx += f" mit Kindern {children}"
 
     feedback_block = ""
     if feedback_examples:
@@ -272,6 +282,8 @@ def _build_prompts(
 
     system = SYSTEM_PROMPT.format(
         user_name=user_name,
+        partner_name=partner_name,
+        family_context=family_ctx,
         feedback_examples=feedback_block,
         memory_context=memory_block,
         existing_termine=existing_block,
