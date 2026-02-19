@@ -1,0 +1,33 @@
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+node_modules/
+.venv/
+venv/
+.worktrees/
+
+# Secrets and credentials
+.env
+deploy/.env
+
+# macOS
+.DS_Store
+
+# Claude Code local state
+.claude/
+
+# Private data — NEVER commit
+full_semantic_context.txt
+import_context.py
+transcribe_voices.py
+validate_implementation.py
+whatsorga-next/
+whatsorga-next.zip
+
+# Root-level test scripts (contain server URLs/keys)
+/test_*.py
+/test-*.sh
+
+# Compiled marker registry (large, generated artifact)
+radar-api/data/marker_registry_radar.json

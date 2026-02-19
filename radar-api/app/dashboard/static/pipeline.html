@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Termin Pipeline - WhatsOrga</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e4e4e7;
+      --text-dim: #8b8d97;
+      --accent: #6366f1;
+      --accent-dim: #4f46e5;
+      --positive: #22c55e;
+      --negative: #ef4444;
+      --warning: #f59e0b;
+      --purple: #8b5cf6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-controls select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .header-controls button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+
+    .header-controls button:hover { background: var(--accent-dim); }
+
+    .refresh-info {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    /* Navigation bar */
+    nav.nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+
+    nav.nav a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 16px;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+
+    nav.nav a:hover {
+      color: var(--text);
+    }
+
+    nav.nav a.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Summary bar */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .summary-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .summary-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .summary-card.green .summary-value { color: var(--positive); }
+    .summary-card.orange .summary-value { color: var(--warning); }
+    .summary-card.blue .summary-value { color: var(--accent); }
+
+    /* Pipeline entry */
+    .pipeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .pipeline-entry {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .pipeline-entry:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Entry header with title and badges */
+    .entry-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .entry-title {
+      font-size: 16px;
+      font-weight: 600;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    /* Status badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-auto { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .badge-suggested { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .badge-skipped { background: rgba(139, 141, 151, 0.15); color: #8b8d97; }
+    .badge-rejected { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .badge-confirmed { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
+
+    /* Category pill */
+    .cat-pill {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .cat-appointment { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
+    .cat-reminder { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .cat-task { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+
+    /* Pipeline flow */
+    .pipeline-flow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+      gap: 0;
+      align-items: stretch;
+    }
+
+    @media (max-width: 900px) {
+      .pipeline-flow {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+      .flow-arrow {
+        transform: rotate(90deg);
+        justify-self: center;
+        padding: 4px 0;
+      }
+    }
+
+    .flow-step {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 100px;
+    }
+
+    .flow-step-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .flow-step-label .icon {
+      font-size: 14px;
+    }
+
+    .flow-step-content {
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .flow-step-content .dim {
+      color: var(--text-dim);
+    }
+
+    .flow-step-content .mono {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-dim);
+      font-size: 18px;
+      padding: 0 6px;
+      user-select: none;
+    }
+
+    /* Confidence meter */
+    .confidence-bar-container {
+      margin-top: 6px;
+    }
+
+    .confidence-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .confidence-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    .confidence-bar-fill.high { background: var(--positive); }
+    .confidence-bar-fill.mid { background: var(--warning); }
+    .confidence-bar-fill.low { background: var(--negative); }
+
+    .confidence-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 3px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Reminder tags */
+    .reminder-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .reminder-tag {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 8px;
+      background: rgba(99, 102, 241, 0.12);
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    /* CalDAV sync indicator */
+    .sync-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    .sync-indicator.synced { color: var(--positive); }
+    .sync-indicator.not-synced { color: var(--text-dim); }
+
+    /* Status-specific left border on entries */
+    .pipeline-entry.status-auto { border-left: 3px solid #22c55e; }
+    .pipeline-entry.status-suggested { border-left: 3px solid #f59e0b; }
+    .pipeline-entry.status-skipped { border-left: 3px solid #8b8d97; }
+    .pipeline-entry.status-rejected { border-left: 3px solid #ef4444; }
+    .pipeline-entry.status-confirmed { border-left: 3px solid #6366f1; }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      color: var(--text-dim);
+      padding: 80px 20px;
+      font-size: 15px;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    /* Auth overlay */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      width: 340px;
+    }
+
+    .auth-box h2 {
+      margin-bottom: 16px;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .auth-box input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .auth-box button {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    .auth-box button:hover { background: var(--accent-dim); }
+
+    .auth-error {
+      color: var(--negative);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-dim);
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Auth screen -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <h2>Termin Pipeline - WhatsOrga</h2>
+    <input type="password" id="authKey" placeholder="API-Key eingeben">
+    <input type="text" id="authChatId" placeholder="Chat-ID eingeben">
+    <button onclick="authenticate()">Verbinden</button>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<!-- Main content -->
+<header>
+  <h1>Termin Pipeline</h1>
+  <div class="header-controls">
+    <span id="chatLabel" style="font-size:13px;color:var(--text-dim)"></span>
+    <select id="limitSelect">
+      <option value="10">10 Eintraege</option>
+      <option value="20" selected>20 Eintraege</option>
+      <option value="50">50 Eintraege</option>
+      <option value="100">100 Eintraege</option>
+    </select>
+    <span class="refresh-info" id="refreshInfo">Auto-Refresh: 30s</span>
+    <button onclick="loadPipeline()">Aktualisieren</button>
+  </div>
+</header>
+
+<nav class="nav">
+  <a href="/dashboard">Dashboard</a>
+  <a href="/dashboard/pipeline" class="active">Pipeline</a>
+  <a href="/dashboard/charts">Charts</a>
+  <a href="/dashboard/monitoring">Monitoring</a>
+</nav>
+
+<div class="container">
+  <!-- Summary -->
+  <div class="summary" id="summary">
+    <div class="summary-card">
+      <div class="summary-value" id="totalCount">-</div>
+      <div class="summary-label">Gesamt</div>
+    </div>
+    <div class="summary-card green">
+      <div class="summary-value" id="autoCount">-</div>
+      <div class="summary-label">Auto (>=85%)</div>
+    </div>
+    <div class="summary-card orange">
+      <div class="summary-value" id="suggestedCount">-</div>
+      <div class="summary-label">Vorgeschlagen</div>
+    </div>
+    <div class="summary-card blue">
+      <div class="summary-value" id="syncedCount">-</div>
+      <div class="summary-label">Kalender-Sync</div>
+    </div>
+  </div>
+
+  <!-- Pipeline entries -->
+  <div id="pipelineContainer">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <div>Lade Pipeline-Daten...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let API_KEY = '';
+let CHAT_ID = '';
+let refreshTimer = null;
+const REFRESH_INTERVAL = 30000;
+
+function headers() {
+  return {
+    'Authorization': 'Bearer ' + API_KEY,
+    'Content-Type': 'application/json'
+  };
+}
+
+async function apiFetch(path) {
+  const resp = await fetch(path, { headers: headers() });
+  if (!resp.ok) throw new Error('API error ' + resp.status);
+  return resp.json();
+}
+
+function authenticate() {
+  API_KEY = document.getElementById('authKey').value.trim();
+  CHAT_ID = document.getElementById('authChatId').value.trim();
+  if (!API_KEY || !CHAT_ID) {
+    document.getElementById('authError').textContent = 'Bitte beide Felder ausfuellen';
+    return;
+  }
+
+  apiFetch('/api/pipeline/' + encodeURIComponent(CHAT_ID) + '?limit=5')
+    .then(function() {
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('chatLabel').textContent = CHAT_ID;
+      localStorage.setItem('radar_key', API_KEY);
+      localStorage.setItem('radar_chat', CHAT_ID);
+      loadPipeline();
+      startAutoRefresh();
+    })
+    .catch(function(err) {
+      document.getElementById('authError').textContent = 'Verbindung fehlgeschlagen: ' + err.message;
+    });
+}
+
+async function loadPipeline() {
+  var limit = document.getElementById('limitSelect').value;
+  var container = document.getElementById('pipelineContainer');
+
+  try {
+    var data = await apiFetch('/api/pipeline/' + encodeURIComponent(CHAT_ID) + '?limit=' + limit);
+    var items = data.pipeline || [];
+
+    renderSummary(items);
+
+    if (!items.length) {
+      container.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="empty-state-icon">&#128197;</div>' +
+          '<div>Noch keine Termine verarbeitet</div>' +
+        '</div>';
+      return;
+    }
+
+    var html = '<div class="pipeline-list">';
+    for (var i = 0; i < items.length; i++) {
+      html += renderEntry(items[i]);
+    }
+    html += '</div>';
+    container.innerHTML = html;
+
+  } catch (e) {
+    console.error('Pipeline load error:', e);
+    container.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-state-icon">&#9888;</div>' +
+        '<div>Fehler beim Laden: ' + esc(e.message) + '</div>' +
+      '</div>';
+  }
+}
+
+function renderSummary(items) {
+  document.getElementById('totalCount').textContent = items.length;
+
+  var autoCount = 0;
+  var suggestedCount = 0;
+  var syncedCount = 0;
+
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    if (item.status === 'auto') autoCount++;
+    if (item.status === 'suggested') suggestedCount++;
+    if (item.caldav_synced) syncedCount++;
+  }
+
+  document.getElementById('autoCount').textContent = autoCount;
+  document.getElementById('suggestedCount').textContent = suggestedCount;
+  document.getElementById('syncedCount').textContent = syncedCount;
+}
+
+function renderEntry(item) {
+  var statusClass = 'status-' + (item.status || 'auto');
+  var badgeClass = 'badge-' + (item.status || 'auto');
+  var catClass = 'cat-' + (item.category || 'appointment');
+
+  var confidencePct = Math.round((item.confidence || 0) * 100);
+  var confBarClass = confidencePct >= 85 ? 'high' : (confidencePct >= 50 ? 'mid' : 'low');
+
+  // Format datetime
+  var terminDate = item.datetime ? formatDateTime(item.datetime) : '-';
+  var sourceDate = item.source_timestamp ? formatDateTime(item.source_timestamp) : '-';
+  var createdDate = item.created_at ? formatDateTime(item.created_at) : '-';
+
+  // Participants
+  var participants = (item.participants || []).join(', ') || '-';
+
+  // Reminders
+  var remindersHtml = '';
+  if (item.reminders && item.reminders.length > 0) {
+    remindersHtml = '<div class="reminder-tags">';
+    for (var r = 0; r < item.reminders.length; r++) {
+      var rem = item.reminders[r];
+      var triggerText = formatTrigger(rem.trigger || '');
+      var desc = rem.description || triggerText;
+      remindersHtml += '<span class="reminder-tag" title="' + esc(desc) + '">' + esc(triggerText) + '</span>';
+    }
+    remindersHtml += '</div>';
+  }
+
+  // CalDAV sync
+  var syncHtml = item.caldav_synced
+    ? '<span class="sync-indicator synced">&#10003; Kalender-Sync</span>'
+    : '<span class="sync-indicator not-synced">&#10005; Nicht synchronisiert</span>';
+
+  // Status label text
+  var statusLabel = getStatusLabel(item.status || 'auto');
+  var categoryLabel = getCategoryLabel(item.category || 'appointment');
+
+  return '' +
+    '<div class="pipeline-entry ' + statusClass + '">' +
+      '<div class="entry-header">' +
+        '<span class="entry-title">' + esc(item.title || 'Unbenannt') + '</span>' +
+        '<span class="badge ' + badgeClass + '">' + esc(statusLabel) + '</span>' +
+        '<span class="cat-pill ' + catClass + '">' + esc(categoryLabel) + '</span>' +
+      '</div>' +
+      '<div class="pipeline-flow">' +
+        /* Step 1: Source Message */
+        '<div class="flow-step">' +
+          '<div class="flow-step-label"><span class="icon">&#128232;</span> Nachricht</div>' +
+          '<div class="flow-step-content">' +
+            '<div>"' + esc(truncate(item.source_text || '', 80)) + '"</div>' +
+            '<div class="dim">von ' + esc(item.source_sender || '-') + '</div>' +
+            '<div class="dim">' + esc(sourceDate) + '</div>' +
+          '</div>' +
+        '</div>' +
+        /* Arrow */
+        '<div class="flow-arrow">&#8594;</div>' +
+        /* Step 2: Detection */
+        '<div class="flow-step">' +
+          '<div class="flow-step-label"><span class="icon">&#128269;</span> Erkennung</div>' +
+          '<div class="flow-step-content">' +
+            '<div>Kategorie: <span class="mono">' + esc(item.category || 'appointment') + '</span></div>' +
+            '<div>Relevanz: <span class="mono">' + esc(item.relevance || 'shared') + '</span></div>' +
+            '<div>Teilnehmer: ' + esc(participants) + '</div>' +
+          '</div>' +
+        '</div>' +
+        /* Arrow */
+        '<div class="flow-arrow">&#8594;</div>' +
+        /* Step 3: Confidence */
+        '<div class="flow-step">' +
+          '<div class="flow-step-label"><span class="icon">&#129504;</span> Kontext</div>' +
+          '<div class="flow-step-content">' +
+            '<div>Konfidenz:</div>' +
+            '<div class="confidence-bar-container">' +
+              '<div class="confidence-bar-bg">' +
+                '<div class="confidence-bar-fill ' + confBarClass + '" style="width:' + confidencePct + '%"></div>' +
+              '</div>' +
+              '<div class="confidence-label">' +
+                '<span>' + confidencePct + '%</span>' +
+                '<span class="dim">' + (confidencePct >= 85 ? 'Hoch' : (confidencePct >= 50 ? 'Mittel' : 'Niedrig')) + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="dim" style="margin-top:4px">Erstellt: ' + esc(createdDate) + '</div>' +
+          '</div>' +
+        '</div>' +
+        /* Arrow */
+        '<div class="flow-arrow">&#8594;</div>' +
+        /* Step 4: Result */
+        '<div class="flow-step">' +
+          '<div class="flow-step-label"><span class="icon">&#128197;</span> Ergebnis</div>' +
+          '<div class="flow-step-content">' +
+            '<div><strong>' + esc(terminDate) + '</strong></div>' +
+            '<div>' + syncHtml + '</div>' +
+            remindersHtml +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+function formatDateTime(iso) {
+  try {
+    var d = new Date(iso);
+    return d.toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (e) {
+    return iso;
+  }
+}
+
+function formatTrigger(trigger) {
+  if (!trigger) return '';
+  // Parse ISO 8601 duration triggers like -P1D, -PT2H, -PT30M
+  var match = trigger.match(/^-?P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?$/);
+  if (match) {
+    var days = parseInt(match[1]) || 0;
+    var hours = parseInt(match[2]) || 0;
+    var minutes = parseInt(match[3]) || 0;
+    var parts = [];
+    if (days > 0) parts.push(days + (days === 1 ? ' Tag' : ' Tage'));
+    if (hours > 0) parts.push(hours + 'h');
+    if (minutes > 0) parts.push(minutes + 'min');
+    return parts.length > 0 ? parts.join(' ') + ' vorher' : trigger;
+  }
+  return trigger;
+}
+
+function getStatusLabel(status) {
+  switch (status) {
+    case 'auto': return 'Auto';
+    case 'suggested': return 'Vorschlag';
+    case 'skipped': return 'Uebersprungen';
+    case 'rejected': return 'Abgelehnt';
+    case 'confirmed': return 'Bestaetigt';
+    default: return status;
+  }
+}
+
+function getCategoryLabel(category) {
+  switch (category) {
+    case 'appointment': return 'Termin';
+    case 'reminder': return 'Erinnerung';
+    case 'task': return 'Aufgabe';
+    default: return category;
+  }
+}
+
+function truncate(str, maxLen) {
+  if (str.length <= maxLen) return str;
+  return str.substring(0, maxLen) + '...';
+}
+
+function esc(s) {
+  var div = document.createElement('div');
+  div.textContent = s || '';
+  return div.innerHTML;
+}
+
+function startAutoRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+
+  var countdown = REFRESH_INTERVAL / 1000;
+  refreshTimer = setInterval(function() {
+    countdown--;
+    if (countdown <= 0) {
+      loadPipeline();
+      countdown = REFRESH_INTERVAL / 1000;
+    }
+    document.getElementById('refreshInfo').textContent = 'Auto-Refresh: ' + countdown + 's';
+  }, 1000);
+}
+
+// Auto-login from localStorage
+(function init() {
+  var saved_key = localStorage.getItem('radar_key');
+  var saved_chat = localStorage.getItem('radar_chat');
+  if (saved_key && saved_chat) {
+    document.getElementById('authKey').value = saved_key;
+    document.getElementById('authChatId').value = saved_chat;
+    authenticate();
+  }
+})();
+</script>
+</body>
+</html>
