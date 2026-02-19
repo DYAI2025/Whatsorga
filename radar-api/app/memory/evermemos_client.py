@@ -296,6 +296,43 @@ async def health_check() -> dict:
     try:
         client = _get_client()
         resp = await client.get("/health", timeout=5.0)
-        return {"status": "ok", "evermemos": "connected", "url": EVERMEMOS_BASE_URL}
+        # Treat only successful HTTP responses as healthy.
+        resp.raise_for_status()
+        # Optionally surface upstream status/body for observability.
+        try:
+            body = resp.json()
+        except Exception:
+            body = resp.text
+        return {
+            "status": "ok",
+            "evermemos": "connected",
+            "url": EVERMEMOS_BASE_URL,
+            "upstream_status": resp.status_code,
+            "upstream_body": body,
+        }
+    except httpx.HTTPStatusError as e:
+        # EverMemOS is reachable but returned a non-2xx status.
+        response = e.response
+        upstream_status = response.status_code if response is not None else None
+        if response is not None:
+            try:
+                upstream_body = response.json()
+            except Exception:
+                upstream_body = response.text
+        else:
+            upstream_body = None
+        return {
+            "status": "degraded",
+            "evermemos": "unhealthy",
+            "url": EVERMEMOS_BASE_URL,
+            "upstream_status": upstream_status,
+            "upstream_body": upstream_body,
+        }
     except Exception as e:
-        return {"status": "degraded", "evermemos": "unreachable", "error": str(e)}
+        # Network or other unexpected errors talking to EverMemOS.
+        return {
+            "status": "degraded",
+            "evermemos": "unreachable",
+            "url": EVERMEMOS_BASE_URL,
+            "error": str(e),
+        }
