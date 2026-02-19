@@ -87,6 +87,7 @@ EverMemOS provides persistent conversational memory. It runs as a separate servi
 - **Message dedup**: `sentMessageIds` Set in chrome.storage.local (rolling 5000 window)
 - **Queue manager**: batches messages before API calls
 - Audio captured as base64 blob in message payload
+- **MV3 heartbeat**: uses `chrome.alarms` (not `setInterval`) — service workers suspend after ~30s idle, killing timers and in-memory state. All heartbeat state persisted to `chrome.storage.local`
 
 ## Key Technical Patterns
 
@@ -101,6 +102,8 @@ EverMemOS provides persistent conversational memory. It runs as a separate servi
 - Python 3.12, FastAPI 0.115, SQLAlchemy 2.0
 
 ## Configuration
+
+**Public repo rule**: never hardcode personal/family data in source. Use env vars (`RADAR_TERMIN_USER_NAME`, `RADAR_TERMIN_PARTNER_NAME`, `RADAR_TERMIN_CHILDREN_NAMES`) for all PII.
 
 All env vars use `RADAR_` prefix (see `radar-api/app/config.py`):
 - `RADAR_API_KEY` — Bearer token for extension auth
