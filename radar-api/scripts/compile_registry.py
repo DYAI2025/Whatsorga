@@ -127,14 +127,16 @@ def compile_registry(
     else:
         embeddings = np.zeros((0, EMBEDDING_DIM), dtype=np.float32)
 
+    # Build mapping from marker index to its embeddings in a single pass
+    marker_idx_to_embeddings = {i: [] for i in range(len(parsed))}
+    for j, midx in enumerate(text_to_marker_idx):
+        # Each entry in text_to_marker_idx corresponds to embeddings[j]
+        marker_idx_to_embeddings[midx].append(embeddings[j].tolist())
+
     # Build registry markers with embeddings
     registry_markers = []
     for i, marker in enumerate(parsed):
-        # Collect embeddings for this marker
-        marker_embeddings = []
-        for j, midx in enumerate(text_to_marker_idx):
-            if midx == i:
-                marker_embeddings.append(embeddings[j].tolist())
+        marker_embeddings = marker_idx_to_embeddings.get(i, [])
 
         registry_markers.append({
             "id": marker["id"],
