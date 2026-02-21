@@ -97,7 +97,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"  # localhost only — radar-api uses Docker network
     environment:
       LLM_PROVIDER: openai
       LLM_MODEL: ${EVERMEMOS_LLM_MODEL:-meta-llama/Llama-3.3-70B-Instruct}
