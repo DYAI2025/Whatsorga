@@ -316,12 +316,12 @@ class RadarTracker {
 
     for (const msg of messages) {
       const prePlainText = msg.getAttribute('data-pre-plain-text') || '';
-      const messageId = this.generateMessageId(msg, prePlainText);
+      const text = this.extractMessageText(msg);
+      const messageId = this.generateStableId(prePlainText, text);
 
       if (this.sentMessageIds.has(messageId)) continue;
 
       const sender = this.extractSenderName(msg, prePlainText);
-      const text = this.extractMessageText(msg);
       const timestamp = this.extractMessageTimestamp(msg, prePlainText);
       const replyTo = this.extractReplyTo(msg, sender);
       const audioInfo = await this.extractAudioInfo(msg);
@@ -353,6 +353,16 @@ class RadarTracker {
   generateMessageId(element, prePlainText) {
     const text = element.textContent || '';
     const raw = `${prePlainText}|${text.substring(0, 100)}|${this.currentChat.id}`;
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;
+    }
+    return `msg_${Math.abs(hash)}`;
+  }
+
+  // Stable hash using extracted text (not raw DOM textContent which changes with read receipts)
+  generateStableId(prePlainText, extractedText) {
+    const raw = `${prePlainText}|${(extractedText || '').substring(0, 100)}|${this.currentChat.id}`;
     let hash = 0;
     for (let i = 0; i < raw.length; i++) {
       hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;

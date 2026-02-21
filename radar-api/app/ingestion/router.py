@@ -84,6 +84,20 @@ async def ingest_messages(
                     text = transcript
                     is_transcribed = True
 
+            # ── Dedup: skip if identical message already exists ──
+            existing = await session.execute(
+                select(Message.id).where(
+                    Message.chat_id == msg.chatId,
+                    Message.sender == msg.sender,
+                    Message.text == (text or None),
+                    Message.timestamp == ts,
+                ).limit(1)
+            )
+            if existing.scalar_one_or_none():
+                logger.debug(f"Skipping duplicate: {msg.sender} '{(text or '')[:40]}'")
+                accepted += 1  # Don't count as error for the extension
+                continue
+
             # Store in DB
             db_msg = Message(
                 chat_id=msg.chatId,
