@@ -45,7 +45,7 @@ echo "$LOG_PREFIX Starting reflection cycle"
 MESSAGES=$(docker exec deploy-postgres-1 psql -U radar -d radar -t -A -F '|' -c "
     SELECT sender, text, timestamp AT TIME ZONE 'Europe/Berlin'
     FROM messages
-    WHERE timestamp > NOW() - INTERVAL '6 hours'
+    WHERE timestamp > NOW() - INTERVAL '24 hours'
       AND text IS NOT NULL
       AND LENGTH(text) > 5
     ORDER BY timestamp DESC
