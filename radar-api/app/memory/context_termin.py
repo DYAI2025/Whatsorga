@@ -56,7 +56,7 @@ async def _get_conversation_context(
 
         lines = []
         for sender, msg_text, ts in rows:
-            time_str = ts.strftime("%H:%M") if ts else ""
+            time_str = ts.strftime("%d.%m. %H:%M") if ts else ""
             # Truncate long messages
             short_text = msg_text[:300] if msg_text else ""
             lines.append(f"[{time_str}] {sender}: {short_text}")
@@ -228,7 +228,14 @@ async def extract_termine_with_context(
     # 3. Memory context from EverMemOS
     memory_context = ""
     try:
-        memory_ctx = await recall_for_termin(text, chat_id, sender)
+        # Enrich query with conversation context for better semantic recall
+        recall_query = text
+        if conversation_context:
+            # Use last 2 context lines + current text for richer semantic search
+            context_lines = conversation_context.strip().split("\n")
+            recent_context = "\n".join(context_lines[-2:])
+            recall_query = f"{recent_context}\n{text}"
+        memory_ctx = await recall_for_termin(recall_query, chat_id, sender)
         if memory_ctx.has_context:
             memory_context = memory_ctx.as_prompt_block()
             logger.info(

@@ -69,6 +69,11 @@ Du MUSST jede Nachricht durch diese 6 Dimensionen bewerten bevor du entscheidest
 - Muss etwas GEKAUFT/MITGEBRACHT werden? → "reminder"
 - Muss etwas VORBEREITET/ORGANISIERT werden? → "task"
 - Ist es nur INFORMATION ohne Handlung? → vielleicht kein Termin!
+- WICHTIG: Vorbereitungen die sich auf einen BESTEHENDEN Termin beziehen → KEIN separater Kalendereintrag!
+  • "Ich packe Proviant ein" (bezieht sich auf existierenden Wettkampf) → leeres Array []
+  • "Muss noch Kuchen backen" (bezieht sich auf existierenden Geburtstag) → leeres Array []
+  • Grund: Der Haupttermin existiert bereits. Vorbereitungen/Erledigungen DAFÜR sind keine eigenständigen Kalendereinträge.
+  • NUR eigenständige Tasks OHNE Bezug zu einem bestehenden Termin → separater Eintrag
 
 🔄 DIMENSION 4 — KONTEXT, DUPLIKATE & UPDATES
 - Wurde dasselbe Thema in den vorherigen Nachrichten schon besprochen?
@@ -78,6 +83,21 @@ Du MUSST jede Nachricht durch diese 6 Dimensionen bewerten bevor du entscheidest
   • ABSAGE: Termin fällt aus / wird abgesagt → action="cancel" mit updates_termin_id
 - Wird das gleiche Event mehrfach erwähnt? → Nur EINMAL extrahieren
 - WICHTIG: Bei Updates/Absagen die ID aus der EXISTIERENDE-TERMINE-Liste verwenden!
+
+═══ NACHRICHTEN-ÜBERGREIFENDE TERMIN-ERKENNUNG ═══
+WICHTIG: Termine entstehen oft aus MEHREREN Nachrichten im Dialog!
+
+FRAGE-ANTWORT-MUSTER:
+- Nachricht A fragt "Wann geht das morgen los?" (enthält Datum: morgen)
+- Nachricht B antwortet "13:45-18 Uhr Turnierschwimmen" (enthält Uhrzeit + Details)
+→ KOMBINIERE zu einem Termin: morgen 13:45, Turnierschwimmen
+
+REGELN:
+- Wenn die aktuelle Nachricht eine ANTWORT mit Uhrzeit/Details ist, aber KEIN Datum enthält:
+  → Suche das Datum im KONVERSATIONS-VERLAUF (vorherige Nachrichten)
+- Kurze Antworten wie "13:45 Uhr", "Ab 14 Uhr Training", "Um 10" die eine vorherige Zeitfrage BEANTWORTEN = Termin mit Datum aus der Frage
+- Zeitfragen erkennst du an: "wann", "wie spät", "um wieviel Uhr", "geht ... los", "fängt ... an"
+- Das Datum kann auch INDIREKT im Kontext stehen: "morgen", "am Samstag", ein konkretes Datum
 
 📆 DIMENSION 5 — PLAUSIBILITÄT
 - Passt das Datum zum Kontext? (Turnier am Wochentag vs. Wochenende)
@@ -94,12 +114,26 @@ Du MUSST jede Nachricht durch diese 6 Dimensionen bewerten bevor du entscheidest
 
 ═══ KATEGORIEN ═══
 - "appointment": Fester Termin mit Datum (Arzt, Treffen, Training, Turnier, Abholen, Geburtstag)
-- "reminder": Konkreter Gegenstand mitbringen/kaufen/besorgen
-- "task": Aufgabe/Vorbereitung (packen, vorbereiten, organisieren)
+- "reminder": Konkreter Gegenstand mitbringen/kaufen/besorgen (NUR wenn eigenständig, NICHT als Vorbereitung für bestehenden Termin)
+- "task": Eigenständige Aufgabe OHNE Bezug zu bestehendem Termin
 
-═══ UHRZEITEN ═══
-- Mit Uhrzeit ("um 15 Uhr", "16:30", "ab 14 Uhr") → "all_day": false, "datetime": "YYYY-MM-DDTHH:MM"
+═══ UHRZEITEN — DENKE NACH! ═══
+Unterscheide STARTZEIT vs. ENDZEIT vs. ZEITRAUM:
+
+- "um 15 Uhr", "16:30", "ab 14 Uhr" = STARTZEIT → "datetime": "YYYY-MM-DDTHH:MM"
+- "bis 18 Uhr", "bis spätestens 16 Uhr", "geht bis 18 Uhr" = ENDZEIT, NICHT Startzeit!
+  • Wettkampf "bis 18 Uhr" → der Wettkampf ENDET um 18 Uhr, er BEGINNT früher!
+  • Bei UPDATE eines bestehenden Termins: behalte die bestehende Startzeit, schreibe Endzeit in den Titel
+  • Bei NEUEM Termin mit nur Endzeit und ohne Startzeit: "all_day": true (Startzeit unbekannt)
+- "von 14 bis 18 Uhr", "14-18 Uhr" = ZEITRAUM → "datetime": Startzeit (14:00), Endzeit im Titel
+- "13:45-18 Uhr" = ZEITRAUM → "datetime": "YYYY-MM-DDTHH:MM" mit 13:45 als Start
 - Ohne Uhrzeit (Geburtstag, Feiertag, Turnier-Tag) → "all_day": true, "datetime": "YYYY-MM-DD"
+
+PLAUSIBILITÄTSCHECK für Uhrzeiten:
+- Frage dich: Ist das die STARTZEIT oder die ENDZEIT?
+- "Wettkampf bis 18 Uhr" → Start ist NICHT 18:00! Ein Wettkampf der "bis 18 Uhr geht" startet VORHER.
+- "Training ab 16:30" → Start IST 16:30 ✓
+- "Treffen um 13 Uhr" → Start IST 13:00 ✓
 
 ═══ SMARTE ERINNERUNGEN ═══
 - Einkauf: NICHT Sonntag. Trigger: 1-2 Werktage vorher
@@ -210,7 +244,7 @@ async def extract_termine(
     if not text or len(text) < 10:
         return []
 
-    if not _might_contain_date(text):
+    if not _might_contain_date(text, context=conversation_context):
         return []
 
     # LLM cascade: Groq → Gemini
@@ -226,8 +260,13 @@ async def extract_termine(
     return []
 
 
-def _might_contain_date(text: str) -> bool:
-    """Quick check if text might contain date/time or task references."""
+def _might_contain_date(text: str, context: str = "") -> bool:
+    """Quick check if text or conversation context might contain date/time references.
+
+    Also triggers on Q&A patterns: if the current message looks like a time/detail
+    answer (e.g. "13:45 Uhr") and the conversation context contains a date question
+    (e.g. "Wann geht das morgen los?"), we let the LLM decide.
+    """
     patterns = [
         r'\d{1,2}\.\d{1,2}\.',  # 14.02.
         r'\d{1,2}:\d{2}',  # 10:00, 14:30
@@ -241,7 +280,45 @@ def _might_contain_date(text: str) -> bool:
         r'(mitbring|kaufen|einkauf|besorgen|pack|vorbereiten)',
     ]
     text_lower = text.lower()
-    return any(re.search(p, text_lower) for p in patterns)
+    if any(re.search(p, text_lower) for p in patterns):
+        return True
+
+    # Q&A pattern: current message has time details, context has the date/question
+    if context:
+        context_lower = context.lower()
+        # Patterns that indicate a date question or date mention in context
+        context_date_patterns = [
+            r'(wann|wie spät|um wieviel uhr|um wie viel uhr)',
+            r'(morgen|übermorgen|nächste|kommende)',
+            r'(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)',
+            r'\d{1,2}\.\d{1,2}\.',
+        ]
+        # Patterns that indicate the current message is a time/detail answer
+        answer_patterns = [
+            r'\d{1,2}:\d{2}',  # 13:45
+            r'um \d{1,2}\s*(uhr)?',  # um 14 Uhr
+            r'ab \d{1,2}\s*(uhr)?',  # ab 13 Uhr
+            r'bis \d{1,2}\s*(uhr)?',  # bis 18 Uhr
+            r'\d{1,2}\s*-\s*\d{1,2}\s*(uhr)?',  # 13-18 Uhr
+        ]
+        context_has_date = any(re.search(p, context_lower) for p in context_date_patterns)
+        text_has_answer = any(re.search(p, text_lower) for p in answer_patterns)
+        if context_has_date and text_has_answer:
+            return True
+
+        # Also check full context for date patterns (cross-message resolution)
+        if any(re.search(p, context_lower) for p in patterns):
+            # Context has date info — check if current message has ANY termin-relevant content
+            termin_content_patterns = [
+                r'\d{1,2}:\d{2}',
+                r'um \d{1,2}',
+                r'ab \d{1,2}',
+                r'(training|turnier|schwimmen|fußball|arzt|schule|kita|hort|abholen)',
+            ]
+            if any(re.search(p, text_lower) for p in termin_content_patterns):
+                return True
+
+    return False
 
 
 def _build_prompts(
