@@ -4,6 +4,8 @@ alias: [romy]
 
 fakten:
   - Geht aufs Beethoven-Gymnasium
+  - Geburtstag: 18. Februar
+  - Kindergeburtstag 2026 am Samstag 21.02. (3 Tage nach echtem Geburtstag)
   - Hat verschiedene Nachmittagsaktivitäten
   - Wird manchmal abgeholt
 
@@ -18,8 +20,8 @@ aktivitaeten:
     typ: Jaehrlich
     muster: "18. Februar"
     termin_logik:
-      - "Kindergeburtstag = separate Feier, oft am Wochenende NACH dem eigentlichen Geburtstag"
-      - "Geburtstag vs. Kindergeburtstag unterscheiden!"
+      - "Kindergeburtstag = separate Feier, NICHT zwingend am Geburtstag selbst"
+      - "Geburtstag (18.02.) vs. Kindergeburtstag-Party (anderer Tag) unterscheiden!"
 
 termin_hinweise:
   - "Wenn Romy + 'abholen' → appointment, relevance=shared"
