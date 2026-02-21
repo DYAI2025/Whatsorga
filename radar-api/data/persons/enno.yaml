@@ -7,9 +7,21 @@ fakten:
   - Geht in den Hort nach der Schule
   - Wird regelmäßig abgeholt (Hort, Schwimmen)
 
+orte:
+  hort:
+    name: Hort
+    kontext: "Werktags nach der Schule, Abholzeit meist 14-16 Uhr"
+  schwimmhalle:
+    name: Schwimmhalle
+    kontext: "Schwimmtraining und Wettkämpfe"
+  schule:
+    name: Schule
+    kontext: "Werktags vormittags"
+
 aktivitaeten:
   schwimmen:
     typ: Vereinssport
+    ort: Schwimmhalle
     muster: "Training unter der Woche, Wettkämpfe/Turniere am Wochenende"
     termin_logik:
       - "Wettkampf/Turnier = meist GANZTÄGIG oder langer Zeitblock"
@@ -18,12 +30,14 @@ aktivitaeten:
       - "Proviant/Wasser einpacken = Vorbereitung, KEIN eigener Termin"
   hort:
     typ: Betreuung
+    ort: Hort
     muster: "Werktags nach der Schule"
     termin_logik:
       - "'abholen' aus dem Hort = konkreter Zeitpunkt, meist 14-16 Uhr"
       - "Ohne Uhrzeit → nachfragen oder Standardzeit annehmen"
   training:
     typ: Regelmäßig
+    ort: Schwimmhalle
     muster: "Feste Wochentage, nachmittags"
     termin_logik:
       - "Training = 1-2 Stunden, fester Wochentag"
@@ -32,5 +46,5 @@ aktivitaeten:
 termin_hinweise:
   - "Wenn Enno + 'Wettkampf' + 'bis X Uhr' → ganztägig ODER Zeitraum, X ist ENDZEIT"
   - "Wenn Enno + 'einpacken/packen/vorbereiten' für bestehenden Termin → KEIN neuer Eintrag"
-  - "Wenn Enno + 'abholen' → appointment mit konkreter Uhrzeit, relevance=shared"
+  - "Wenn Enno + 'abholen' → appointment mit konkreter Uhrzeit, relevance=shared, location=Hort (wenn Werktag nachmittags) oder Schwimmhalle (wenn Trainingszeit)"
   - "Kinder-Termine sind IMMER relevance=shared (beide Eltern betroffen)"

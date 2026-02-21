@@ -4,7 +4,7 @@ LLM stack: Groq 70B (primary) → Gemini 2.5 Flash (fallback).
 No regex fallback — only LLMs understand context well enough.
 
 Uses Structured Multi-Dimensional Reasoning (Tree-of-Thoughts inspired):
-The LLM evaluates each message across 6 dimensions before deciding,
+The LLM evaluates each message across 7 dimensions before deciding,
 giving ToT-quality reasoning in a single LLM call.
 """
 
@@ -36,6 +36,7 @@ class ExtractedTermin:
     reasoning: str = ""
     action: str = "create"  # create | update | cancel
     updates_termin_id: str | None = None  # UUID of existing termin to update/cancel
+    location: str = ""  # Where the event takes place (derived from context/memory)
 
 
 SYSTEM_PROMPT = """Du bist ein tiefdenkendes Termin-Analyse-System für {user_name}s WhatsApp-Chat mit {partner_name}.
@@ -52,7 +53,7 @@ Du analysierst NICHT oberflächlich — du denkst in DIMENSIONEN bevor du entsch
 
 ═══ MULTI-DIMENSIONALE ANALYSE ═══
 
-Du MUSST jede Nachricht durch diese 6 Dimensionen bewerten bevor du entscheidest:
+Du MUSST jede Nachricht durch diese 7 Dimensionen bewerten bevor du entscheidest:
 
 📅 DIMENSION 1 — ZEIT
 - Enthält die Nachricht ein konkretes Datum oder eine Uhrzeit?
@@ -117,6 +118,23 @@ REGELN:
 - "Wollen wir mal wieder essen gehen?" → KEIN Termin (vage Idee)
 - "Lass uns Freitag essen gehen" → Termin (konkretes Datum)
 
+📍 DIMENSION 7 — ORT (WOHIN?)
+PFLICHT bei Bewegungs-Wörtern! Wenn eines dieser Wörter vorkommt, MUSS du den Ort bestimmen:
+- abholen, hinbringen, bringen, holen, hingehen, hinfahren, dort, dorthin, vor Ort, dort warten
+- Training, Wettkampf, Turnier, Schule, Hort, Arzt, Zahnarzt, Kita, Schwimmen
+
+ORT ABLEITEN — So findest du den Ort:
+1. DIREKT IM TEXT: "vom Hort abholen" → Ort = Hort. "Training im Schwimmbad" → Ort = Schwimmbad
+2. AUS PERSONEN-KONTEXT: Enno + "abholen" → prüfe Ennos Aktivitäten (Hort, Schwimmen). Romy + "Schule" → Beethoven-Gymnasium
+3. AUS KONVERSATION: Vorherige Nachrichten können den Ort nennen ("Schwimmhalle" → nächste "abholen"-Nachricht = Schwimmhalle)
+4. AUS GEDÄCHTNIS: EverMemOS-Kontext kann bekannte Orte enthalten
+
+REGELN:
+- "Enno abholen" OHNE Ortsangabe → Prüfe: Ist gerade Hort-Zeit (Werktag nachmittags)? Oder Trainingszeit? → Setze den wahrscheinlichsten Ort
+- "abholen" allein reicht NICHT als Termin-Titel. Ergänze WO: "Enno vom Hort abholen" oder "Enno vom Schwimmen abholen"
+- Wenn der Ort NICHT ableitbar ist → location: "" (leer lassen, aber den Termin trotzdem extrahieren)
+- Bekannte Orte in den Titel einbauen: "Enno abholen" → "Enno vom Hort abholen" (wenn Hort-Zeit)
+
 ═══ KATEGORIEN ═══
 - "appointment": Fester Termin mit Datum (Arzt, Treffen, Training, Turnier, Abholen, Geburtstag)
 - "reminder": Konkreter Gegenstand mitbringen/kaufen/besorgen (NUR wenn eigenständig, NICHT als Vorbereitung für bestehenden Termin)
@@ -171,6 +189,7 @@ SCHRITT 1 — DIMENSIONEN (kurz, je 1 Zeile):
 🔄 Kontext: [Schon besprochen? Duplikat? Update?]
 📆 Plausibilität: [Macht das Datum Sinn?]
 💭 Intention: [Echter Termin oder nur Erwähnung/Smalltalk?]
+📍 Ort: [WO findet es statt? Aus Text/Kontext/Personen-Profil ableitbar?]
 
 SCHRITT 2 — HYPOTHESEN:
 H1: [Es ist ein NEUER Termin weil...]
@@ -191,13 +210,14 @@ Format pro Termin:
 [{{
   "action": "create|update|cancel",
   "updates_termin_id": "ID aus EXISTIERENDE TERMINE (nur bei update/cancel)",
-  "title": "Kurze Beschreibung",
+  "title": "Kurze Beschreibung (MIT Ort wenn ableitbar, z.B. 'Enno vom Hort abholen')",
   "datetime": "YYYY-MM-DDTHH:MM oder YYYY-MM-DD",
   "all_day": true/false,
   "participants": ["Name"],
   "confidence": 0.0-1.0,
   "category": "appointment|reminder|task",
   "relevance": "for_me|shared|partner_only|affects_me",
+  "location": "Ort des Termins (z.B. 'Hort', 'Schwimmhalle', 'Beethoven-Gymnasium') oder leer",
   "reminders": [{{"trigger": "-P1D", "description": "..."}}],
   "reasoning": "Zusammenfassung der Dimensionen-Analyse und Entscheidung"
 }}]"""
@@ -517,6 +537,7 @@ def _parse_extraction_response(response_text: str, sender: str) -> list[Extracte
             reasoning=reasoning,
             action=action,
             updates_termin_id=updates_id,
+            location=item.get("location", ""),
         ))
 
     return results
@@ -566,7 +587,7 @@ async def _extract_via_groq(
 
             if results is not None:
                 for r in results:
-                    logger.info(f"Groq: [{r.action}] '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}{f', updates={r.updates_termin_id}' if r.updates_termin_id else ''}) — {r.reasoning[:300]}")
+                    logger.info(f"Groq: [{r.action}] '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}{f', loc={r.location}' if r.location else ''}{f', updates={r.updates_termin_id}' if r.updates_termin_id else ''}) — {r.reasoning[:300]}")
                 if not results:
                     logger.info(f"Groq: no termine in '{text[:60]}...'")
             return results
@@ -621,7 +642,7 @@ async def _extract_via_gemini(
                 return []
 
             for r in results:
-                logger.info(f"Gemini: [{r.action}] '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}{f', updates={r.updates_termin_id}' if r.updates_termin_id else ''}) — {r.reasoning[:300]}")
+                logger.info(f"Gemini: [{r.action}] '{r.title}' @ {r.datetime_str} (all_day={r.all_day}, conf={r.confidence}, cat={r.category}, rel={r.relevance}{f', loc={r.location}' if r.location else ''}{f', updates={r.updates_termin_id}' if r.updates_termin_id else ''}) — {r.reasoning[:300]}")
             if not results:
                 logger.info(f"Gemini: no termine in '{text[:60]}...'")
             return results

@@ -106,8 +106,9 @@ async def _get_existing_termine(
             dt_str = t.datetime_.strftime("%Y-%m-%d %H:%M") if t.datetime_ else "?"
             if t.all_day:
                 dt_str = t.datetime_.strftime("%Y-%m-%d") + " (ganztägig)"
+            loc_str = f" | ort={t.location}" if getattr(t, 'location', None) else ""
             lines.append(
-                f"- ID={t.id} | {t.title} | {dt_str} | {t.category} | {t.relevance} | conf={t.confidence}"
+                f"- ID={t.id} | {t.title} | {dt_str} | {t.category} | {t.relevance} | conf={t.confidence}{loc_str}"
             )
 
         return "\n".join(lines)

@@ -165,6 +165,7 @@ async def get_termine(
                 "category": t.category or "appointment",
                 "relevance": t.relevance or "shared",
                 "status": t.status or "auto",
+                "location": t.location or "",
             }
             for t, _ in rows
         ],

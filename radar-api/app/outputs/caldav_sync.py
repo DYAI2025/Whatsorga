@@ -100,6 +100,7 @@ def _build_vcalendar(
     description: str,
     all_day: bool = False,
     reminders: list[dict] | None = None,
+    location: str = "",
 ) -> str:
     """Build a complete VCALENDAR string with timezone and dynamic VALARMs."""
     valarms = _build_valarms(summary, reminders)
@@ -117,6 +118,8 @@ def _build_vcalendar(
         )
         tz_block = TIMEZONE_BERLIN + "\r\n"
 
+    location_line = f"LOCATION:{location}\r\n" if location else ""
+
     return (
         f"BEGIN:VCALENDAR\r\n"
         f"VERSION:2.0\r\n"
@@ -126,6 +129,7 @@ def _build_vcalendar(
         f"UID:{uid}\r\n"
         f"{dt_lines}\r\n"
         f"SUMMARY:{summary}\r\n"
+        f"{location_line}"
         f"DESCRIPTION:{description}\r\n"
         f"{valarms}\r\n"
         f"END:VEVENT\r\n"
@@ -142,6 +146,7 @@ def _create_event_sync(
     all_day: bool = False,
     reminders: list[dict] | None = None,
     context_note: str = "",
+    location: str = "",
 ) -> str:
     """Create a CalDAV event (synchronous, runs in thread)."""
     cal = _get_calendar(calendar_name)
@@ -173,11 +178,12 @@ def _create_event_sync(
         description=description,
         all_day=all_day,
         reminders=reminders,
+        location=location,
     )
 
     cal.save_event(vcal)
     event_type = "all-day" if all_day else f"at {dt}"
-    logger.info(f"CalDAV event created in '{calendar_name}': '{title}' {event_type}")
+    logger.info(f"CalDAV event created in '{calendar_name}': '{title}' {event_type}{f' @ {location}' if location else ''}")
     return uid
 
 
@@ -191,6 +197,7 @@ async def sync_termin_to_calendar(
     all_day: bool = False,
     reminders: list[dict] | None = None,
     context_note: str = "",
+    location: str = "",
 ) -> tuple[str | None, str]:
     """Route termin to the appropriate calendar based on confidence and relevance.
 
@@ -229,6 +236,7 @@ async def sync_termin_to_calendar(
             all_day,
             reminders,
             context_note,
+            location,
         )
         return uid, status
     except Exception as e:
@@ -246,6 +254,7 @@ def _update_event_sync(
     all_day: bool = False,
     reminders: list[dict] | None = None,
     context_note: str = "",
+    location: str = "",
 ) -> str:
     """Update an existing CalDAV event by replacing it with new data (synchronous)."""
     cal = _get_calendar(calendar_name)
@@ -274,11 +283,12 @@ def _update_event_sync(
         description=description,
         all_day=all_day,
         reminders=reminders,
+        location=location,
     )
 
     cal.save_event(vcal)
     event_type = "all-day" if all_day else f"at {dt}"
-    logger.info(f"CalDAV event UPDATED in '{calendar_name}': '{title}' {event_type} (uid={caldav_uid})")
+    logger.info(f"CalDAV event UPDATED in '{calendar_name}': '{title}' {event_type}{f' @ {location}' if location else ''} (uid={caldav_uid})")
     return caldav_uid
 
 
@@ -315,6 +325,7 @@ async def update_termin_in_calendar(
     all_day: bool = False,
     reminders: list[dict] | None = None,
     context_note: str = "",
+    location: str = "",
 ) -> tuple[str | None, str]:
     """Update an existing calendar event. Returns (caldav_uid, status)."""
     if not settings.caldav_url or not settings.caldav_username:
@@ -331,7 +342,7 @@ async def update_termin_in_calendar(
         uid = await loop.run_in_executor(
             None, _update_event_sync,
             caldav_uid, event_title, dt, participants, source_text,
-            calendar_name, all_day, reminders, context_note,
+            calendar_name, all_day, reminders, context_note, location,
         )
         return uid, status
     except Exception as e:

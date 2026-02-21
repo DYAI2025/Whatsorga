@@ -81,6 +81,7 @@ class Termin(Base):
     status = Column(String, default="auto")  # auto | suggested | confirmed | rejected | skipped | cancelled
     reminder_config = Column(JSONB, nullable=True)
     all_day = Column(Boolean, default=False)
+    location = Column(String, nullable=True)  # Where the event takes place
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 

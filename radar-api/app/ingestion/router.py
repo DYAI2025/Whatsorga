@@ -190,6 +190,7 @@ async def ingest_messages(
                                 existing.relevance = t.relevance
                                 existing.all_day = t.all_day
                                 existing.reminder_config = t.reminders if t.reminders else None
+                                existing.location = t.location or None
                                 if existing.caldav_uid:
                                     await update_termin_in_calendar(
                                         caldav_uid=existing.caldav_uid,
@@ -198,6 +199,7 @@ async def ingest_messages(
                                         source_text=text, relevance=t.relevance,
                                         all_day=t.all_day, reminders=t.reminders,
                                         context_note=t.context_note,
+                                        location=t.location,
                                     )
                                 logger.info(f"Termin UPDATED: '{t.title}' @ {t.datetime_str} (id={existing.id})")
 
@@ -209,6 +211,7 @@ async def ingest_messages(
                                 source_text=text, relevance=t.relevance,
                                 all_day=t.all_day, reminders=t.reminders,
                                 context_note=t.context_note,
+                                location=t.location,
                             )
                             db_termin = Termin(
                                 message_id=db_msg.id,
@@ -218,6 +221,7 @@ async def ingest_messages(
                                 relevance=t.relevance, status=termin_status,
                                 reminder_config=t.reminders if t.reminders else None,
                                 all_day=t.all_day,
+                                location=t.location or None,
                             )
                             session.add(db_termin)
 

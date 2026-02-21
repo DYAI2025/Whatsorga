@@ -9,9 +9,15 @@ fakten:
   - Hat verschiedene Nachmittagsaktivitäten
   - Wird manchmal abgeholt
 
+orte:
+  schule:
+    name: Beethoven-Gymnasium
+    kontext: "Werktags vormittags und nachmittags"
+
 aktivitaeten:
   schule:
     typ: Regelmaessig
+    ort: Beethoven-Gymnasium
     muster: "Werktags, Beethoven-Gymnasium"
     termin_logik:
       - "'abholen vom Beethoven' = konkreter Zeitpunkt"
@@ -24,7 +30,7 @@ aktivitaeten:
       - "Geburtstag (18.02.) vs. Kindergeburtstag-Party (anderer Tag) unterscheiden!"
 
 termin_hinweise:
-  - "Wenn Romy + 'abholen' → appointment, relevance=shared"
-  - "Wenn Romy + Schule/Beethoven → schulbezogener Termin"
+  - "Wenn Romy + 'abholen' → appointment, relevance=shared, location=Beethoven-Gymnasium (wenn Schulzeit)"
+  - "Wenn Romy + Schule/Beethoven → schulbezogener Termin, location=Beethoven-Gymnasium"
   - "Kinder-Termine sind IMMER relevance=shared"
   - "Wenn 'Nawi/Padlet/Hausaufgaben' → task für Romy, aber prüfe ob es MICH betrifft"

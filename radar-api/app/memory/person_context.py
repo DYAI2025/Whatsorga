@@ -115,12 +115,23 @@ def format_person_context(persons: list[dict]) -> str:
             for f in fakten:
                 lines.append(f"  - {f}")
 
+        # Bekannte Orte
+        orte = person.get("orte", {})
+        if orte:
+            lines.append("  📍 Bekannte Orte:")
+            for ort_key, ort_data in orte.items():
+                name = ort_data.get("name", ort_key)
+                kontext = ort_data.get("kontext", "")
+                lines.append(f"    • {name}: {kontext}")
+
         # Aktivitäten mit Termin-Logik
         aktivitaeten = person.get("aktivitaeten", {})
         if aktivitaeten:
             for akt_name, akt in aktivitaeten.items():
                 muster = akt.get("muster", "")
-                lines.append(f"  📌 {akt_name}: {muster}")
+                ort = akt.get("ort", "")
+                ort_info = f" [Ort: {ort}]" if ort else ""
+                lines.append(f"  📌 {akt_name}: {muster}{ort_info}")
                 for regel in akt.get("termin_logik", []):
                     lines.append(f"    → {regel}")
 
