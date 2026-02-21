@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 import httpx
 
 from app.config import settings
+from app.memory.person_context import get_person_context
 
 logger = logging.getLogger(__name__)
 
@@ -37,13 +38,17 @@ class ExtractedTermin:
     updates_termin_id: str | None = None  # UUID of existing termin to update/cancel
 
 
-SYSTEM_PROMPT = """Du bist ein tiefdenkendes Termin-Analyse-System für {user_name}s WhatsApp-Chat mit Partner/in {partner_name}.
+SYSTEM_PROMPT = """Du bist ein tiefdenkendes Termin-Analyse-System für {user_name}s WhatsApp-Chat mit {partner_name}.
+{user_name} und {partner_name} sind getrennt und koordinieren per WhatsApp die Kinder-Logistik.
 Du analysierst NICHT oberflächlich — du denkst in DIMENSIONEN bevor du entscheidest.
 
 ═══ FAMILIEN-KONTEXT ═══
 {family_context}
 - ALLE Kinder-Termine betreffen BEIDE Eltern → "shared"
-- "partner_only" NUR für rein persönliche Termine des Partners OHNE Familie
+- Kinder-Übergaben (abholen, bringen) sind IMMER terminrelevant
+- "partner_only" NUR für rein persönliche Termine OHNE Kinder
+
+{person_context}
 
 ═══ MULTI-DIMENSIONALE ANALYSE ═══
 
@@ -357,10 +362,17 @@ def _build_prompts(
 
     calendar_table = _build_calendar_table(timestamp)
 
+    # Detect mentioned persons and load their semantic profiles
+    person_ctx = get_person_context(text, conversation_context)
+    person_block = ""
+    if person_ctx:
+        person_block = f"═══ PERSONEN-KONTEXT (nutze dieses Wissen!) ═══\n{person_ctx}"
+
     system = SYSTEM_PROMPT.format(
         user_name=user_name,
         partner_name=partner_name,
         family_context=family_ctx,
+        person_context=person_block,
         feedback_examples=feedback_block,
         memory_context=memory_block,
         existing_termine=existing_block,

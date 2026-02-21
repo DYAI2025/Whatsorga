@@ -1,0 +1,36 @@
+name: Enno
+rolle: Sohn
+alias: [enno, eno]
+
+fakten:
+  - Schwimmt im Verein (Wettkampfschwimmen / Turnierschwimmen)
+  - Geht in den Hort nach der Schule
+  - Wird regelmäßig abgeholt (Hort, Schwimmen)
+
+aktivitaeten:
+  schwimmen:
+    typ: Vereinssport
+    muster: "Training unter der Woche, Wettkämpfe/Turniere am Wochenende"
+    termin_logik:
+      - "Wettkampf/Turnier = meist GANZTÄGIG oder langer Zeitblock"
+      - "'bis X Uhr' bei Wettkampf = ENDZEIT, nicht Startzeit!"
+      - "'13:45-18 Uhr' = Zeitraum, Start ist 13:45"
+      - "Proviant/Wasser einpacken = Vorbereitung, KEIN eigener Termin"
+  hort:
+    typ: Betreuung
+    muster: "Werktags nach der Schule"
+    termin_logik:
+      - "'abholen' aus dem Hort = konkreter Zeitpunkt, meist 14-16 Uhr"
+      - "Ohne Uhrzeit → nachfragen oder Standardzeit annehmen"
+  training:
+    typ: Regelmäßig
+    muster: "Feste Wochentage, nachmittags"
+    termin_logik:
+      - "Training = 1-2 Stunden, fester Wochentag"
+      - "'hat Training' = appointment, nicht task"
+
+termin_hinweise:
+  - "Wenn Enno + 'Wettkampf' + 'bis X Uhr' → ganztägig ODER Zeitraum, X ist ENDZEIT"
+  - "Wenn Enno + 'einpacken/packen/vorbereiten' für bestehenden Termin → KEIN neuer Eintrag"
+  - "Wenn Enno + 'abholen' → appointment mit konkreter Uhrzeit, relevance=shared"
+  - "Kinder-Termine sind IMMER relevance=shared (beide Eltern betroffen)"

@@ -1,0 +1,32 @@
+name: Marike
+rolle: Ex-Partnerin / Mutter der Kinder
+alias: [marike, mama]
+
+fakten:
+  - Ex-Partnerin von Ben (getrennt lebend)
+  - Mutter von Romy und Enno
+  - Abstimmung per WhatsApp WEIL getrennt → Koordination der Kinder ist der Hauptzweck des Chats
+  - Hauptkommunikationspartnerin im WhatsApp-Chat
+
+aktivitaeten:
+  persoenlich:
+    typ: Individuell
+    muster: "Eigene Termine (Yoga, Friseur, Freunde, Arzt)"
+    termin_logik:
+      - "Rein persönliche Termine OHNE Kinder → relevance=partner_only"
+      - "ABER: Marikes persönliche Termine können Bens Kinderbetreuung beeinflussen → affects_me prüfen"
+  koordination:
+    typ: Kinder-Übergabe und Abstimmung
+    muster: "Wer hat die Kinder wann, Übergaben, Abholen/Bringen"
+    termin_logik:
+      - "Übergabe-Zeiten = echte Termine für Ben (relevance=for_me oder shared)"
+      - "'Ich bringe sie um X' / 'Hol sie um X ab' → appointment mit konkreter Zeit"
+      - "'Wann bist du hier?' / 'Wann kommst du?' → Koordination, kein eigener Termin"
+      - "Wenn Marike Kinder hat und Ben sie übernimmt → Übergabe-Termin"
+
+termin_hinweise:
+  - "Marike ist die häufigste Informationsquelle für Kinder-Termine (Schule, Sport, Events)"
+  - "Ihre Aussagen über Kinder-Termine sind autoritativ (sie kennt die Details)"
+  - "Wenn sie Uhrzeiten nennt als Antwort auf eine Frage → das IST die definitive Zeit"
+  - "'Ich fahre los' / 'Bin um X da' im Kontext von Kinder-Übergabe → relevance=shared oder for_me"
+  - "Getrennt lebend: JEDE Kinder-Logistik (abholen, bringen, übergeben) ist terminrelevant für Ben"

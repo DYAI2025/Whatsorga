@@ -1,0 +1,28 @@
+name: Romy
+rolle: Tochter
+alias: [romy]
+
+fakten:
+  - Geht aufs Beethoven-Gymnasium
+  - Hat verschiedene Nachmittagsaktivitäten
+  - Wird manchmal abgeholt
+
+aktivitaeten:
+  schule:
+    typ: Regelmaessig
+    muster: "Werktags, Beethoven-Gymnasium"
+    termin_logik:
+      - "'abholen vom Beethoven' = konkreter Zeitpunkt"
+      - "Schulveranstaltungen = meist ganztägig oder Nachmittag"
+  geburtstag:
+    typ: Jaehrlich
+    muster: "18. Februar"
+    termin_logik:
+      - "Kindergeburtstag = separate Feier, oft am Wochenende NACH dem eigentlichen Geburtstag"
+      - "Geburtstag vs. Kindergeburtstag unterscheiden!"
+
+termin_hinweise:
+  - "Wenn Romy + 'abholen' → appointment, relevance=shared"
+  - "Wenn Romy + Schule/Beethoven → schulbezogener Termin"
+  - "Kinder-Termine sind IMMER relevance=shared"
+  - "Wenn 'Nawi/Padlet/Hausaufgaben' → task für Romy, aber prüfe ob es MICH betrifft"

@@ -1,0 +1,29 @@
+name: Ben
+rolle: User / Vater
+alias: [ben, papa, ich]
+
+fakten:
+  - Hauptnutzer des Systems (WhatsOrga läuft für Ben)
+  - Vater von Romy und Enno
+  - Ex-Partner von Marike (getrennt lebend, Kinder-Koordination per WhatsApp)
+
+aktivitaeten:
+  arbeit:
+    typ: Beruflich
+    muster: "Berufliche Termine und Meetings"
+    termin_logik:
+      - "Berufliche Termine → relevance=for_me"
+      - "Work-Life-Konflikte prüfen (Termin vs. Kinder-Abholung)"
+  familie:
+    typ: Familien-Koordination
+    muster: "Abholen, Bringen, gemeinsame Termine"
+    termin_logik:
+      - "'Ich hole ab' → appointment, relevance=for_me"
+      - "'Wann muss ich...' → Frage, kein Termin (aber Kontext für Antwort!)"
+
+termin_hinweise:
+  - "Ben ist der NUTZER — alle Termine werden aus SEINER Perspektive bewertet"
+  - "for_me = Ben muss persönlich handeln"
+  - "shared = Betrifft die Familie, Ben muss es wissen"
+  - "affects_me = Ben ist indirekt betroffen (z.B. Partner-Termin beeinflusst Kinderbetreuung)"
+  - "Bens Fragen ('Wann geht das los?') liefern oft das DATUM für die Antwort-Nachricht"
