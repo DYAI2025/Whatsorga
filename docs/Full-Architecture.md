@@ -1,6 +1,6 @@
 # Full Architecture — DYAI Multi-Machine Network
 
-Stand: 21.02.2026 | 4 Maschinen, ~30 Services, 6+ AI-Agents
+Stand: 21.02.2026 (Ports gehaertet 21.02. abends) | 4 Maschinen, ~30 Services, 6+ AI-Agents
 
 Dieses Dokument beschreibt das gesamte verteilte System inklusive aller Maschinen, Services, Agents und deren Verbindungen. Es dient als Referenz fuer alle Agenten und Entwickler.
 
@@ -170,9 +170,9 @@ Chrome Extension (Mac)
 
 | Service | Port | Binding | User | Beschreibung |
 |---------|------|---------|------|--------------|
-| EverMemOS API | 8003 | public | dyai | Agentisches Gedaechtnis REST API |
-| EverMemOS Memsys | 1995 | public | dyai | Default Memsys Port |
-| EverMemOS Metrics | 9090 | public | dyai | Prometheus Metrics |
+| EverMemOS API | 8003 | 0.0.0.0 | dyai | Agentisches Gedaechtnis REST API (braucht Tailscale) |
+| EverMemOS Memsys | 1995 | 0.0.0.0 | dyai | Default Memsys Port |
+| EverMemOS Metrics | 9090 | 0.0.0.0 | dyai | Prometheus Metrics |
 | EverMemOS MCP | - | - | dyai | MCP Server fuer Claude |
 | Selina (Next.js) | 3000 | public | dyai | Selina Web UI |
 | WhatsApp Radar Bridge | - | - | dyai | Node.js + Puppeteer/Chrome headless |
@@ -181,25 +181,26 @@ Chrome Extension (Mac)
 | Streamlit | 8501 | public | dyai | Dashboard |
 | Qwen CLI | - | - | dyai | Qwen Agent (2 Sessions) |
 
-### Docker-Services
+### Docker-Services (Ports gehaertet 21.02.2026)
 
-| Container | Port (Host) | Beschreibung |
-|-----------|-------------|--------------|
-| memsys-mongodb | 27017 | Memory Storage |
-| memsys-elasticsearch | 19200 | Textsuche (remapped) |
-| memsys-milvus-standalone | 19530 | Vektor-DB |
-| memsys-milvus-etcd | - | Milvus Metadata (UNHEALTHY!) |
-| memsys-milvus-minio | 9000, 9001 | Object Storage |
-| memsys-redis | 6379 | Cache |
-| deploy-radar-api-1 | 8900 | Zweite radar-api Instanz?! |
-| deploy-postgres-1 | - | PostgreSQL |
-| deploy-chromadb-1 | 8000 | ChromaDB + LPrint (Konflikt!) |
-| deploy-ollama-1 | - | Ollama |
-| auto-claude-falkordb | 6380 | FalkorDB Graph-DB |
-| backend | 32768 | Unbekannte App (Backend) |
-| client | 32769 | Unbekannte App (Frontend) |
-| clickhouse | - | Analytics DB |
-| postgres | - | Zweites PostgreSQL |
+| Container | Port (Host) | Binding | Beschreibung |
+|-----------|-------------|---------|--------------|
+| memsys-mongodb | 27017 | **127.0.0.1** | Memory Storage |
+| memsys-elasticsearch | 19200 | **127.0.0.1** | Textsuche (remapped) |
+| memsys-milvus-standalone | 19530, 9091 | **127.0.0.1** | Vektor-DB |
+| memsys-milvus-etcd | - | - | Milvus Metadata (UNHEALTHY!) |
+| memsys-milvus-minio | 9000, 9001 | **127.0.0.1** | Object Storage |
+| memsys-redis | 6379 | **127.0.0.1** | Cache |
+| deploy-radar-api-1 | 8900 | **127.0.0.1** | Zweite radar-api Instanz (Dev/Test) |
+| deploy-postgres-1 | - | intern | PostgreSQL |
+| deploy-chromadb-1 | - | intern | ChromaDB |
+| deploy-ollama-1 | - | intern | Ollama |
+| auto-claude-falkordb | 6380 | **127.0.0.1** | FalkorDB Graph-DB |
+| auto-claude-graphiti-mcp | 8010 | **127.0.0.1** | Graphiti MCP Server (von 8000 auf 8010 wg. LPrint-Konflikt) |
+| backend | 32768 | 0.0.0.0 | Unbekannte App (Backend) |
+| client | 32769 | 0.0.0.0 | Unbekannte App (Frontend) |
+| clickhouse | - | intern | Analytics DB |
+| postgres | - | intern | Zweites PostgreSQL |
 
 ### WhatsApp Radar Bridge
 ```
@@ -259,17 +260,19 @@ Berlin PC ──WhatsApp Bridge──▶ WhatsApp Servers (headless Chrome)
 Berlin PC ──Tailscale──▶ Mac (SSH-zurueck, wenn noetig)
 ```
 
-### Sicherheits-Status
+### Sicherheits-Status (aktualisiert 21.02.2026 abends)
 
 | Service | Port | Binding | Auth | Risiko |
 |---------|------|---------|------|--------|
-| EverMemOS (Hetzner) | 8001 | localhost | keine | OK (abgesichert 21.02.) |
-| EverMemOS (Berlin) | 8003 | 0.0.0.0 | keine | MITTEL (Tailscale-only Netzwerk) |
-| MongoDB (Berlin) | 27017 | 0.0.0.0 | admin/memsys123 | HOCH (oeffentlich erreichbar!) |
-| Elasticsearch (Berlin) | 19200 | 0.0.0.0 | keine | HOCH (kein Auth!) |
-| Redis (Berlin) | 6379 | 0.0.0.0 | keine | HOCH (kein Auth!) |
-| Milvus (Berlin) | 19530 | 0.0.0.0 | keine | MITTEL |
-| Minio (Berlin) | 9000 | 0.0.0.0 | minioadmin | HOCH (Default-Credentials) |
+| EverMemOS (Hetzner) | 8001 | **localhost** | keine | OK (abgesichert 21.02.) |
+| EverMemOS (Berlin) | 8003 | 0.0.0.0 | keine | MITTEL (braucht Tailscale-Zugang) |
+| MongoDB (Berlin) | 27017 | **localhost** | admin/memsys123 | OK (abgesichert 21.02.) |
+| Elasticsearch (Berlin) | 19200 | **localhost** | keine | OK (abgesichert 21.02.) |
+| Redis (Berlin) | 6379 | **localhost** | keine | OK (abgesichert 21.02.) |
+| Milvus (Berlin) | 19530 | **localhost** | keine | OK (abgesichert 21.02.) |
+| Minio (Berlin) | 9000 | **localhost** | minioadmin | OK (abgesichert 21.02.) |
+| FalkorDB (Berlin) | 6380 | **localhost** | keine | OK (abgesichert 21.02.) |
+| radar-api (Berlin) | 8900 | **localhost** | Bearer Token | OK (abgesichert 21.02.) |
 | radar-api (Hetzner) | 8900 | 0.0.0.0 | Bearer Token | OK |
 | Perr00bot API (DYAI) | 3003 | 0.0.0.0 | keine | MITTEL |
 
@@ -299,29 +302,29 @@ Berlin PC ──Tailscale──▶ Mac (SSH-zurueck, wenn noetig)
 | PostgreSQL (WhatsOrga) | Hetzner VPS | 5432 (intern) | Messages, Termine, Feedback | radar/$POSTGRES_PASSWORD |
 | PostgreSQL (Berlin) | Berlin PC | 5432 (intern) | Unbekannt (deploy-Stack) | ? |
 | MongoDB (Hetzner) | Hetzner VPS | 27017 (intern) | EverMemOS Private Memory | admin/$MONGODB_PASSWORD |
-| MongoDB (Berlin) | Berlin PC | 27017 (public!) | EverMemOS Shared Memory | admin/memsys123 |
+| MongoDB (Berlin) | Berlin PC | 27017 (localhost) | EverMemOS Shared Memory | admin/memsys123 |
 | Elasticsearch (Hetzner) | Hetzner VPS | 9200 (intern) | EverMemOS Textsuche | keine |
-| Elasticsearch (Berlin) | Berlin PC | 19200 (public!) | EverMemOS Textsuche | keine |
+| Elasticsearch (Berlin) | Berlin PC | 19200 (localhost) | EverMemOS Textsuche | keine |
 | Milvus (Hetzner) | Hetzner VPS | 19530 (intern) | EverMemOS Vektoren | keine |
-| Milvus (Berlin) | Berlin PC | 19530 (public!) | EverMemOS Vektoren | keine |
+| Milvus (Berlin) | Berlin PC | 19530 (localhost) | EverMemOS Vektoren | keine |
 | Redis (Hetzner) | Hetzner VPS | 6379 (intern) | Boundary Detection Buffer | keine |
-| Redis (Berlin) | Berlin PC | 6379 (public!) | Cache | keine |
+| Redis (Berlin) | Berlin PC | 6379 (localhost) | Cache | keine |
 | ChromaDB (Hetzner) | Hetzner VPS | 8000 (intern) | RAG Embeddings | keine |
-| ChromaDB (Berlin) | Berlin PC | 8000 (public!) | Agent Embeddings | keine |
-| FalkorDB | Berlin PC | 6380 (public!) | Graph-DB | keine |
+| ChromaDB (Berlin) | Berlin PC | intern | Agent Embeddings | keine |
+| FalkorDB | Berlin PC | 6380 (localhost) | Graph-DB | keine |
 | ClickHouse | Berlin PC | intern | Analytics | keine |
 
 ---
 
 ## Bekannte Probleme
 
-1. **Berlin PC: Alles oeffentlich!** — MongoDB, Elasticsearch, Redis, Milvus, Minio sind auf 0.0.0.0 gebunden ohne Auth. Nur durch Tailscale-Netzwerk geschuetzt, aber trotzdem riskant.
+1. ~~**Berlin PC: Alles oeffentlich!**~~ **BEHOBEN 21.02.2026** — Alle Infra-Ports (MongoDB, ES, Redis, Milvus, Minio, FalkorDB) auf 127.0.0.1 gebunden. Nur EverMemOS (8003) und Selina (3000) bleiben auf 0.0.0.0 (brauchen Tailscale-Zugang).
 2. **milvus-etcd UNHEALTHY** auf Berlin PC — kann zu Milvus-Instabilitaet fuehren.
 3. **Doppelte Deploy-Stacks** auf Berlin PC — `deploy-radar-api-1` und `deploy-postgres-1` laufen zusaetzlich zu den memsys-Containern. Vermutlich Test/Dev-Leftovers.
 4. **5 Claude-Prozesse** auf DYAI VPS — unklar ob alle aktiv genutzt oder Zombies.
 5. **WhatsApp Radar Bridge** auf Berlin PC laeuft seit 12.02. — Chrome-Session koennte auslaufen.
 6. **Ollama** laeuft auf Hetzner VPS und Berlin PC, wird aber von keinem Service aktiv genutzt.
-7. **Port 8000 Konflikt** auf Berlin PC — ChromaDB und deploy-radar-api beanspruchen beide Port-Ranges.
+7. ~~**Port 8000 Konflikt**~~ **BEHOBEN 21.02.2026** — graphiti-mcp von Port 8000 auf 8010 verschoben (LPrint belegt 8000).
 
 ---
 
