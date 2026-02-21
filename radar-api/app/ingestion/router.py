@@ -24,6 +24,7 @@ from app.outputs.caldav_sync import sync_termin_to_calendar, update_termin_in_ca
 from app.storage.database import Termin
 from app.memory import evermemos_client
 from app.memory.context_termin import extract_termine_with_context
+from app.memory.person_learner import learn_from_termin
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -205,6 +206,13 @@ async def ingest_messages(
                                 all_day=t.all_day,
                             )
                             session.add(db_termin)
+
+                            # Auto-learn: enrich person YAML from successful extraction
+                            learn_from_termin(
+                                title=t.title, category=t.category,
+                                relevance=t.relevance, confidence=t.confidence,
+                                all_day=t.all_day, dt=termin_dt,
+                            )
                 except Exception as e:
                     logger.warning(f"Termin extraction error (non-fatal): {e}")
 

@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.storage.database import get_session, Message, Analysis, DriftSnapshot, Thread, Termin, TerminFeedback, CaptureStats
 from app.storage.rag_store import rag_store
+from app.memory.person_learner import learn_from_feedback
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -235,6 +236,15 @@ async def submit_termin_feedback(
             termin.relevance = payload.correction["relevance"]
 
     await session.commit()
+
+    # Auto-learn: enrich person YAML from feedback
+    if payload.action in ("rejected", "edited"):
+        learn_from_feedback(
+            title=termin.title,
+            action=payload.action,
+            reason=payload.reason,
+            correction=payload.correction,
+        )
 
     return {
         "termin_id": termin_id,

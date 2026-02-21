@@ -24,6 +24,13 @@ _loaded = False
 PERSONS_DIR = Path(__file__).parent.parent.parent / "data" / "persons"
 
 
+def reload_persons() -> None:
+    """Force reload of person profiles (called after YAML updates)."""
+    global _loaded
+    _loaded = False
+    load_persons()
+
+
 def load_persons(directory: Path | None = None) -> dict[str, dict]:
     """Load all person YAML files from the persons directory.
 
