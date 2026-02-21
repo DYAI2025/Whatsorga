@@ -81,7 +81,7 @@ Dieses Dokument beschreibt das gesamte verteilte System inklusive aller Maschine
 | OpenClaw Agent | - | - | moltbot | Agentic execution |
 | Nanobot Gateway | 18791 | localhost | moltbot | Nanobot agent |
 | Perr00bot TTS | 8002 | localhost | moltbot | TTS Server (Python 3.14) |
-| Perr00bot API | 3003 | public | moltbot | Node.js server.cjs |
+| Perr00bot API | 3003 | **localhost** | moltbot | Node.js server.cjs (abgesichert 21.02.) |
 | REST Proxy | 3005 | localhost | moltbot | Node.js rest-proxy.mjs |
 | Kanban Spec-Server | 3004 | localhost | moltbot | Kanban backend |
 | Kanban Task-Runner | - | - | moltbot | Task execution |
@@ -274,7 +274,7 @@ Berlin PC ──Tailscale──▶ Mac (SSH-zurueck, wenn noetig)
 | FalkorDB (Berlin) | 6380 | **localhost** | keine | OK (abgesichert 21.02.) |
 | radar-api (Berlin) | 8900 | **localhost** | Bearer Token | OK (abgesichert 21.02.) |
 | radar-api (Hetzner) | 8900 | 0.0.0.0 | Bearer Token | OK |
-| Perr00bot API (DYAI) | 3003 | 0.0.0.0 | keine | MITTEL |
+| Perr00bot API (DYAI) | 3003 | **localhost** | keine | OK (abgesichert 21.02.) |
 
 ---
 
