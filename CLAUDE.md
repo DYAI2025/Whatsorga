@@ -136,6 +136,21 @@ All env vars use `RADAR_` prefix (see `radar-api/app/config.py`):
 **Memory**: `GET /api/context/status`, `/api/context/recall`
 **Health**: `GET /health`
 
+## Slash Commands
+
+- `/whatsorga-deploy` — Commit, push, and deploy to Hetzner VPS
+- `/whatsorga-test-termin` — Send test messages and verify termin extraction on VPS
+- `/whatsorga-reprocess` — Delete termine and re-run extraction pipeline against stored messages
+
+## Deployment (Hetzner VPS)
+
+- VPS: Hetzner CAX21 (ARM64, 4 vCPU, 8GB RAM)
+- SSH: `ssh -i ~/.ssh/id_ed25519 root@46.225.120.255`
+- Repo on VPS: `/opt/Whatsorga`
+- Deploy dir: `/opt/Whatsorga/deploy`
+- Min 6GB RAM required (Elasticsearch + Milvus are memory-intensive)
+- Groq has 100k TPD limit — reprocessing many messages can exhaust it; Gemini Flash is fallback
+
 ## Root-Level Utility Scripts
 - `import_context.py` — batch WhatsApp export importer into EverMemOS (smart chunking by time gaps, async with semaphore)
 - `transcribe_voices.py` — batch .opus voice transcription via Groq Whisper into EverMemOS
