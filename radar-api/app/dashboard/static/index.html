@@ -214,6 +214,116 @@
     .search-text { font-size: 13px; line-height: 1.4; }
     .search-meta { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
 
+    /* Feedback buttons */
+    .termin-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .termin-actions button {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .termin-actions button:hover { opacity: 0.85; }
+    .btn-confirm { background: rgba(34,197,94,0.2); color: #22c55e; }
+    .btn-reject { background: rgba(239,68,68,0.2); color: #ef4444; }
+    .btn-edit { background: rgba(99,102,241,0.2); color: #6366f1; }
+    .btn-cancel-edit { background: rgba(139,141,151,0.2); color: #8b8d97; }
+    .btn-save { background: var(--accent); color: white; }
+
+    .termin-status-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-left: 6px;
+    }
+    .badge-auto { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .badge-suggested { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .badge-confirmed { background: rgba(99,102,241,0.15); color: #6366f1; }
+    .badge-rejected { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .badge-cancelled { background: rgba(139,141,151,0.15); color: #8b8d97; }
+
+    .termin-confidence {
+      display: inline-block;
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-left: 6px;
+    }
+
+    .termin-edit-form {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 10px;
+      background: var(--bg);
+      border-radius: 8px;
+    }
+    .termin-edit-form label {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .termin-edit-form input,
+    .termin-edit-form select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .termin-edit-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .reject-reason {
+      margin-top: 6px;
+    }
+    .reject-reason input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .reject-reason-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .termin-feedback-done {
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 6px;
+      padding: 4px 0;
+    }
+
+    .past-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .past-toggle input[type="checkbox"] {
+      accent-color: var(--accent);
+    }
+
     /* Heatmap */
     .heatmap-grid {
       display: flex;
@@ -443,7 +553,11 @@
 
   <!-- Termine -->
   <div class="card">
-    <h2>Anstehende Termine</h2>
+    <h2>Termine</h2>
+    <div class="past-toggle">
+      <input type="checkbox" id="showPastTermine" onchange="loadTermine()">
+      <label for="showPastTermine">Vergangene anzeigen</label>
+    </div>
     <ul class="termin-list" id="terminList">
       <li class="empty-state">Lade...</li>
     </ul>
@@ -727,21 +841,166 @@ async function loadThreads() {
 
 async function loadTermine() {
   try {
-    const data = await apiFetch(`/api/termine/${encodeURIComponent(CHAT_ID)}`);
+    const includePast = document.getElementById('showPastTermine').checked;
+    const url = `/api/termine/${encodeURIComponent(CHAT_ID)}${includePast ? '?include_past=true' : ''}`;
+    const data = await apiFetch(url);
     const list = document.getElementById('terminList');
     if (!data.termine.length) {
-      list.innerHTML = '<li class="empty-state">Keine anstehenden Termine</li>';
+      list.innerHTML = '<li class="empty-state">Keine Termine</li>';
       return;
     }
-    list.innerHTML = data.termine.map(t => `
-      <li class="termin-item">
-        <div class="termin-title">${esc(t.title)}${t.caldav_synced ? '<span class="termin-synced">Kalender</span>' : ''}</div>
-        <div class="termin-datetime">${t.datetime ? formatDate(t.datetime) : '-'}</div>
-        <div class="termin-participants">${(t.participants || []).join(', ')}</div>
-      </li>
-    `).join('');
+    list.innerHTML = data.termine.map(t => renderTerminItem(t)).join('');
   } catch (e) {
     console.error('Termine error:', e);
+  }
+}
+
+function renderTerminItem(t) {
+  const badgeClass = 'badge-' + (t.status || 'auto');
+  const statusLabels = {auto:'Auto',suggested:'Vorschlag',confirmed:'Bestätigt',rejected:'Abgelehnt',cancelled:'Abgesagt'};
+  const statusLabel = statusLabels[t.status] || t.status;
+  const confPct = t.confidence ? Math.round(t.confidence * 100) + '%' : '';
+  const isDone = t.status === 'confirmed' || t.status === 'rejected';
+
+  let actionsHtml = '';
+  if (!isDone) {
+    actionsHtml = `
+      <div class="termin-actions" id="actions-${t.id}">
+        <button class="btn-confirm" onclick="confirmTermin('${t.id}')">Bestätigen</button>
+        <button class="btn-reject" onclick="showRejectForm('${t.id}')">Ablehnen</button>
+        <button class="btn-edit" onclick="showEditForm('${t.id}', this)">Bearbeiten</button>
+      </div>`;
+  } else {
+    actionsHtml = `<div class="termin-feedback-done" style="color:${t.status==='confirmed'?'var(--positive)':'var(--negative)'}">
+      ${t.status==='confirmed'?'✓ Bestätigt':'✗ Abgelehnt'}</div>`;
+  }
+
+  return `
+    <li class="termin-item" id="termin-${t.id}" data-termin='${esc(JSON.stringify(t))}'>
+      <div class="termin-title">
+        ${esc(t.title)}
+        <span class="termin-status-badge ${badgeClass}">${esc(statusLabel)}</span>
+        ${t.caldav_synced ? '<span class="termin-synced">Kalender</span>' : ''}
+        ${confPct ? '<span class="termin-confidence">' + confPct + '</span>' : ''}
+      </div>
+      <div class="termin-datetime">${t.datetime ? formatDate(t.datetime) : '-'}${t.location ? ' · ' + esc(t.location) : ''}</div>
+      <div class="termin-participants">${(t.participants || []).join(', ')}</div>
+      ${actionsHtml}
+    </li>`;
+}
+
+async function confirmTermin(id) {
+  try {
+    await fetch(`/api/termine/${id}/feedback`, {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({action: 'confirmed'})
+    });
+    updateTerminUI(id, 'confirmed');
+  } catch (e) { console.error('Confirm error:', e); }
+}
+
+function showRejectForm(id) {
+  const actionsEl = document.getElementById('actions-' + id);
+  if (!actionsEl) return;
+  actionsEl.innerHTML = `
+    <div class="reject-reason">
+      <input type="text" id="reject-reason-${id}" placeholder="Grund (optional)">
+      <div class="reject-reason-actions">
+        <button class="btn-reject" onclick="rejectTermin('${id}')">Ablehnen</button>
+        <button class="btn-cancel-edit" onclick="loadTermine()">Abbrechen</button>
+      </div>
+    </div>`;
+}
+
+async function rejectTermin(id) {
+  const reason = document.getElementById('reject-reason-' + id)?.value || '';
+  try {
+    await fetch(`/api/termine/${id}/feedback`, {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({action: 'rejected', reason: reason || null})
+    });
+    updateTerminUI(id, 'rejected');
+  } catch (e) { console.error('Reject error:', e); }
+}
+
+function showEditForm(id) {
+  const li = document.getElementById('termin-' + id);
+  if (!li) return;
+  const t = JSON.parse(li.dataset.termin);
+  const dtLocal = t.datetime ? t.datetime.slice(0, 16) : '';
+
+  const actionsEl = document.getElementById('actions-' + id);
+  if (!actionsEl) return;
+  actionsEl.innerHTML = `
+    <div class="termin-edit-form">
+      <label>Titel</label>
+      <input type="text" id="edit-title-${id}" value="${esc(t.title || '')}">
+      <label>Datum/Uhrzeit</label>
+      <input type="datetime-local" id="edit-datetime-${id}" value="${dtLocal}">
+      <label>Ort</label>
+      <input type="text" id="edit-location-${id}" value="${esc(t.location || '')}">
+      <div style="display:flex;gap:12px">
+        <div style="flex:1">
+          <label>Kategorie</label>
+          <select id="edit-category-${id}">
+            <option value="appointment" ${t.category==='appointment'?'selected':''}>Termin</option>
+            <option value="reminder" ${t.category==='reminder'?'selected':''}>Erinnerung</option>
+            <option value="task" ${t.category==='task'?'selected':''}>Aufgabe</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label>Relevanz</label>
+          <select id="edit-relevance-${id}">
+            <option value="for_me" ${t.relevance==='for_me'?'selected':''}>Für mich</option>
+            <option value="shared" ${t.relevance==='shared'?'selected':''}>Geteilt</option>
+            <option value="partner_only" ${t.relevance==='partner_only'?'selected':''}>Nur Partner</option>
+            <option value="affects_me" ${t.relevance==='affects_me'?'selected':''}>Betrifft mich</option>
+          </select>
+        </div>
+      </div>
+      <div class="termin-edit-actions">
+        <button class="btn-save" onclick="saveEdit('${id}')">Speichern</button>
+        <button class="btn-cancel-edit" onclick="loadTermine()">Abbrechen</button>
+      </div>
+    </div>`;
+}
+
+async function saveEdit(id) {
+  const correction = {};
+  const title = document.getElementById('edit-title-' + id)?.value;
+  const dt = document.getElementById('edit-datetime-' + id)?.value;
+  const category = document.getElementById('edit-category-' + id)?.value;
+  const relevance = document.getElementById('edit-relevance-' + id)?.value;
+
+  if (title) correction.title = title;
+  if (dt) correction.datetime = dt;
+  if (category) correction.category = category;
+  if (relevance) correction.relevance = relevance;
+
+  try {
+    await fetch(`/api/termine/${id}/feedback`, {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({action: 'edited', correction})
+    });
+    loadTermine();
+  } catch (e) { console.error('Edit error:', e); }
+}
+
+function updateTerminUI(id, newStatus) {
+  const li = document.getElementById('termin-' + id);
+  if (!li) return;
+  const actionsEl = document.getElementById('actions-' + id);
+  if (actionsEl) {
+    const color = newStatus === 'confirmed' ? 'var(--positive)' : 'var(--negative)';
+    const label = newStatus === 'confirmed' ? '✓ Bestätigt' : '✗ Abgelehnt';
+    actionsEl.innerHTML = `<div class="termin-feedback-done" style="color:${color}">${label}</div>`;
+  }
+  // Update badge
+  const badge = li.querySelector('.termin-status-badge');
+  if (badge) {
+    badge.className = 'termin-status-badge badge-' + newStatus;
+    const labels = {confirmed:'Bestätigt',rejected:'Abgelehnt'};
+    badge.textContent = labels[newStatus] || newStatus;
   }
 }
 

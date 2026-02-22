@@ -362,6 +362,89 @@
     .pipeline-entry.status-rejected { border-left: 3px solid #ef4444; }
     .pipeline-entry.status-confirmed { border-left: 3px solid #6366f1; }
 
+    /* Feedback actions */
+    .feedback-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .feedback-bar button {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .feedback-bar button:hover { opacity: 0.85; }
+    .fb-confirm { background: rgba(34,197,94,0.2); color: #22c55e; }
+    .fb-reject { background: rgba(239,68,68,0.2); color: #ef4444; }
+    .fb-edit { background: rgba(99,102,241,0.2); color: #6366f1; }
+    .fb-cancel { background: rgba(139,141,151,0.2); color: #8b8d97; }
+    .fb-save { background: var(--accent); color: white; }
+    .fb-spacer { flex: 1; }
+    .fb-done {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 0;
+    }
+
+    .fb-reject-form {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .fb-reject-form input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .fb-edit-form {
+      margin-top: 12px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .fb-edit-form label {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 2px;
+      display: block;
+    }
+    .fb-edit-form input,
+    .fb-edit-form select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .fb-edit-form .full-width {
+      grid-column: 1 / -1;
+    }
+    .fb-edit-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
     /* Empty state */
     .empty-state {
       text-align: center;
@@ -655,11 +738,33 @@ function renderEntry(item) {
   var statusLabel = getStatusLabel(item.status || 'auto');
   var categoryLabel = getCategoryLabel(item.category || 'appointment');
 
+  // Feedback bar
+  var isDone = item.status === 'confirmed' || item.status === 'rejected';
+  var feedbackHtml = '';
+  if (isDone) {
+    var fbColor = item.status === 'confirmed' ? 'var(--positive)' : 'var(--negative)';
+    var fbLabel = item.status === 'confirmed' ? '&#10003; Bestaetigt' : '&#10007; Abgelehnt';
+    feedbackHtml = '<div class="feedback-bar"><div class="fb-done" style="color:' + fbColor + '">' + fbLabel + '</div></div>';
+  } else {
+    feedbackHtml =
+      '<div class="feedback-bar" id="fb-' + item.id + '">' +
+        '<button class="fb-confirm" onclick="fbConfirm(\'' + item.id + '\')">Bestaetigen</button>' +
+        '<button class="fb-reject" onclick="fbShowReject(\'' + item.id + '\')">Ablehnen</button>' +
+        '<button class="fb-edit" onclick="fbShowEdit(\'' + item.id + '\')">Bearbeiten</button>' +
+      '</div>';
+  }
+
+  // Store item data for edit form
+  var dataAttr = ' data-item=\'' + esc(JSON.stringify({
+    title: item.title, datetime: item.datetime,
+    category: item.category, relevance: item.relevance, location: item.location || ''
+  })) + '\'';
+
   return '' +
-    '<div class="pipeline-entry ' + statusClass + '">' +
+    '<div class="pipeline-entry ' + statusClass + '" id="entry-' + item.id + '"' + dataAttr + '>' +
       '<div class="entry-header">' +
         '<span class="entry-title">' + esc(item.title || 'Unbenannt') + '</span>' +
-        '<span class="badge ' + badgeClass + '">' + esc(statusLabel) + '</span>' +
+        '<span class="badge ' + badgeClass + '" id="badge-' + item.id + '">' + esc(statusLabel) + '</span>' +
         '<span class="cat-pill ' + catClass + '">' + esc(categoryLabel) + '</span>' +
       '</div>' +
       '<div class="pipeline-flow">' +
@@ -714,6 +819,7 @@ function renderEntry(item) {
           '</div>' +
         '</div>' +
       '</div>' +
+      feedbackHtml +
     '</div>';
 }
 
@@ -792,6 +898,117 @@ function startAutoRefresh() {
     }
     document.getElementById('refreshInfo').textContent = 'Auto-Refresh: ' + countdown + 's';
   }, 1000);
+}
+
+// --- Feedback handlers ---
+
+async function fbConfirm(id) {
+  try {
+    await fetch('/api/termine/' + id + '/feedback', {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({action: 'confirmed'})
+    });
+    fbUpdateUI(id, 'confirmed');
+  } catch (e) { console.error('Confirm error:', e); }
+}
+
+function fbShowReject(id) {
+  var el = document.getElementById('fb-' + id);
+  if (!el) return;
+  el.outerHTML =
+    '<div class="fb-reject-form" id="fb-' + id + '">' +
+      '<input type="text" id="fb-reason-' + id + '" placeholder="Grund (optional)">' +
+      '<button class="fb-reject" onclick="fbReject(\'' + id + '\')">Ablehnen</button>' +
+      '<button class="fb-cancel" onclick="loadPipeline()">Abbrechen</button>' +
+    '</div>';
+  document.getElementById('fb-reason-' + id).focus();
+}
+
+async function fbReject(id) {
+  var reason = document.getElementById('fb-reason-' + id);
+  var reasonVal = reason ? reason.value : '';
+  try {
+    await fetch('/api/termine/' + id + '/feedback', {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({action: 'rejected', reason: reasonVal || null})
+    });
+    fbUpdateUI(id, 'rejected');
+  } catch (e) { console.error('Reject error:', e); }
+}
+
+function fbShowEdit(id) {
+  var entry = document.getElementById('entry-' + id);
+  if (!entry) return;
+  var item;
+  try { item = JSON.parse(entry.dataset.item); } catch(e) { return; }
+
+  var dtLocal = item.datetime ? item.datetime.slice(0, 16) : '';
+  var el = document.getElementById('fb-' + id);
+  if (!el) return;
+
+  el.outerHTML =
+    '<div class="fb-edit-form" id="fb-' + id + '">' +
+      '<div><label>Titel</label><input type="text" id="fb-title-' + id + '" value="' + esc(item.title || '') + '"></div>' +
+      '<div><label>Datum/Uhrzeit</label><input type="datetime-local" id="fb-dt-' + id + '" value="' + dtLocal + '"></div>' +
+      '<div><label>Kategorie</label>' +
+        '<select id="fb-cat-' + id + '">' +
+          '<option value="appointment"' + (item.category==='appointment'?' selected':'') + '>Termin</option>' +
+          '<option value="reminder"' + (item.category==='reminder'?' selected':'') + '>Erinnerung</option>' +
+          '<option value="task"' + (item.category==='task'?' selected':'') + '>Aufgabe</option>' +
+        '</select></div>' +
+      '<div><label>Relevanz</label>' +
+        '<select id="fb-rel-' + id + '">' +
+          '<option value="for_me"' + (item.relevance==='for_me'?' selected':'') + '>Fuer mich</option>' +
+          '<option value="shared"' + (item.relevance==='shared'?' selected':'') + '>Geteilt</option>' +
+          '<option value="partner_only"' + (item.relevance==='partner_only'?' selected':'') + '>Nur Partner</option>' +
+          '<option value="affects_me"' + (item.relevance==='affects_me'?' selected':'') + '>Betrifft mich</option>' +
+        '</select></div>' +
+      '<div class="fb-edit-actions">' +
+        '<button class="fb-save" onclick="fbSaveEdit(\'' + id + '\')">Speichern</button>' +
+        '<button class="fb-cancel" onclick="loadPipeline()">Abbrechen</button>' +
+      '</div>' +
+    '</div>';
+}
+
+async function fbSaveEdit(id) {
+  var correction = {};
+  var title = document.getElementById('fb-title-' + id);
+  var dt = document.getElementById('fb-dt-' + id);
+  var cat = document.getElementById('fb-cat-' + id);
+  var rel = document.getElementById('fb-rel-' + id);
+
+  if (title && title.value) correction.title = title.value;
+  if (dt && dt.value) correction.datetime = dt.value;
+  if (cat && cat.value) correction.category = cat.value;
+  if (rel && rel.value) correction.relevance = rel.value;
+
+  try {
+    await fetch('/api/termine/' + id + '/feedback', {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({action: 'edited', correction: correction})
+    });
+    loadPipeline();
+  } catch (e) { console.error('Edit error:', e); }
+}
+
+function fbUpdateUI(id, newStatus) {
+  var el = document.getElementById('fb-' + id);
+  if (el) {
+    var color = newStatus === 'confirmed' ? 'var(--positive)' : 'var(--negative)';
+    var label = newStatus === 'confirmed' ? '&#10003; Bestaetigt' : '&#10007; Abgelehnt';
+    el.outerHTML = '<div class="feedback-bar"><div class="fb-done" style="color:' + color + '">' + label + '</div></div>';
+  }
+  // Update badge
+  var badge = document.getElementById('badge-' + id);
+  if (badge) {
+    badge.className = 'badge badge-' + newStatus;
+    badge.textContent = newStatus === 'confirmed' ? 'Bestaetigt' : 'Abgelehnt';
+  }
+  // Update border color
+  var entry = document.getElementById('entry-' + id);
+  if (entry) {
+    entry.className = entry.className.replace(/status-\w+/, 'status-' + newStatus);
+  }
 }
 
 // Auto-login from localStorage

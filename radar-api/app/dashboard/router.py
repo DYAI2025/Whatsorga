@@ -139,16 +139,20 @@ async def get_threads(
 @router.get("/termine/{chat_id}")
 async def get_termine(
     chat_id: str,
+    include_past: bool = Query(default=False),
     session: AsyncSession = Depends(get_session),
     _auth: None = Depends(verify_api_key),
 ):
-    """Get upcoming appointments extracted from messages."""
+    """Get appointments extracted from messages. Use include_past=true to also show past termine."""
+    conditions = [Message.chat_id == chat_id]
+    if not include_past:
+        conditions.append(Termin.datetime_ >= datetime.utcnow())
     result = await session.execute(
         select(Termin, Message.chat_id)
         .join(Message, Termin.message_id == Message.id)
-        .where(and_(Message.chat_id == chat_id, Termin.datetime_ >= datetime.utcnow()))
-        .order_by(Termin.datetime_)
-        .limit(20)
+        .where(and_(*conditions))
+        .order_by(Termin.datetime_.desc() if include_past else Termin.datetime_)
+        .limit(50 if include_past else 20)
     )
     rows = result.all()
 
