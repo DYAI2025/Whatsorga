@@ -491,7 +491,7 @@ def _parse_extraction_response(response_text: str, sender: str) -> list[Extracte
             logger.debug(f"LLM says no termine (no JSON brackets): {response_text[:200]}")
             return []
 
-        logger.warning(f"Failed to parse LLM response (no JSON array found): {response_text[:800]}...")
+        logger.warning(f"Failed to parse LLM response (no JSON array found): {response_text[:300]}...")
         return None
 
     if not isinstance(parsed, list):
@@ -641,7 +641,7 @@ async def _extract_via_gemini(
             if results is None:
                 # Gemini responded but we couldn't parse JSON — treat as "no termine"
                 # not "LLM unavailable" (which would be misleading)
-                logger.info(f"Gemini: unparseable response for '{text[:60]}...': {response_text[:800]}")
+                logger.info(f"Gemini: unparseable response for '{text[:60]}...': {response_text[:200]}")
                 return []
 
             for r in results:
