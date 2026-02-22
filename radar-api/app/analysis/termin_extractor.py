@@ -220,7 +220,10 @@ Format pro Termin:
   "location": "Ort des Termins (z.B. 'Hort', 'Schwimmhalle', 'Beethoven-Gymnasium') oder leer",
   "reminders": [{{"trigger": "-P1D", "description": "..."}}],
   "reasoning": "Zusammenfassung der Dimensionen-Analyse und Entscheidung"
-}}]"""
+}}]
+
+PFLICHT: Deine Antwort MUSS mit einem JSON-Array enden — entweder [{{"title":...}}] oder leeres Array [].
+Reasoning-Text OHNE JSON am Ende ist UNGÜLTIG."""
 
 
 WEEKDAYS_DE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
@@ -619,7 +622,7 @@ async def _extract_via_gemini(
                 json={
                     "system_instruction": {"parts": [{"text": system_prompt}]},
                     "contents": [{"parts": [{"text": user_prompt}]}],
-                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 2048},
+                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 4096},
                 },
             )
 
