@@ -908,11 +908,14 @@ function renderCommPattern(data) {
     return;
   }
 
-  // Find max value for color scaling
-  let maxVal = 1;
+  // Find max value for color scaling (use 95th percentile to avoid outlier domination)
+  const allVals = [];
   for (let d = 0; d < 7; d++)
     for (let h = 0; h < 24; h++)
-      if (heatmap[d][h] > maxVal) maxVal = heatmap[d][h];
+      if (heatmap[d][h] > 0) allVals.push(heatmap[d][h]);
+  allVals.sort((a, b) => a - b);
+  const p95 = allVals.length > 0 ? allVals[Math.floor(allVals.length * 0.95)] : 1;
+  const maxVal = Math.max(p95, 1);
 
   // Hour labels row
   let html = '<div class="comm-hour-labels"><div></div>';
