@@ -969,11 +969,13 @@ async function saveEdit(id) {
   const correction = {};
   const title = document.getElementById('edit-title-' + id)?.value;
   const dt = document.getElementById('edit-datetime-' + id)?.value;
+  const location = document.getElementById('edit-location-' + id)?.value;
   const category = document.getElementById('edit-category-' + id)?.value;
   const relevance = document.getElementById('edit-relevance-' + id)?.value;
 
   if (title) correction.title = title;
   if (dt) correction.datetime = dt;
+  if (location !== undefined) correction.location = location;
   if (category) correction.category = category;
   if (relevance) correction.relevance = relevance;
 

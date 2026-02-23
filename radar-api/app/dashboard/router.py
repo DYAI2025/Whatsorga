@@ -235,6 +235,8 @@ async def submit_termin_feedback(
                 termin.datetime_ = datetime.fromisoformat(payload.correction["datetime"])
             except ValueError:
                 pass
+        if "location" in payload.correction:
+            termin.location = payload.correction["location"]
         if "category" in payload.correction:
             termin.category = payload.correction["category"]
         if "relevance" in payload.correction:
