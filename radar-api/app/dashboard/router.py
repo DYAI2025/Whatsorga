@@ -26,6 +26,78 @@ def verify_api_key(authorization: str = Header(...)):
         raise HTTPException(status_code=403, detail="Invalid API key")
 
 
+@router.get("/messages/{chat_id}")
+async def get_messages(
+    chat_id: str,
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+    sender: str = Query(default=""),
+    days: int = Query(default=0, ge=0, le=365),
+    session: AsyncSession = Depends(get_session),
+    _auth: None = Depends(verify_api_key),
+):
+    """Browse messages with optional sender filter and pagination.
+
+    Returns messages joined with their analysis data (sentiment, markers).
+    """
+    from sqlalchemy.orm import aliased
+
+    conditions = [Message.chat_id == chat_id]
+    if sender:
+        conditions.append(Message.sender == sender)
+    if days > 0:
+        since = datetime.utcnow() - timedelta(days=days)
+        conditions.append(Message.timestamp >= since)
+
+    # Total count for pagination
+    count_result = await session.execute(
+        select(func.count(Message.id)).where(and_(*conditions))
+    )
+    total = count_result.scalar() or 0
+
+    # Get distinct senders for filter dropdown
+    sender_result = await session.execute(
+        select(Message.sender, func.count(Message.id).label("cnt"))
+        .where(Message.chat_id == chat_id)
+        .group_by(Message.sender)
+        .order_by(desc(func.count(Message.id)))
+    )
+    senders = [{"name": r.sender, "count": r.cnt} for r in sender_result.all()]
+
+    # Fetch messages with analysis
+    result = await session.execute(
+        select(Message, Analysis)
+        .outerjoin(Analysis, Analysis.message_id == Message.id)
+        .where(and_(*conditions))
+        .order_by(desc(Message.timestamp))
+        .offset(offset)
+        .limit(limit)
+    )
+    rows = result.all()
+
+    return {
+        "chat_id": chat_id,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "senders": senders,
+        "messages": [
+            {
+                "id": str(msg.id),
+                "sender": msg.sender,
+                "text": msg.text or "",
+                "timestamp": msg.timestamp.isoformat() if msg.timestamp else None,
+                "has_audio": bool(msg.audio_path),
+                "is_transcribed": msg.is_transcribed,
+                "sentiment": round(analysis.sentiment_score, 3) if analysis and analysis.sentiment_score is not None else None,
+                "markers": analysis.markers if analysis else None,
+                "marker_categories": analysis.marker_categories if analysis else None,
+            }
+            for msg, analysis in rows
+        ],
+    }
+
+
 @router.get("/drift/{chat_id}")
 async def get_drift(
     chat_id: str,

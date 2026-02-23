@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nachrichten - WhatsOrga</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e4e4e7;
+      --text-dim: #8b8d97;
+      --accent: #6366f1;
+      --accent-dim: #4f46e5;
+      --positive: #22c55e;
+      --negative: #ef4444;
+      --warning: #f59e0b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    header h1 { font-size: 18px; font-weight: 600; }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-controls select,
+    .header-controls input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .header-controls button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .header-controls button:hover { background: var(--accent-dim); }
+
+    .nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      gap: 0;
+    }
+    .nav a {
+      color: var(--text-dim);
+      text-decoration: none;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .nav a:hover { color: var(--text); }
+    .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* Filter bar */
+    .filter-bar {
+      max-width: 900px;
+      margin: 20px auto 0;
+      padding: 0 24px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .filter-bar select,
+    .filter-bar input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .filter-bar select { min-width: 160px; }
+    .filter-bar input[type="search"] { flex: 1; min-width: 200px; }
+    .filter-bar .filter-info {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-left: auto;
+    }
+
+    /* Message list */
+    .msg-container {
+      max-width: 900px;
+      margin: 16px auto;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .msg-bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      position: relative;
+      line-height: 1.45;
+    }
+
+    .msg-incoming {
+      align-self: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-outgoing {
+      align-self: flex-end;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-sender {
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+    .msg-incoming .msg-sender { color: var(--accent); }
+    .msg-outgoing .msg-sender { color: var(--positive); }
+
+    .msg-text {
+      font-size: 13px;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .msg-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 10px;
+      color: var(--text-dim);
+      justify-content: flex-end;
+    }
+
+    .msg-sentiment {
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 10px;
+    }
+    .msg-sentiment.pos { background: rgba(34,197,94,0.15); color: var(--positive); }
+    .msg-sentiment.neg { background: rgba(239,68,68,0.15); color: var(--negative); }
+    .msg-sentiment.neu { background: rgba(139,141,151,0.15); color: var(--text-dim); }
+
+    .msg-markers {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .msg-marker-tag {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+
+    .msg-audio-badge {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 8px;
+      background: rgba(139,92,246,0.15);
+      color: #8b5cf6;
+    }
+
+    /* Date separator */
+    .date-sep {
+      text-align: center;
+      margin: 16px 0 8px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .date-sep span {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 3px 12px;
+      border-radius: 10px;
+    }
+
+    /* Pagination */
+    .pagination {
+      max-width: 900px;
+      margin: 16px auto 32px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .pagination button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .pagination button:hover { background: var(--border); }
+    .pagination button:disabled { opacity: 0.3; cursor: default; }
+    .pagination .page-info {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-dim);
+      padding: 60px 20px;
+      font-size: 14px;
+    }
+
+    /* Auth */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      width: 340px;
+    }
+    .auth-box h2 { margin-bottom: 16px; font-size: 18px; color: var(--text); }
+    .auth-box input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .auth-box button {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .auth-error { color: var(--negative); font-size: 13px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<!-- Auth -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <h2>WhatsOrga</h2>
+    <input type="password" id="authKey" placeholder="API-Key eingeben">
+    <input type="text" id="authChatId" placeholder="Chat-ID eingeben">
+    <button onclick="authenticate()">Verbinden</button>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<header>
+  <h1>WhatsOrga</h1>
+  <div class="header-controls">
+    <span id="chatLabel" style="font-size:13px;color:var(--text-dim)"></span>
+  </div>
+</header>
+
+<nav class="nav">
+  <a href="/dashboard">Dashboard</a>
+  <a href="/dashboard/pipeline">Pipeline</a>
+  <a href="/dashboard/charts">Charts</a>
+  <a href="/dashboard/messages" class="active">Nachrichten</a>
+  <a href="/dashboard/monitoring">Monitoring</a>
+</nav>
+
+<div class="filter-bar">
+  <select id="senderFilter" onchange="currentOffset=0;loadMessages()">
+    <option value="">Alle Sender</option>
+  </select>
+  <select id="daysFilter" onchange="currentOffset=0;loadMessages()">
+    <option value="0">Gesamter Zeitraum</option>
+    <option value="7">Letzte 7 Tage</option>
+    <option value="14">Letzte 14 Tage</option>
+    <option value="30" selected>Letzte 30 Tage</option>
+    <option value="90">Letzte 90 Tage</option>
+  </select>
+  <input type="search" id="textFilter" placeholder="Text filtern..." oninput="debounceFilter()">
+  <span class="filter-info" id="filterInfo"></span>
+</div>
+
+<div class="msg-container" id="msgContainer">
+  <div class="empty-state">Lade Nachrichten...</div>
+</div>
+
+<div class="pagination" id="pagination" style="display:none">
+  <button id="btnPrev" onclick="pagePrev()">Neuere</button>
+  <span class="page-info" id="pageInfo"></span>
+  <button id="btnNext" onclick="pageNext()">Altere</button>
+</div>
+
+<script>
+let API_KEY = '';
+let CHAT_ID = '';
+let currentOffset = 0;
+const PAGE_SIZE = 50;
+let totalMessages = 0;
+let allSenders = [];
+let outgoingSender = '';  // detected from data
+let filterTimer = null;
+
+const MARKER_COLORS = {
+  waerme: '#22c55e', distanz: '#3b82f6', stress: '#ef4444',
+  konflikt: '#f97316', freude: '#fbbf24', trauer: '#8b5cf6',
+  fuersorge: '#ec4899', planung: '#06b6d4', dankbarkeit: '#10b981',
+  unsicherheit: '#6b7280',
+};
+
+function headers() {
+  return { Authorization: 'Bearer ' + API_KEY, 'Content-Type': 'application/json' };
+}
+
+async function apiFetch(path) {
+  const resp = await fetch(path, { headers: headers() });
+  if (!resp.ok) throw new Error(`API error ${resp.status}`);
+  return resp.json();
+}
+
+function authenticate() {
+  API_KEY = document.getElementById('authKey').value.trim();
+  CHAT_ID = document.getElementById('authChatId').value.trim();
+  if (!API_KEY || !CHAT_ID) {
+    document.getElementById('authError').textContent = 'Bitte beide Felder ausfuellen';
+    return;
+  }
+  apiFetch(`/api/overview/${encodeURIComponent(CHAT_ID)}`)
+    .then(() => {
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('chatLabel').textContent = CHAT_ID;
+      localStorage.setItem('radar_key', API_KEY);
+      localStorage.setItem('radar_chat', CHAT_ID);
+      loadMessages();
+    })
+    .catch(err => {
+      document.getElementById('authError').textContent = 'Verbindung fehlgeschlagen: ' + err.message;
+    });
+}
+
+function debounceFilter() {
+  clearTimeout(filterTimer);
+  filterTimer = setTimeout(() => { currentOffset = 0; loadMessages(); }, 300);
+}
+
+async function loadMessages() {
+  const container = document.getElementById('msgContainer');
+  const sender = document.getElementById('senderFilter').value;
+  const days = document.getElementById('daysFilter').value;
+
+  let url = `/api/messages/${encodeURIComponent(CHAT_ID)}?offset=${currentOffset}&limit=${PAGE_SIZE}`;
+  if (sender) url += `&sender=${encodeURIComponent(sender)}`;
+  if (days !== '0') url += `&days=${days}`;
+
+  try {
+    const data = await apiFetch(url);
+    totalMessages = data.total;
+
+    // Populate sender filter (once)
+    if (data.senders && data.senders.length && allSenders.length === 0) {
+      allSenders = data.senders;
+      // Guess outgoing sender: the one whose name matches env or has fewer messages
+      // Heuristic: sort by count, the chat_id usually matches the other person
+      outgoingSender = data.senders.find(s => s.name !== CHAT_ID)?.name || '';
+      const sel = document.getElementById('senderFilter');
+      for (const s of data.senders) {
+        const opt = document.createElement('option');
+        opt.value = s.name;
+        opt.textContent = `${s.name} (${s.count})`;
+        sel.appendChild(opt);
+      }
+    }
+
+    renderMessages(data.messages);
+    updatePagination();
+  } catch (e) {
+    console.error('Messages error:', e);
+    container.innerHTML = '<div class="empty-state">Fehler beim Laden: ' + esc(e.message) + '</div>';
+  }
+}
+
+function renderMessages(messages) {
+  const container = document.getElementById('msgContainer');
+  const textFilter = document.getElementById('textFilter').value.toLowerCase().trim();
+
+  // Filter client-side by text
+  let filtered = messages;
+  if (textFilter) {
+    filtered = messages.filter(m => (m.text || '').toLowerCase().includes(textFilter));
+  }
+
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty-state">Keine Nachrichten' +
+      (textFilter ? ' mit "' + esc(textFilter) + '"' : '') + '</div>';
+    return;
+  }
+
+  // Update filter info
+  const info = document.getElementById('filterInfo');
+  info.textContent = textFilter
+    ? `${filtered.length}/${messages.length} angezeigt (${totalMessages} gesamt)`
+    : `${totalMessages} Nachrichten`;
+
+  let html = '';
+  let lastDate = '';
+
+  for (const m of filtered) {
+    // Date separator
+    const msgDate = m.timestamp ? m.timestamp.slice(0, 10) : '';
+    if (msgDate && msgDate !== lastDate) {
+      lastDate = msgDate;
+      const d = new Date(msgDate);
+      const label = d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: '2-digit' });
+      html += `<div class="date-sep"><span>${label}</span></div>`;
+    }
+
+    const isOutgoing = m.sender === outgoingSender;
+    const bubbleClass = isOutgoing ? 'msg-outgoing' : 'msg-incoming';
+
+    // Sentiment badge
+    let sentimentHtml = '';
+    if (m.sentiment != null) {
+      const cls = m.sentiment > 0.1 ? 'pos' : m.sentiment < -0.1 ? 'neg' : 'neu';
+      sentimentHtml = `<span class="msg-sentiment ${cls}">${m.sentiment > 0 ? '+' : ''}${m.sentiment.toFixed(2)}</span>`;
+    }
+
+    // Marker tags
+    let markerHtml = '';
+    if (m.markers && Object.keys(m.markers).length > 0) {
+      const tags = Object.entries(m.markers)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4)
+        .map(([name, count]) => {
+          const color = MARKER_COLORS[name] || '#6366f1';
+          return `<span class="msg-marker-tag" style="background:${hexToRgba(color, 0.15)};color:${color}">${name}</span>`;
+        }).join('');
+      markerHtml = `<div class="msg-markers">${tags}</div>`;
+    }
+
+    // Audio badge
+    const audioBadge = m.has_audio
+      ? `<span class="msg-audio-badge">${m.is_transcribed ? 'Transkribiert' : 'Audio'}</span>`
+      : '';
+
+    // Time
+    const time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '';
+
+    // Highlight search text
+    let text = esc(m.text || '');
+    if (textFilter) {
+      const regex = new RegExp('(' + escRegex(textFilter) + ')', 'gi');
+      text = text.replace(regex, '<mark style="background:rgba(99,102,241,0.3);color:var(--text);border-radius:2px;padding:0 1px">$1</mark>');
+    }
+
+    html += `
+      <div class="msg-bubble ${bubbleClass}">
+        <div class="msg-sender">${esc(m.sender)}</div>
+        <div class="msg-text">${text}</div>
+        ${markerHtml}
+        <div class="msg-meta">
+          ${audioBadge}
+          ${sentimentHtml}
+          <span>${time}</span>
+        </div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function updatePagination() {
+  const pag = document.getElementById('pagination');
+  if (totalMessages <= PAGE_SIZE) {
+    pag.style.display = 'none';
+    return;
+  }
+  pag.style.display = 'flex';
+
+  const pageNum = Math.floor(currentOffset / PAGE_SIZE) + 1;
+  const totalPages = Math.ceil(totalMessages / PAGE_SIZE);
+
+  document.getElementById('pageInfo').textContent = `Seite ${pageNum} von ${totalPages}`;
+  document.getElementById('btnPrev').disabled = currentOffset === 0;
+  document.getElementById('btnNext').disabled = currentOffset + PAGE_SIZE >= totalMessages;
+}
+
+function pageNext() {
+  if (currentOffset + PAGE_SIZE < totalMessages) {
+    currentOffset += PAGE_SIZE;
+    loadMessages();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function pagePrev() {
+  if (currentOffset > 0) {
+    currentOffset = Math.max(0, currentOffset - PAGE_SIZE);
+    loadMessages();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function escRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Auto-login
+(function init() {
+  const k = localStorage.getItem('radar_key');
+  const c = localStorage.getItem('radar_chat');
+  if (k && c) {
+    document.getElementById('authKey').value = k;
+    document.getElementById('authChatId').value = c;
+    authenticate();
+  }
+})();
+</script>
+</body>
+</html>
