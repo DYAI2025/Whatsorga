@@ -432,10 +432,18 @@ function renderMessages(messages) {
   const container = document.getElementById('msgContainer');
   const textFilter = document.getElementById('textFilter').value.toLowerCase().trim();
 
+  // Deduplicate messages (same text + timestamp = extension double-send)
+  const seen = new Set();
+  const deduped = [];
+  for (const m of messages) {
+    const key = m.text + '|' + m.timestamp;
+    if (!seen.has(key)) { seen.add(key); deduped.push(m); }
+  }
+
   // Filter client-side by text
-  let filtered = messages;
+  let filtered = deduped;
   if (textFilter) {
-    filtered = messages.filter(m => (m.text || '').toLowerCase().includes(textFilter));
+    filtered = deduped.filter(m => (m.text || '').toLowerCase().includes(textFilter));
   }
 
   if (!filtered.length) {
@@ -446,9 +454,11 @@ function renderMessages(messages) {
 
   // Update filter info
   const info = document.getElementById('filterInfo');
+  const dupesRemoved = messages.length - deduped.length;
+  const dupeNote = dupesRemoved > 0 ? ` (${dupesRemoved} Duplikate ausgeblendet)` : '';
   info.textContent = textFilter
-    ? `${filtered.length}/${messages.length} angezeigt (${totalMessages} gesamt)`
-    : `${totalMessages} Nachrichten`;
+    ? `${filtered.length}/${deduped.length} angezeigt${dupeNote}`
+    : `${totalMessages} Nachrichten${dupeNote}`;
 
   let html = '';
   let lastDate = '';
@@ -466,9 +476,9 @@ function renderMessages(messages) {
     const isOutgoing = m.sender === outgoingSender;
     const bubbleClass = isOutgoing ? 'msg-outgoing' : 'msg-incoming';
 
-    // Sentiment badge
+    // Sentiment badge (only show when non-zero / meaningful)
     let sentimentHtml = '';
-    if (m.sentiment != null) {
+    if (m.sentiment != null && Math.abs(m.sentiment) > 0.05) {
       const cls = m.sentiment > 0.1 ? 'pos' : m.sentiment < -0.1 ? 'neg' : 'neu';
       sentimentHtml = `<span class="msg-sentiment ${cls}">${m.sentiment > 0 ? '+' : ''}${m.sentiment.toFixed(2)}</span>`;
     }
