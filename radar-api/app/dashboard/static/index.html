@@ -1036,15 +1036,18 @@ async function loadResponseTimes() {
 
 function renderResponseTimes(data) {
   const container = document.getElementById('responseTimesContainer');
-  const rt = data.response_times || [];
+  // Filter out senders with too few responses (unreliable avg)
+  const rt = (data.response_times || []).filter(r => r.response_count >= 3);
 
   if (!rt.length) {
     container.innerHTML = '<div class="empty-state">Nicht genug Daten</div>';
     return;
   }
 
-  // Find max avg for bar scaling
-  const maxAvg = Math.max(...rt.map(r => r.avg_response_minutes || 0), 1);
+  // Use p90 for bar scaling to avoid outlier domination
+  const avgs = rt.map(r => r.avg_response_minutes || 0).sort((a, b) => a - b);
+  const p90 = avgs[Math.floor(avgs.length * 0.9)] || avgs[avgs.length - 1] || 1;
+  const maxAvg = Math.max(p90, 1);
 
   let html = '<div class="rt-grid">';
   for (const r of rt) {
@@ -1052,11 +1055,11 @@ function renderResponseTimes(data) {
     const avgLabel = avgMin != null ? formatDuration(avgMin) : '–';
     const pct = avgMin != null ? Math.min((avgMin / maxAvg) * 100, 100) : 0;
 
-    // Color: green=fast (<10min), yellow=moderate (<60min), orange=slow
+    // Color: green=fast (<15min), yellow=moderate (<60min), orange=slow
     let barColor = 'var(--positive)';
     if (avgMin != null) {
       if (avgMin > 60) barColor = 'var(--warning)';
-      else if (avgMin > 10) barColor = '#eab308';
+      else if (avgMin > 15) barColor = '#eab308';
     }
 
     html += `
