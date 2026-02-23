@@ -324,6 +324,65 @@
       accent-color: var(--accent);
     }
 
+    /* Communication pattern heatmap */
+    .comm-heatmap {
+      display: grid;
+      grid-template-columns: 50px repeat(24, 1fr);
+      gap: 2px;
+    }
+    .comm-heatmap-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 6px;
+    }
+    .comm-heatmap-cell {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      min-height: 16px;
+      position: relative;
+      cursor: default;
+    }
+    .comm-heatmap-cell:hover {
+      outline: 1px solid var(--text-dim);
+    }
+    .comm-hour-labels {
+      display: grid;
+      grid-template-columns: 50px repeat(24, 1fr);
+      gap: 2px;
+      margin-bottom: 4px;
+    }
+    .comm-hour-label {
+      font-size: 9px;
+      color: var(--text-dim);
+      text-align: center;
+    }
+    .comm-legend {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .comm-legend-bar {
+      display: flex;
+      gap: 1px;
+      margin: 0 4px;
+    }
+    .comm-legend-swatch {
+      width: 14px;
+      height: 10px;
+      border-radius: 2px;
+    }
+    .comm-total {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
     /* Heatmap */
     .heatmap-grid {
       display: flex;
@@ -479,7 +538,7 @@
   <h1>WhatsOrga</h1>
   <div class="header-controls">
     <span id="chatLabel" style="font-size:13px;color:var(--text-dim)"></span>
-    <select id="driftDays" onchange="loadDrift()">
+    <select id="driftDays" onchange="loadDrift();loadCommPattern()">
       <option value="7">7 Tage</option>
       <option value="14">14 Tage</option>
       <option value="30" selected>30 Tage</option>
@@ -541,6 +600,14 @@
   <div class="card card-wide">
     <h2>Marker-Heatmap</h2>
     <div id="heatmapContainer"></div>
+  </div>
+
+  <!-- Communication Pattern -->
+  <div class="card card-wide">
+    <h2>Kommunikationsmuster</h2>
+    <div id="commPatternContainer">
+      <div class="empty-state">Lade...</div>
+    </div>
   </div>
 
   <!-- Threads -->
@@ -624,6 +691,7 @@ function refreshAll() {
   loadOverview();
   loadDrift();
   loadMarkers();
+  loadCommPattern();
   loadThreads();
   loadTermine();
   loadStatus();
@@ -815,6 +883,72 @@ function hexToRgba(hex, alpha) {
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
+}
+
+async function loadCommPattern() {
+  const container = document.getElementById('commPatternContainer');
+  try {
+    const days = document.getElementById('driftDays').value;
+    const data = await apiFetch(`/api/communication-pattern/${encodeURIComponent(CHAT_ID)}?days=${days}`);
+    renderCommPattern(data);
+  } catch (e) {
+    console.error('CommPattern error:', e);
+    container.innerHTML = '<div class="empty-state">Fehler beim Laden</div>';
+  }
+}
+
+function renderCommPattern(data) {
+  const container = document.getElementById('commPatternContainer');
+  const heatmap = data.heatmap; // 7x24 matrix
+  const total = data.total_messages;
+  const dayLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+  if (!total) {
+    container.innerHTML = '<div class="empty-state">Keine Nachrichtendaten</div>';
+    return;
+  }
+
+  // Find max value for color scaling
+  let maxVal = 1;
+  for (let d = 0; d < 7; d++)
+    for (let h = 0; h < 24; h++)
+      if (heatmap[d][h] > maxVal) maxVal = heatmap[d][h];
+
+  // Hour labels row
+  let html = '<div class="comm-hour-labels"><div></div>';
+  for (let h = 0; h < 24; h++) {
+    html += `<div class="comm-hour-label">${h}</div>`;
+  }
+  html += '</div>';
+
+  // Grid
+  html += '<div class="comm-heatmap">';
+  for (let d = 0; d < 7; d++) {
+    html += `<div class="comm-heatmap-label">${dayLabels[d]}</div>`;
+    for (let h = 0; h < 24; h++) {
+      const val = heatmap[d][h];
+      const intensity = val / maxVal;
+      const bg = val === 0
+        ? 'var(--bg)'
+        : `rgba(99, 102, 241, ${0.15 + intensity * 0.85})`;
+      html += `<div class="comm-heatmap-cell" style="background:${bg}" title="${dayLabels[d]} ${h}:00 — ${val} Nachrichten"></div>`;
+    }
+  }
+  html += '</div>';
+
+  // Legend
+  html += '<div class="comm-legend">';
+  html += '<span>Weniger</span><div class="comm-legend-bar">';
+  const steps = [0, 0.25, 0.5, 0.75, 1];
+  for (const s of steps) {
+    const bg = s === 0 ? 'var(--bg)' : `rgba(99, 102, 241, ${0.15 + s * 0.85})`;
+    html += `<div class="comm-legend-swatch" style="background:${bg};border:1px solid var(--border)"></div>`;
+  }
+  html += '</div><span>Mehr</span>';
+  html += `<span class="comm-total">${total} Nachrichten gesamt</span>`;
+  html += '</div>';
+
+  container.innerHTML = html;
 }
 
 async function loadThreads() {
