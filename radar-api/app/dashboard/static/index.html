@@ -383,6 +383,65 @@
       color: var(--text-dim);
     }
 
+    /* Response times */
+    .rt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .rt-person {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .rt-name {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rt-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .rt-bar-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      width: 72px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+    .rt-bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .rt-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .rt-bar-value {
+      font-size: 11px;
+      color: var(--text);
+      font-weight: 600;
+      width: 52px;
+      flex-shrink: 0;
+    }
+    .rt-meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
     /* Heatmap */
     .heatmap-grid {
       display: flex;
@@ -538,7 +597,7 @@
   <h1>WhatsOrga</h1>
   <div class="header-controls">
     <span id="chatLabel" style="font-size:13px;color:var(--text-dim)"></span>
-    <select id="driftDays" onchange="loadDrift();loadCommPattern()">
+    <select id="driftDays" onchange="loadDrift();loadCommPattern();loadResponseTimes()">
       <option value="7">7 Tage</option>
       <option value="14">14 Tage</option>
       <option value="30" selected>30 Tage</option>
@@ -606,6 +665,14 @@
   <div class="card card-wide">
     <h2>Kommunikationsmuster</h2>
     <div id="commPatternContainer">
+      <div class="empty-state">Lade...</div>
+    </div>
+  </div>
+
+  <!-- Response Times -->
+  <div class="card card-wide">
+    <h2>Antwortzeiten</h2>
+    <div id="responseTimesContainer">
       <div class="empty-state">Lade...</div>
     </div>
   </div>
@@ -692,6 +759,7 @@ function refreshAll() {
   loadDrift();
   loadMarkers();
   loadCommPattern();
+  loadResponseTimes();
   loadThreads();
   loadTermine();
   loadStatus();
@@ -952,6 +1020,71 @@ function renderCommPattern(data) {
   html += '</div>';
 
   container.innerHTML = html;
+}
+
+async function loadResponseTimes() {
+  const container = document.getElementById('responseTimesContainer');
+  try {
+    const days = document.getElementById('driftDays').value;
+    const data = await apiFetch(`/api/response-times/${encodeURIComponent(CHAT_ID)}?days=${days}`);
+    renderResponseTimes(data);
+  } catch (e) {
+    console.error('ResponseTimes error:', e);
+    container.innerHTML = '<div class="empty-state">Fehler beim Laden</div>';
+  }
+}
+
+function renderResponseTimes(data) {
+  const container = document.getElementById('responseTimesContainer');
+  const rt = data.response_times || [];
+
+  if (!rt.length) {
+    container.innerHTML = '<div class="empty-state">Nicht genug Daten</div>';
+    return;
+  }
+
+  // Find max avg for bar scaling
+  const maxAvg = Math.max(...rt.map(r => r.avg_response_minutes || 0), 1);
+
+  let html = '<div class="rt-grid">';
+  for (const r of rt) {
+    const avgMin = r.avg_response_minutes;
+    const avgLabel = avgMin != null ? formatDuration(avgMin) : '–';
+    const pct = avgMin != null ? Math.min((avgMin / maxAvg) * 100, 100) : 0;
+
+    // Color: green=fast (<10min), yellow=moderate (<60min), orange=slow
+    let barColor = 'var(--positive)';
+    if (avgMin != null) {
+      if (avgMin > 60) barColor = 'var(--warning)';
+      else if (avgMin > 10) barColor = '#eab308';
+    }
+
+    html += `
+      <div class="rt-person">
+        <div class="rt-name">${esc(r.sender)}</div>
+        <div class="rt-bar-row">
+          <span class="rt-bar-label">Ø Antwort</span>
+          <div class="rt-bar-track">
+            <div class="rt-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+          </div>
+          <span class="rt-bar-value">${avgLabel}</span>
+        </div>
+        <div class="rt-meta">
+          <span>${r.message_count} Nachrichten</span>
+          <span>${r.response_count} Antworten</span>
+        </div>
+      </div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function formatDuration(minutes) {
+  if (minutes < 1) return '<1 min';
+  if (minutes < 60) return Math.round(minutes) + ' min';
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  return m > 0 ? h + 'h ' + m + 'm' : h + 'h';
 }
 
 async function loadThreads() {
