@@ -1,5 +1,35 @@
-// @ts-nocheck — to be removed in Phase 3 module migration
-// WhatsOrga Popup Script
+import { loadConfig, saveConfig } from './src/lib/config.js';
+
+/**
+ * Pure handler used by the Save button. Exposed for testing.
+ * @param {{ serverUrl:string, apiKey:string }} input
+ */
+export async function applyServerForm(input) {
+  await saveConfig({ serverUrl: input.serverUrl, apiKey: input.apiKey });
+  await chrome.runtime.sendMessage({ type: 'CONFIG_UPDATED' }).catch(() => {});
+}
+
+/**
+ * Probe /health to confirm the saved config actually reaches the server.
+ * @param {{ serverUrl:string, apiKey:string }} cfg
+ * @returns {Promise<{ ok:boolean, status?:number, error?:string }>}
+ */
+export async function probeHealth(cfg) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 5000);
+  try {
+    const r = await fetch(`${cfg.serverUrl}/health`, {
+      headers: { Authorization: `Bearer ${cfg.apiKey}` },
+      signal: ctrl.signal,
+    });
+    return { ok: r.ok, status: r.status };
+  } catch (err) {
+    return { ok: false, error: err.message || String(err) };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const serverUrlInput = document.getElementById('serverUrl');
   const apiKeyInput = document.getElementById('apiKey');
@@ -10,36 +40,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   const enabledToggle = document.getElementById('enabledToggle');
 
   // Load saved config
-  const data = await chrome.storage.local.get(['serverUrl', 'apiKey', 'whitelist', 'enabled']);
-  serverUrlInput.value = data.serverUrl || '';
-  apiKeyInput.value = data.apiKey || '';
-  enabledToggle.checked = data.enabled !== false;
-  renderWhitelist(data.whitelist || []);
+  const cfg = await loadConfig();
+  serverUrlInput.value = cfg.serverUrl || '';
+  apiKeyInput.value = cfg.apiKey || '';
+  enabledToggle.checked = cfg.enabled !== false;
+  renderWhitelist(cfg.whitelist || []);
 
   // Save server config
   saveServerBtn.addEventListener('click', async () => {
-    await chrome.storage.local.set({
-      serverUrl: serverUrlInput.value.trim().replace(/\/$/, ''),
-      apiKey: apiKeyInput.value.trim()
-    });
-    notifyConfigUpdated();
-    showSaved(saveServerBtn);
+    try {
+      await applyServerForm({ serverUrl: serverUrlInput.value, apiKey: apiKeyInput.value });
+      showSaved(saveServerBtn);
+    } catch (err) {
+      setStatus('error', err.message || 'Invalid URL');
+    }
   });
 
   // Add contact to whitelist
   async function addContact() {
     const name = newContactInput.value.trim();
     if (!name) return;
-
-    const current = await chrome.storage.local.get(['whitelist']);
+    const current = await loadConfig();
     const list = current.whitelist || [];
-    if (!list.some(w => w.toLowerCase() === name.toLowerCase())) {
-      list.push(name);
-      await chrome.storage.local.set({ whitelist: list });
+    if (!list.some((w) => w.toLowerCase() === name.toLowerCase())) {
+      await saveConfig({ whitelist: [...list, name] });
       notifyConfigUpdated();
     }
     newContactInput.value = '';
-    renderWhitelist(list);
+    const updated = await loadConfig();
+    renderWhitelist(updated.whitelist || []);
   }
 
   addContactBtn.addEventListener('click', addContact);
@@ -49,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Toggle enabled
   enabledToggle.addEventListener('change', async () => {
-    await chrome.storage.local.set({ enabled: enabledToggle.checked });
+    await saveConfig({ enabled: enabledToggle.checked });
     notifyConfigUpdated();
   });
 
@@ -65,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       whitelistItems.innerHTML = '<li class="empty">No contacts added yet</li>';
       return;
     }
-    list.forEach(name => {
+    list.forEach((name) => {
       const li = document.createElement('li');
       li.className = 'whitelist-entry';
 
@@ -76,9 +105,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       removeBtn.textContent = 'x';
       removeBtn.className = 'btn-remove';
       removeBtn.addEventListener('click', async () => {
-        const current = await chrome.storage.local.get(['whitelist']);
-        const updated = (current.whitelist || []).filter(w => w !== name);
-        await chrome.storage.local.set({ whitelist: updated });
+        const current = await loadConfig();
+        const updated = (current.whitelist || []).filter((w) => w !== name);
+        await saveConfig({ whitelist: updated });
         notifyConfigUpdated();
         renderWhitelist(updated);
       });
@@ -101,7 +130,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           document.getElementById('isWhitelisted').textContent = response.isWhitelisted ? 'Yes' : 'No';
           document.getElementById('sentCount').textContent = response.sentCount || 0;
 
-          // Observer status
           const obsEl = document.getElementById('observerStatus');
           if (response.observerActive) {
             const reconLabel = response.reconnectCount > 0 ? ` (${response.reconnectCount}x)` : '';
@@ -116,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
 
           setStatus(response.enabled ? 'success' : 'warning',
-                    response.enabled ? 'Capturing' : 'Paused');
+            response.enabled ? 'Capturing' : 'Paused');
         }
       } else {
         setStatus('warning', 'Open WhatsApp Web');
