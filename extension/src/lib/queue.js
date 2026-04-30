@@ -1,4 +1,5 @@
 import { createStorage } from './storage.js';
+import { createMutex } from './mutex.js';
 
 const STORAGE_AREA = 'session';
 const DROPPED_KEY_SUFFIX = '__dropped';
@@ -17,14 +18,7 @@ export function createQueue(key, opts) {
   const maxBytes = opts.maxBytes ?? 0; // 0 = no byte cap
 
   // Per-instance mutex: serializes all read-modify-write operations.
-  /** @type {Promise<unknown>} */
-  let tail = Promise.resolve();
-  /** @template T @param {() => Promise<T>} fn @returns {Promise<T>} */
-  function lock(fn) {
-    const next = tail.then(fn, fn);
-    tail = next.catch(() => {});
-    return next;
-  }
+  const mutex = createMutex();
 
   async function read() {
     return (await store.get(key, [])) || [];
@@ -36,7 +30,7 @@ export function createQueue(key, opts) {
   return {
     /** @param {unknown} item */
     enqueue(item) {
-      return lock(async () => {
+      return mutex.run(async () => {
         const arr = await read();
         arr.push(item);
         let dropped = 0;
@@ -63,7 +57,7 @@ export function createQueue(key, opts) {
     },
     /** @param {number} n */
     drainHead(n) {
-      return lock(async () => {
+      return mutex.run(async () => {
         const arr = await read();
         const head = arr.splice(0, n);
         await write(arr);
@@ -72,19 +66,19 @@ export function createQueue(key, opts) {
     },
     /** @param {unknown[]} items */
     returnHead(items) {
-      return lock(async () => {
+      return mutex.run(async () => {
         const arr = await read();
         await write(items.concat(arr));
       });
     },
     clear() {
-      return lock(async () => write([]));
+      return mutex.run(async () => write([]));
     },
     async droppedCount() {
       return (await store.get(droppedKey, 0)) || 0;
     },
     resetDroppedCount() {
-      return lock(async () => store.set(droppedKey, 0));
+      return mutex.run(async () => store.set(droppedKey, 0));
     },
   };
 }

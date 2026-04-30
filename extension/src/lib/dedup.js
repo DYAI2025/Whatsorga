@@ -1,4 +1,5 @@
 import { createStorage } from './storage.js';
+import { createMutex } from './mutex.js';
 
 /**
  * Rolling-window message deduplicator backed by chrome.storage. Caller
@@ -10,19 +11,12 @@ import { createStorage } from './storage.js';
 export function createDedup({ key, windowSize, area = 'local' }) {
   const store = createStorage(area);
 
-  /** @type {Promise<unknown>} */
-  let tail = Promise.resolve();
-  /** @template T @param {() => Promise<T>} fn @returns {Promise<T>} */
-  function lock(fn) {
-    const next = tail.then(fn, fn);
-    tail = next.catch(() => {});
-    return next;
-  }
+  const mutex = createMutex();
 
   return {
     /** @param {string} id */
     isFresh(id) {
-      return lock(async () => {
+      return mutex.run(async () => {
         const arr = (await store.get(key, [])) || [];
         if (arr.includes(id)) return false;
         arr.push(id);
@@ -35,7 +29,7 @@ export function createDedup({ key, windowSize, area = 'local' }) {
       return ((await store.get(key, [])) || []).length;
     },
     clear() {
-      return lock(async () => store.set(key, []));
+      return mutex.run(async () => store.set(key, []));
     },
   };
 }
