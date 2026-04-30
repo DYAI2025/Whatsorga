@@ -10,6 +10,7 @@ import { createStorage } from './storage.js';
 export function createDedup({ key, windowSize, area = 'local' }) {
   const store = createStorage(area);
 
+  /** @type {Promise<unknown>} */
   let tail = Promise.resolve();
   /** @template T @param {() => Promise<T>} fn @returns {Promise<T>} */
   function lock(fn) {

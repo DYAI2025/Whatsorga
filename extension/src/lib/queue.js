@@ -16,6 +16,7 @@ export function createQueue(key, opts) {
   const maxSize = opts.maxSize;
 
   // Per-instance mutex: serializes all read-modify-write operations.
+  /** @type {Promise<unknown>} */
   let tail = Promise.resolve();
   /** @template T @param {() => Promise<T>} fn @returns {Promise<T>} */
   function lock(fn) {
