@@ -1,221 +1,100 @@
-// @ts-nocheck — to be removed in Phase 3 module migration
-// WhatsOrga Background Service Worker
-// Receives messages from content.js, forwards to server with retry queue
+// MV3 service worker — thin, stateless dispatcher backed by src/lib modules.
+// All durability lives in chrome.storage.session (queue + attempt counter).
+//
+// Public message types (handled by createMessageHandler):
+//   NEW_MESSAGES     - { data: object[] }       -> RouterResult
+//   GET_STATUS       - {}                       -> Snapshot
+//   CONFIG_UPDATED   - {}                       -> { ok: true } (forwards update to content scripts)
+//   FLUSH_QUEUE      - {}                       -> RetryResult
+//   CLEAR_QUEUE      - {}                       -> { ok: true }
+//   MESSAGE_CAPTURED - { chatId: string }       -> { ok: true }
+
+import { createRouter } from './src/lib/router.js';
+import { ALARM_NAME } from './src/lib/retry.js';
+import { runHeartbeat } from './src/lib/heartbeat.js';
+import { loadConfig } from './src/lib/config.js';
+
+const HEARTBEAT_ALARM = 'whatsorga_heartbeat';
+const HEARTBEAT_COUNTS_KEY = 'heartbeatCounts';
+
 console.log('[Radar] Background service worker started');
 
-const RETRY_DELAYS = [5000, 15000, 60000, 300000]; // 5s, 15s, 1m, 5m
-const MAX_QUEUE_SIZE = 500;
-
-let serverUrl = '';
-let apiKey = '';
-let retryQueue = [];
-let retryTimer = null;
-
-// Load config on startup
-loadServerConfig();
-
-// Use chrome.alarms for heartbeat (survives MV3 service worker suspension)
-chrome.alarms.create('heartbeat', { periodInMinutes: 1 });
-
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  switch (msg.type) {
-    case 'NEW_MESSAGES':
-      handleNewMessages(msg.data).then(result => sendResponse(result));
-      return true; // keep channel open for async response
-
-    case 'GET_STATUS':
-      sendResponse({
-        serverUrl: serverUrl || '',
-        queueSize: retryQueue.length,
-        configured: !!(serverUrl && apiKey)
-      });
-      break;
-
-    case 'CONFIG_UPDATED':
-      loadServerConfig();
-      sendResponse({ ok: true });
-      // Also forward to content script
-      forwardToContentScript(msg);
-      break;
-
-    case 'FLUSH_QUEUE':
-      processRetryQueue();
-      sendResponse({ ok: true });
-      break;
-
-    case 'CLEAR_QUEUE':
-      retryQueue = [];
-      sendResponse({ ok: true });
-      break;
-
-    case 'MESSAGE_CAPTURED':
-      // Track messages for heartbeat (persisted to survive worker restarts)
-      chrome.storage.local.get(['heartbeatCounts'], (data) => {
-        const counts = data.heartbeatCounts || {};
-        counts[msg.chatId] = (counts[msg.chatId] || 0) + 1;
-        chrome.storage.local.set({ heartbeatCounts: counts });
-      });
-      sendResponse({ ok: true });
-      break;
-  }
-  return true;
-});
-
-async function loadServerConfig() {
-  const data = await chrome.storage.local.get(['serverUrl', 'apiKey']);
-  serverUrl = data.serverUrl || '';
-  apiKey = data.apiKey || '';
-  console.log(`[Radar] Config loaded: server=${serverUrl ? 'set' : 'empty'}`);
+export function createMessageHandler() {
+  const router = createRouter();
+  return async function handle(msg) {
+    switch (msg && msg.type) {
+      case 'NEW_MESSAGES':
+        return router.acceptBatch(msg.data || []);
+      case 'GET_STATUS':
+        return router.snapshot();
+      case 'CONFIG_UPDATED':
+        await forwardToContentScripts(msg);
+        return { ok: true };
+      case 'FLUSH_QUEUE':
+        return router.retryNow();
+      case 'CLEAR_QUEUE':
+        await router.clear();
+        return { ok: true };
+      case 'MESSAGE_CAPTURED':
+        await bumpHeartbeatCount(msg.chatId);
+        return { ok: true };
+      default:
+        return { ok: false, error: 'unknown_message_type' };
+    }
+  };
 }
 
-function forwardToContentScript(msg) {
-  chrome.tabs.query({ url: '*://web.whatsapp.com/*' }, (tabs) => {
-    for (const tab of tabs) {
-      chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+async function forwardToContentScripts(msg) {
+  const tabs = await chrome.tabs.query({ url: '*://web.whatsapp.com/*' });
+  for (const tab of tabs) {
+    if (tab.id === undefined || tab.id === null) continue;
+    try { await chrome.tabs.sendMessage(tab.id, msg); } catch { /* tab may be closing */ }
+  }
+}
+
+async function bumpHeartbeatCount(chatId) {
+  if (!chatId) return;
+  const out = await chrome.storage.local.get([HEARTBEAT_COUNTS_KEY]);
+  const counts = out[HEARTBEAT_COUNTS_KEY] || {};
+  counts[chatId] = (counts[chatId] || 0) + 1;
+  await chrome.storage.local.set({ [HEARTBEAT_COUNTS_KEY]: counts });
+}
+
+// ---- runtime wiring (only in extension; guarded so tests can import this file safely) ----
+// Tests import createMessageHandler() directly and never reach this block.
+if (
+  typeof chrome !== 'undefined' &&
+  chrome.runtime?.id &&
+  chrome.runtime.onMessage &&
+  chrome.alarms &&
+  chrome.alarms.onAlarm
+) {
+  chrome.alarms.create(HEARTBEAT_ALARM, { periodInMinutes: 1 });
+
+  const handler = createMessageHandler();
+
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    // Always return true so Chrome keeps the message channel open while we await.
+    Promise.resolve(handler(msg)).then(sendResponse).catch((err) => {
+      console.error('[Radar] handler error:', err);
+      sendResponse({ ok: false, error: String(err) });
+    });
+    return true;
+  });
+
+  chrome.alarms.onAlarm.addListener(async (alarm) => {
+    if (alarm.name === ALARM_NAME) {
+      await handler({ type: 'FLUSH_QUEUE' });
+    } else if (alarm.name === HEARTBEAT_ALARM) {
+      const cfg = await loadConfig();
+      const out = await chrome.storage.local.get([HEARTBEAT_COUNTS_KEY]);
+      const counts = out[HEARTBEAT_COUNTS_KEY] || {};
+      const router = createRouter();
+      const snap = await router.snapshot();
+      const result = await runHeartbeat({
+        serverUrl: cfg.serverUrl, apiKey: cfg.apiKey, counts, queueSize: snap.queueSize,
+      });
+      await chrome.storage.local.set({ [HEARTBEAT_COUNTS_KEY]: result.remaining });
     }
   });
-}
-
-async function handleNewMessages(messages) {
-  if (!Array.isArray(messages) || messages.length === 0) return { ok: false };
-
-  console.log(`[Radar] Received ${messages.length} new messages`);
-
-  if (!serverUrl || !apiKey) {
-    console.warn('[Radar] Server not configured, queuing messages');
-    enqueue(messages);
-    return { ok: false };
-  }
-
-  const result = await sendToServer(messages);
-  if (!result.ok) {
-    enqueue(messages);
-  }
-  return result;
-}
-
-async function sendToServer(messages) {
-  try {
-    const response = await fetch(`${serverUrl}/api/ingest`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({ messages })
-    });
-
-    if (response.ok) {
-      console.log(`[Radar] Sent ${messages.length} messages to server`);
-      return { ok: true };
-    }
-
-    if (response.status === 401 || response.status === 403) {
-      console.error(`[Radar] Auth error ${response.status} - check API key`);
-      return { ok: false, authError: true };
-    }
-
-    console.warn(`[Radar] Server responded ${response.status}`);
-    return { ok: false };
-  } catch (err) {
-    console.warn('[Radar] Network error:', err.message);
-    return { ok: false };
-  }
-}
-
-function enqueue(messages) {
-  retryQueue.push({ messages, attempts: 0, addedAt: Date.now() });
-
-  // Trim queue if too large (drop oldest)
-  while (retryQueue.length > MAX_QUEUE_SIZE) {
-    retryQueue.shift();
-  }
-
-  scheduleRetry();
-}
-
-function scheduleRetry() {
-  if (retryTimer) return;
-  if (retryQueue.length === 0) return;
-
-  const nextItem = retryQueue[0];
-  const delay = RETRY_DELAYS[Math.min(nextItem.attempts, RETRY_DELAYS.length - 1)];
-
-  retryTimer = setTimeout(() => {
-    retryTimer = null;
-    processRetryQueue();
-  }, delay);
-}
-
-async function processRetryQueue() {
-  if (retryQueue.length === 0) return;
-  if (!serverUrl || !apiKey) return;
-
-  // Process up to 10 batches per cycle
-  const toProcess = retryQueue.splice(0, 10);
-  const failed = [];
-
-  for (const item of toProcess) {
-    const result = await sendToServer(item.messages);
-    if (!result.ok) {
-      item.attempts++;
-      if (item.attempts < RETRY_DELAYS.length + 2) {
-        failed.push(item);
-      } else {
-        console.warn(`[Radar] Dropping ${item.messages.length} messages after ${item.attempts} retries`);
-      }
-    }
-  }
-
-  // Put failed items back at the front
-  retryQueue.unshift(...failed);
-
-  if (retryQueue.length > 0) {
-    scheduleRetry();
-  }
-}
-
-// Handle alarms (survives service worker suspension)
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'heartbeat') {
-    await sendHeartbeat();
-  }
-});
-
-async function sendHeartbeat() {
-  // Always reload config fresh — worker may have been suspended and lost state
-  const config = await chrome.storage.local.get(['serverUrl', 'apiKey', 'heartbeatCounts']);
-  const url = config.serverUrl || '';
-  const key = config.apiKey || '';
-  const counts = config.heartbeatCounts || {};
-
-  if (!url || !key) return;
-
-  const chatIds = Object.keys(counts).filter(id => counts[id] > 0);
-  if (chatIds.length === 0) return;
-
-  try {
-    for (const chatId of chatIds) {
-      await fetch(`${url}/api/heartbeat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${key}`
-        },
-        body: JSON.stringify({
-          chatId,
-          messageCount: counts[chatId],
-          queueSize: retryQueue.length,
-          timestamp: new Date().toISOString()
-        })
-      });
-
-      console.log(`[Radar Heartbeat] Sent for ${chatId}: ${counts[chatId]} messages`);
-      counts[chatId] = 0;
-    }
-
-    await chrome.storage.local.set({ heartbeatCounts: counts });
-  } catch (error) {
-    console.error('[Radar Heartbeat] Error:', error);
-  }
 }

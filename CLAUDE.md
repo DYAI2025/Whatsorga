@@ -84,10 +84,15 @@ EverMemOS provides persistent conversational memory. It runs as a separate servi
 
 ### Extension Architecture
 - **DOM observer** on WhatsApp Web with watchdog: checks `#main` every 5s, force-rescans every 30s
-- **Message dedup**: `sentMessageIds` Set in chrome.storage.local (rolling 5000 window)
-- **Queue manager**: batches messages before API calls
+- **Message dedup**: rolling 5000-id window via `src/lib/dedup.js` backed by `chrome.storage.local`
+- **Durable queue**: `src/lib/queue.js` — FIFO backed by `chrome.storage.session`; survives MV3 service-worker suspension
+- **Transport**: `src/lib/transport.js` — classified outcomes (`ok`, `auth_error`, `server_error`, `network_error`, `timeout`)
+- **Retry**: `src/lib/retry.js` — exponential backoff ladder via `chrome.alarms` (not `setTimeout`)
+- **Router**: `src/lib/router.js` — orchestrates queue + transport + retry; non-retriable auth errors clear the alarm
+- **MV3 heartbeat**: 1-minute `chrome.alarms` tick, parallel `/api/heartbeat` per chat, counters in `chrome.storage.local`
 - Audio captured as base64 blob in message payload
-- **MV3 heartbeat**: uses `chrome.alarms` (not `setInterval`) — service workers suspend after ~30s idle, killing timers and in-memory state. All heartbeat state persisted to `chrome.storage.local`
+- Minimum Chrome 122 (content-script ES modules + `chrome.storage.session`)
+- See `extension/README.md` for module map, storage map, and known limitations
 
 ## Key Technical Patterns
 

@@ -1,19 +1,22 @@
-// @ts-nocheck — to be removed in Phase 3 module migration
-/* global MessageQueue */ // injected via queue-manager.js script tag
 // WhatsOrga Content Script
 // Forked from What's That!? v2.7 — keeps DOM scanning, adds whitelist + server forwarding
+import { createDedup } from './src/lib/dedup.js';
+
 console.log('[Radar] Content script loaded');
+
+const messageDedup = createDedup({
+  key: 'sentMessageIds_v2',
+  windowSize: 5000,
+  area: 'local',
+});
 
 class RadarTracker {
   constructor() {
-    this.sentMessageIds = new Set();
     this.whitelist = [];
     this.enabled = false;
     this.currentChat = { id: 'unknown', name: 'Unknown' };
     this._scanTimer = null;
     this._audioBlobCache = new Map();
-    this.messageQueue = new MessageQueue();
-    this._retryTimer = null;
 
     // Watchdog state
     this._currentMainEl = null;
@@ -30,14 +33,7 @@ class RadarTracker {
 
   async init() {
     await this.loadConfig();
-    await this._loadSentMessageIds();
     this.waitForWhatsApp();
-
-    // Start retry scheduler (every 10 seconds)
-    this._retryTimer = setInterval(() => {
-      this.processPendingQueue();
-      this.messageQueue.cleanup();
-    }, 10000);
 
     // Start watchdog (every 5 seconds)
     this._watchdogInterval = setInterval(() => this.watchdog(), 5000);
@@ -49,15 +45,16 @@ class RadarTracker {
         sendResponse({ ok: true });
       }
       if (msg.type === 'GET_STATUS') {
-        sendResponse({
-          enabled: this.enabled,
-          currentChat: this.currentChat,
-          isWhitelisted: this.isChatWhitelisted(),
-          sentCount: this.sentMessageIds.size,
-          observerActive: this._observerActive,
-          lastScanAge: this._lastScanTime ? Math.round((Date.now() - this._lastScanTime) / 1000) : null,
-          reconnectCount: this._reconnectCount
-        });
+        const self = this;
+        (async () => sendResponse({
+          enabled: self.enabled,
+          currentChat: self.currentChat,
+          isWhitelisted: self.isChatWhitelisted(),
+          sentCount: await messageDedup.size(),
+          observerActive: self._observerActive,
+          lastScanAge: self._lastScanTime ? Math.round((Date.now() - self._lastScanTime) / 1000) : null,
+          reconnectCount: self._reconnectCount,
+        }))();
       }
       return true;
     });
@@ -68,33 +65,6 @@ class RadarTracker {
     this.whitelist = data.whitelist || [];
     this.enabled = data.enabled !== false;
     console.log(`[Radar] Config: enabled=${this.enabled}, whitelist=[${this.whitelist.join(', ')}]`);
-  }
-
-  // --- sentMessageIds persistence ---
-
-  async _loadSentMessageIds() {
-    try {
-      const data = await chrome.storage.local.get(['sentMessageIds']);
-      const ids = data.sentMessageIds || [];
-      this.sentMessageIds = new Set(ids);
-      console.log(`[Radar] Loaded ${this.sentMessageIds.size} sent message IDs from storage`);
-    } catch (e) {
-      console.log(`[Radar] Failed to load sentMessageIds: ${e.message}`);
-    }
-  }
-
-  async _saveSentMessageIds() {
-    try {
-      let ids = Array.from(this.sentMessageIds);
-      // Rolling window: keep only the most recent 5000
-      if (ids.length > 5000) {
-        ids = ids.slice(ids.length - 5000);
-        this.sentMessageIds = new Set(ids);
-      }
-      await chrome.storage.local.set({ sentMessageIds: ids });
-    } catch (e) {
-      console.log(`[Radar] Failed to save sentMessageIds: ${e.message}`);
-    }
   }
 
   // --- Watchdog: permanent health check loop ---
@@ -166,7 +136,7 @@ class RadarTracker {
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (!(node instanceof HTMLElement)) continue;
-          const audioEls = node.tagName === 'AUDIO' ? [node] : node.querySelectorAll?.('audio') || [];
+          const audioEls = /** @type {HTMLAudioElement[]} */ (node.tagName === 'AUDIO' ? [node] : [...(node.querySelectorAll?.('audio') || [])]);
           for (const audioEl of audioEls) {
             if (audioEl.src) {
               this._captureBlobImmediately(audioEl);
@@ -228,7 +198,7 @@ class RadarTracker {
       const base64 = btoa(binary);
       this._audioBlobCache.set(src, base64);
       console.log(`[Radar] Audio blob captured: ${bytes.length} bytes`);
-    } catch (e) {
+    } catch (/** @type {any} */ e) {
       console.log(`[Radar] Audio blob capture failed: ${e.message}`);
     }
   }
@@ -253,13 +223,13 @@ class RadarTracker {
     // Strategy 2: header with title attribute
     const headerTitle = document.querySelector('#main header span[title]');
     if (headerTitle) {
-      const name = headerTitle.getAttribute('title');
+      const name = headerTitle.getAttribute('title') ?? 'Unknown';
       return { id: name, name };
     }
     // Strategy 3: conversation-header testid
     const convHeader = document.querySelector('[data-testid="conversation-header"] span[title]');
     if (convHeader) {
-      const name = convHeader.getAttribute('title');
+      const name = convHeader.getAttribute('title') ?? 'Unknown';
       return { id: name, name };
     }
     // Strategy 4: span with dir="auto" in #main header (2026 WhatsApp Web)
@@ -321,7 +291,7 @@ class RadarTracker {
       const text = this.extractMessageText(msg);
       const messageId = this.generateStableId(prePlainText, text);
 
-      if (this.sentMessageIds.has(messageId)) continue;
+      if (!(await messageDedup.isFresh(messageId))) continue;
 
       const sender = this.extractSenderName(msg, prePlainText);
       const timestamp = this.extractMessageTimestamp(msg, prePlainText);
@@ -344,8 +314,6 @@ class RadarTracker {
     }
 
     if (newMessages.length > 0) {
-      newMessages.forEach(m => this.sentMessageIds.add(m.messageId));
-      this._saveSentMessageIds();
       this.sendToAPI(newMessages);
     }
   }
@@ -480,75 +448,22 @@ class RadarTracker {
     return { blob: null, type: 'audio_detected' };
   }
 
-  // --- Queue-based sending with retry logic ---
+  // --- Send to background router (handles queue + retry internally) ---
 
   sendToAPI(messages) {
     if (!messages || messages.length === 0) return;
 
-    // Enqueue all messages first (synchronous - no await)
-    const queueIds = [];
     for (const msg of messages) {
-      const id = this.messageQueue.enqueue(msg);
-      queueIds.push(id);
-
-      // Notify background for heartbeat tracking
-      chrome.runtime.sendMessage({
-        type: 'MESSAGE_CAPTURED',
-        chatId: msg.chatId
-      }).catch(err => console.log('[Radar] Background notification failed:', err.message));
+      chrome.runtime.sendMessage({ type: 'MESSAGE_CAPTURED', chatId: msg.chatId })
+        .catch(() => {});
     }
 
-    console.log(`[Radar] Enqueued ${messages.length} messages`);
+    chrome.runtime.sendMessage({ type: 'NEW_MESSAGES', data: messages })
+      .catch((err) => console.log('[Radar] Background send failed:', err.message));
 
-    // Attempt to send immediately
-    this.processPendingQueue();
-  }
-
-  async processPendingQueue() {
-    const pending = this.messageQueue.getPending();
-    if (pending.length === 0) return;
-
-    // Batch send (max 10 at a time)
-    const batch = pending.slice(0, 10);
-    const messages = batch.map(item => item.message);
-
-    try {
-      // Route through background service worker (bypasses WhatsApp Web CSP)
-      const response = await chrome.runtime.sendMessage({
-        type: 'NEW_MESSAGES',
-        data: messages
-      });
-
-      if (response?.ok) {
-        for (const item of batch) {
-          this.messageQueue.markConfirmed(item.id);
-        }
-        console.log(`[Radar] Confirmed ${batch.length} messages via background`);
-      } else if (response?.authError) {
-        for (const item of batch) {
-          this.messageQueue.markConfirmed(item.id);
-        }
-        console.error('[Radar] Auth error - check API key');
-      } else {
-        for (const item of batch) {
-          this.messageQueue.incrementRetry(item.id);
-        }
-        console.warn('[Radar] Background send failed, will retry');
-      }
-    } catch (error) {
-      // Service worker channel closed — don't burn retries, just wait and retry
-      if (error.message?.includes('message channel closed')) {
-        console.warn('[Radar] Service worker inactive, retrying in 3s...');
-        setTimeout(() => this.processPendingQueue(), 3000);
-        return;
-      }
-      for (const item of batch) {
-        this.messageQueue.incrementRetry(item.id);
-      }
-      console.warn('[Radar] Background message error, will retry:', error.message);
-    }
+    console.log(`[Radar] Sent ${messages.length} messages to background`);
   }
 }
 
 // Start tracker
-window.radarTracker = new RadarTracker();
+/** @type {any} */ (window).radarTracker = new RadarTracker();
