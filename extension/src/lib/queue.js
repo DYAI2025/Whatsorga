@@ -8,12 +8,13 @@ const DROPPED_KEY_SUFFIX = '__dropped';
  * service-worker suspension within the same browser session.
  *
  * @param {string} key Unique storage key.
- * @param {{ maxSize: number }} opts
+ * @param {{ maxSize: number, maxBytes?: number }} opts
  */
 export function createQueue(key, opts) {
   const store = createStorage(STORAGE_AREA);
   const droppedKey = key + DROPPED_KEY_SUFFIX;
   const maxSize = opts.maxSize;
+  const maxBytes = opts.maxBytes ?? 0; // 0 = no byte cap
 
   // Per-instance mutex: serializes all read-modify-write operations.
   /** @type {Promise<unknown>} */
@@ -40,6 +41,12 @@ export function createQueue(key, opts) {
         arr.push(item);
         let dropped = 0;
         while (arr.length > maxSize) { arr.shift(); dropped++; }
+        if (maxBytes) {
+          while (arr.length > 1 && JSON.stringify(arr).length > maxBytes) {
+            arr.shift();
+            dropped++;
+          }
+        }
         if (dropped > 0) {
           const prev = (await store.get(droppedKey, 0)) || 0;
           await store.set(droppedKey, prev + dropped);

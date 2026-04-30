@@ -61,7 +61,7 @@ Heartbeat: a 1-minute `chrome.alarms` tick flushes per-chat counters via paralle
 | `session` | `whatsorga_send_queue__dropped`  | router      | counter of evicted batches             | session   |
 | `session` | `whatsorga_retry_attempt`        | router      | exponential backoff index              | session   |
 
-`chrome.storage.session` is capped at 10 MB. With `QUEUE_MAX = 200` batches × ~50 messages/batch × ~500 bytes/message ≈ 5 MB, leaving headroom. Going above this requires raising the storage quota with `"unlimitedStorage"` permission.
+`chrome.storage.session` is capped at 10 MB. The router enforces both `QUEUE_MAX = 200` batches and `QUEUE_MAX_BYTES = 8 MB` of serialized payload — whichever evicts first. Audio messages (~100 KB each) hit the byte cap before the count cap, so dropped messages always reflect a real storage-pressure event surfaced via `droppedCount`.
 
 ## Schema versioning
 

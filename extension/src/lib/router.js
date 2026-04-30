@@ -5,6 +5,7 @@ import { backoffMinutes, scheduleRetry, clearRetry } from './retry.js';
 
 const QUEUE_KEY = 'whatsorga_send_queue';
 const QUEUE_MAX = 200;
+const QUEUE_MAX_BYTES = 8 * 1024 * 1024; // 8 MB — leaves 2 MB headroom under chrome.storage.session's 10 MB quota
 const ATTEMPT_KEY = 'whatsorga_retry_attempt';
 
 /**
@@ -15,7 +16,7 @@ const ATTEMPT_KEY = 'whatsorga_retry_attempt';
  */
 
 export function createRouter() {
-  const queue = createQueue(QUEUE_KEY, { maxSize: QUEUE_MAX });
+  const queue = createQueue(QUEUE_KEY, { maxSize: QUEUE_MAX, maxBytes: QUEUE_MAX_BYTES });
 
   return {
     /**

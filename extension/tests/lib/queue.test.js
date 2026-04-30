@@ -64,4 +64,17 @@ describe('queue', () => {
     expect(a.length + b.length).toBe(10);
     expect(await q.size()).toBe(0);
   });
+
+  it('drops oldest items when serialized total exceeds maxBytes', async () => {
+    const q = createQueue('q_bytes', { maxSize: 1000, maxBytes: 1000 });
+    const big = 'x'.repeat(400); // ~430 bytes once serialized
+    for (let i = 0; i < 5; i++) await q.enqueue({ id: i, data: big });
+    // 5 × ~430 = ~2150 bytes; budget is 1000 bytes
+    const remaining = await q.peek(100);
+    const totalBytes = JSON.stringify(remaining).length;
+    expect(totalBytes).toBeLessThanOrEqual(1000);
+    expect(await q.droppedCount()).toBeGreaterThan(0);
+    // Most recent item must be retained
+    expect(remaining[remaining.length - 1].id).toBe(4);
+  });
 });
