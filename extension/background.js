@@ -62,7 +62,13 @@ async function bumpHeartbeatCount(chatId) {
 
 // ---- runtime wiring (only in extension; guarded so tests can import this file safely) ----
 // Tests import createMessageHandler() directly and never reach this block.
-if (typeof chrome !== 'undefined' && chrome.runtime && chrome.alarms) {
+if (
+  typeof chrome !== 'undefined' &&
+  chrome.runtime?.id &&
+  chrome.runtime.onMessage &&
+  chrome.alarms &&
+  chrome.alarms.onAlarm
+) {
   chrome.alarms.create(HEARTBEAT_ALARM, { periodInMinutes: 1 });
 
   const handler = createMessageHandler();
