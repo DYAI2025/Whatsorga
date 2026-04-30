@@ -27,6 +27,10 @@ export default [
     languageOptions: { globals: { ...globals.node, ...globals.vitest } },
   },
   {
+    files: ['scripts/**/*.{js,mjs}'],
+    languageOptions: { globals: { ...globals.node } },
+  },
+  {
     ignores: ['node_modules/**', 'coverage/**', 'dist/**'],
   },
 ];

@@ -8,7 +8,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint --no-error-on-unmatched-pattern src tests *.js",
+    "lint": "eslint --no-error-on-unmatched-pattern src tests scripts *.js",
     "typecheck": "tsc --noEmit --allowJs --checkJs",
     "lint:manifest": "node scripts/validate-manifest.mjs",
     "package": "web-ext build --source-dir=. --artifacts-dir=./dist --overwrite-dest --ignore-files='node_modules/**' 'tests/**' 'coverage/**' 'package*.json' 'tsconfig.json' 'eslint.config.js' 'vitest.config.js' 'docs/**'",
