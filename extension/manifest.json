@@ -17,7 +17,7 @@
   "content_scripts": [
     {
       "matches": ["*://web.whatsapp.com/*"],
-      "js": ["queue-manager.js", "content.js"],
+      "js": ["content.js"],
       "run_at": "document_idle",
       "all_frames": false,
       "type": "module"

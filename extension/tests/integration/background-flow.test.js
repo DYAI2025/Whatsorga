@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Drives the public message-handler API (NEW_MESSAGES, GET_STATUS, CONFIG_UPDATED,
 // FLUSH_QUEUE) without depending on chrome.runtime wiring details.
 import { describe, it, expect, vi } from 'vitest';

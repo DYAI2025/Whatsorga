@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { applyServerForm } from '../../popup.js';
 import { loadConfig } from '../../src/lib/config.js';
 

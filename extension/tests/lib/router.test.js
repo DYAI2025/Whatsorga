@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, vi } from 'vitest';
 import { createRouter } from '../../src/lib/router.js';
 import { saveConfig } from '../../src/lib/config.js';

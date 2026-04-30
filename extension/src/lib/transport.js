@@ -37,9 +37,9 @@ export async function sendBatch({
       return { outcome: 'auth_error', status: response.status };
     if (response.status >= 500) return { outcome: 'server_error', status: response.status };
     return { outcome: 'client_error', status: response.status };
-  } catch (err) {
+  } catch (/** @type {any} */ err) {
     if (err && err.name === 'AbortError') return { outcome: 'timeout' };
-    return { outcome: 'network_error', error: err && err.message ? err.message : String(err) };
+    return { outcome: 'network_error', error: err instanceof Error ? err.message : String(err) };
   } finally {
     clearTimeout(timer);
   }
