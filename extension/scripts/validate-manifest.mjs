@@ -20,43 +20,44 @@ try {
   process.exit(1);
 }
 
-function require(condition, message) {
+function must(condition, message) {
   if (!condition) errors.push(message);
 }
+
 
 function warn(condition, message) {
   if (!condition) warnings.push(message);
 }
 
-require(manifest.manifest_version === 3, 'manifest_version must be 3');
-require(typeof manifest.name === 'string' && manifest.name.length > 0, 'name is required');
-require(/^\d+\.\d+\.\d+$/.test(manifest.version), 'version must be semver-like X.Y.Z');
-require(typeof manifest.description === 'string' && manifest.description.length > 0, 'description is required');
-require(Array.isArray(manifest.permissions), 'permissions must be an array');
-require(Array.isArray(manifest.host_permissions), 'host_permissions must be an array');
+must(manifest.manifest_version === 3, 'manifest_version must be 3');
+must(typeof manifest.name === 'string' && manifest.name.length > 0, 'name is required');
+must(/^\d+\.\d+\.\d+$/.test(manifest.version), 'version must be semver-like X.Y.Z');
+must(typeof manifest.description === 'string' && manifest.description.length > 0, 'description is required');
+must(Array.isArray(manifest.permissions), 'permissions must be an array');
+must(Array.isArray(manifest.host_permissions), 'host_permissions must be an array');
 
 const sw = manifest.background?.service_worker;
-require(typeof sw === 'string' && sw.endsWith('.js'), 'background.service_worker must reference a .js file');
+must(typeof sw === 'string' && sw.endsWith('.js'), 'background.service_worker must reference a .js file');
 if (sw) {
-  require(existsSync(join(root, sw)), `background.service_worker file not found: ${sw}`);
+  must(existsSync(join(root, sw)), `background.service_worker file not found: ${sw}`);
 }
 
-require(Array.isArray(manifest.content_scripts) && manifest.content_scripts.length > 0, 'content_scripts must be a non-empty array');
+must(Array.isArray(manifest.content_scripts) && manifest.content_scripts.length > 0, 'content_scripts must be a non-empty array');
 for (const cs of manifest.content_scripts ?? []) {
-  require(Array.isArray(cs.matches) && cs.matches.length > 0, 'content_scripts[].matches must be a non-empty array');
-  require(Array.isArray(cs.js) && cs.js.length > 0, 'content_scripts[].js must be a non-empty array');
+  must(Array.isArray(cs.matches) && cs.matches.length > 0, 'content_scripts[].matches must be a non-empty array');
+  must(Array.isArray(cs.js) && cs.js.length > 0, 'content_scripts[].js must be a non-empty array');
   for (const file of cs.js ?? []) {
-    require(existsSync(join(root, file)), `content_scripts js file not found: ${file}`);
+    must(existsSync(join(root, file)), `content_scripts js file not found: ${file}`);
   }
 }
 
-require(typeof manifest.action?.default_popup === 'string', 'action.default_popup is required');
+must(typeof manifest.action?.default_popup === 'string', 'action.default_popup is required');
 if (manifest.action?.default_popup) {
-  require(existsSync(join(root, manifest.action.default_popup)), `action.default_popup file not found: ${manifest.action.default_popup}`);
+  must(existsSync(join(root, manifest.action.default_popup)), `action.default_popup file not found: ${manifest.action.default_popup}`);
 }
 
 for (const [size, icon] of Object.entries(manifest.icons ?? {})) {
-  require(existsSync(join(root, icon)), `icons[${size}] file not found: ${icon}`);
+  must(existsSync(join(root, icon)), `icons[${size}] file not found: ${icon}`);
 }
 
 warn(manifest.permissions?.includes('alarms'), 'alarms permission missing — needed for MV3 service-worker scheduling');
