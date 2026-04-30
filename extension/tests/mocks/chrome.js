@@ -1,3 +1,4 @@
+// @ts-nocheck — test infra; mock shape intentionally diverges from chrome.* types
 import { vi } from 'vitest';
 
 /**

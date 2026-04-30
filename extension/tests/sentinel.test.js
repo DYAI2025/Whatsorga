@@ -1,3 +1,4 @@
+// @ts-nocheck — test uses mock-only helpers (_scheduled) not in chrome types
 import { describe, it, expect } from 'vitest';
 
 describe('sentinel', () => {
