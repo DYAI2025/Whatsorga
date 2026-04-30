@@ -56,6 +56,11 @@ export function createRouter() {
       });
       if (result.outcome === 'ok') return { outcome: 'ok' };
       if (result.outcome === 'auth_error') {
+        // Auth is non-retriable until the user fixes the key. Clear the
+        // retry alarm so we don't keep banging the server, but preserve
+        // the batch in the queue so a manual flush after the fix replays
+        // it. Matches retryNow's auth_error contract.
+        await queue.enqueue(messages);
         await clearRetry();
         return { outcome: 'rejected', reason: 'auth_error' };
       }

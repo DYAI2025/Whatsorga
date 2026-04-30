@@ -48,7 +48,7 @@ describe('router', () => {
     expect(calls).toBe(2);
   });
 
-  it('drops a batch on auth_error and clears retry', async () => {
+  it('preserves the batch on auth_error and clears retry (user must fix key, then flush)', async () => {
     await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'wrong' });
     vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 401 })));
     const r = createRouter();
@@ -56,6 +56,9 @@ describe('router', () => {
     expect(result.outcome).toBe('rejected');
     expect(result.reason).toBe('auth_error');
     expect(chrome.alarms.clear).toHaveBeenCalledWith('whatsorga_retry');
+    // The batch is preserved so it can replay once the user fixes the key.
+    const snap = await r.snapshot();
+    expect(snap.queueSize).toBe(1);
   });
 
   it('retryNow returns auth_error when server returns 401 during drain', async () => {
@@ -189,5 +192,18 @@ describe('router', () => {
     // is at most 3. Without the lock, two parallel reads could both produce
     // the same +1, dropping a count.
     expect(snap.attempt).toBeLessThanOrEqual(3);
+  });
+
+  it('acceptBatch on auth_error queues the batch for replay (matches retryNow)', async () => {
+    await saveConfig({ serverUrl: 'http://x', apiKey: 'wrong' });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 401 })));
+    const r = createRouter();
+    const result = await r.acceptBatch([{ messageId: 'auth-test' }]);
+    expect(result.outcome).toBe('rejected');
+    expect(result.reason).toBe('auth_error');
+    // Behavior change: the batch must be preserved in the queue so a
+    // future retryNow (after user fixes the key) replays it.
+    const snap = await r.snapshot();
+    expect(snap.queueSize).toBeGreaterThanOrEqual(1);
   });
 });
