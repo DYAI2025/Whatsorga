@@ -80,6 +80,12 @@ export function createChromeMock() {
       },
       _scheduled: () => new Map(alarms),
     },
+    /**
+     * Clear all in-memory state. NOT called automatically — `tests/setup.js`
+     * already creates a fresh mock per `beforeEach`. Use this only when a
+     * single test needs to wipe state mid-flow (e.g., simulating extension
+     * re-install or a browser session restart inside the same test body).
+     */
     _reset: () => {
       stores.local.clear();
       stores.session.clear();
