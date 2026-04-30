@@ -11,6 +11,10 @@ on:
       - "extension/**"
       - ".github/workflows/extension-ci.yml"
 
+concurrency:
+  group: extension-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     working-directory: extension
