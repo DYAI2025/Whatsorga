@@ -1,3 +1,5 @@
+// @ts-nocheck — to be removed in Phase 3 module migration
+/* global MessageQueue */ // injected via queue-manager.js script tag
 // WhatsOrga Content Script
 // Forked from What's That!? v2.7 — keeps DOM scanning, adds whitelist + server forwarding
 console.log('[Radar] Content script loaded');
