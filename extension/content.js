@@ -1,12 +1,17 @@
-// @ts-nocheck — to be removed in Phase 3 module migration
-/* global MessageQueue */ // injected via queue-manager.js script tag
 // WhatsOrga Content Script
 // Forked from What's That!? v2.7 — keeps DOM scanning, adds whitelist + server forwarding
+import { createDedup } from './src/lib/dedup.js';
+
 console.log('[Radar] Content script loaded');
+
+const messageDedup = createDedup({
+  key: 'sentMessageIds_v2',
+  windowSize: 5000,
+  area: 'local',
+});
 
 class RadarTracker {
   constructor() {
-    this.sentMessageIds = new Set();
     this.whitelist = [];
     this.enabled = false;
     this.currentChat = { id: 'unknown', name: 'Unknown' };
@@ -30,7 +35,6 @@ class RadarTracker {
 
   async init() {
     await this.loadConfig();
-    await this._loadSentMessageIds();
     this.waitForWhatsApp();
 
     // Start retry scheduler (every 10 seconds)
@@ -49,15 +53,16 @@ class RadarTracker {
         sendResponse({ ok: true });
       }
       if (msg.type === 'GET_STATUS') {
-        sendResponse({
-          enabled: this.enabled,
-          currentChat: this.currentChat,
-          isWhitelisted: this.isChatWhitelisted(),
-          sentCount: this.sentMessageIds.size,
-          observerActive: this._observerActive,
-          lastScanAge: this._lastScanTime ? Math.round((Date.now() - this._lastScanTime) / 1000) : null,
-          reconnectCount: this._reconnectCount
-        });
+        const self = this;
+        (async () => sendResponse({
+          enabled: self.enabled,
+          currentChat: self.currentChat,
+          isWhitelisted: self.isChatWhitelisted(),
+          sentCount: await messageDedup.size(),
+          observerActive: self._observerActive,
+          lastScanAge: self._lastScanTime ? Math.round((Date.now() - self._lastScanTime) / 1000) : null,
+          reconnectCount: self._reconnectCount,
+        }))();
       }
       return true;
     });
@@ -68,33 +73,6 @@ class RadarTracker {
     this.whitelist = data.whitelist || [];
     this.enabled = data.enabled !== false;
     console.log(`[Radar] Config: enabled=${this.enabled}, whitelist=[${this.whitelist.join(', ')}]`);
-  }
-
-  // --- sentMessageIds persistence ---
-
-  async _loadSentMessageIds() {
-    try {
-      const data = await chrome.storage.local.get(['sentMessageIds']);
-      const ids = data.sentMessageIds || [];
-      this.sentMessageIds = new Set(ids);
-      console.log(`[Radar] Loaded ${this.sentMessageIds.size} sent message IDs from storage`);
-    } catch (e) {
-      console.log(`[Radar] Failed to load sentMessageIds: ${e.message}`);
-    }
-  }
-
-  async _saveSentMessageIds() {
-    try {
-      let ids = Array.from(this.sentMessageIds);
-      // Rolling window: keep only the most recent 5000
-      if (ids.length > 5000) {
-        ids = ids.slice(ids.length - 5000);
-        this.sentMessageIds = new Set(ids);
-      }
-      await chrome.storage.local.set({ sentMessageIds: ids });
-    } catch (e) {
-      console.log(`[Radar] Failed to save sentMessageIds: ${e.message}`);
-    }
   }
 
   // --- Watchdog: permanent health check loop ---
@@ -321,7 +299,7 @@ class RadarTracker {
       const text = this.extractMessageText(msg);
       const messageId = this.generateStableId(prePlainText, text);
 
-      if (this.sentMessageIds.has(messageId)) continue;
+      if (!(await messageDedup.isFresh(messageId))) continue;
 
       const sender = this.extractSenderName(msg, prePlainText);
       const timestamp = this.extractMessageTimestamp(msg, prePlainText);
@@ -344,8 +322,6 @@ class RadarTracker {
     }
 
     if (newMessages.length > 0) {
-      newMessages.forEach(m => this.sentMessageIds.add(m.messageId));
-      this._saveSentMessageIds();
       this.sendToAPI(newMessages);
     }
   }
