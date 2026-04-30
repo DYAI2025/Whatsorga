@@ -122,4 +122,25 @@ describe('router', () => {
     const snap = await r.snapshot();
     expect(snap.queueSize).toBe(0);
   });
+
+  it('retryNow preserves unprocessed batches in queue on auth_error', async () => {
+    await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'k' });
+    let calls = 0;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      calls++;
+      // calls 1+2: queue both batches via network error
+      if (calls <= 2) throw new TypeError('net');
+      // call 3 (retryNow's first send): 401, halts the drain
+      return new Response('', { status: 401 });
+    }));
+    const r = createRouter();
+    await r.acceptBatch([{ messageId: 'a' }]);
+    await r.acceptBatch([{ messageId: 'b' }]);
+    // Both batches now queued. retryNow drains both, first one hits 401.
+    const result = await r.retryNow();
+    expect(result.outcome).toBe('auth_error');
+    // The second batch was never even tried — must remain in the queue.
+    const snap = await r.snapshot();
+    expect(snap.queueSize).toBeGreaterThanOrEqual(1);
+  });
 });

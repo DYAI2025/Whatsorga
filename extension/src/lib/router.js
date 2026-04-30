@@ -56,16 +56,21 @@ export function createRouter() {
         return { outcome: 'idle' };
       }
       const failed = [];
-      for (const batch of head) {
+      for (let i = 0; i < head.length; i++) {
+        const batch = head[i];
         const r = await sendBatch({
           serverUrl: cfg.serverUrl, apiKey: cfg.apiKey, messages: batch, eventVersion: cfg.eventVersion,
         });
-        if (r.outcome !== 'ok') failed.push(batch);
         if (r.outcome === 'auth_error') {
+          // The current batch is rejected (auth is non-retriable). Put back
+          // anything we hadn't tried yet so it isn't silently lost.
+          const untried = head.slice(i + 1);
+          if (untried.length > 0) await queue.returnHead(untried);
           await clearRetry();
           await resetAttempt();
           return { outcome: 'auth_error' };
         }
+        if (r.outcome !== 'ok') failed.push(batch);
       }
       if (failed.length > 0) {
         await queue.returnHead(failed);
