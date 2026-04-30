@@ -1,45 +1,103 @@
-// @ts-nocheck — to be removed in Phase 3 module migration
-// WhatsOrga Popup Script
+import { loadConfig, saveConfig } from './src/lib/config.js';
+import { createRouter } from './src/lib/router.js';
+
+/**
+ * Pure handler used by the Save button. Exposed for testing.
+ * @param {{ serverUrl:string, apiKey:string }} input
+ */
+export async function applyServerForm(input) {
+  await saveConfig({ serverUrl: input.serverUrl, apiKey: input.apiKey });
+  await chrome.runtime.sendMessage({ type: 'CONFIG_UPDATED' }).catch(() => {});
+}
+
+/**
+ * Probe /health to confirm the saved config actually reaches the server.
+ * @param {{ serverUrl:string, apiKey:string }} cfg
+ * @returns {Promise<{ ok:boolean, status?:number, error?:string, skipped?:string }>}
+ */
+export async function probeHealth(cfg) {
+  const serverUrl = (cfg.serverUrl || '').trim();
+  const apiKey = (cfg.apiKey || '').trim();
+  if (!serverUrl || !apiKey) {
+    return { ok: false, error: 'not_configured', skipped: 'not_configured' };
+  }
+
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 5000);
+  try {
+    const r = await fetch(`${serverUrl}/health`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal: ctrl.signal,
+    });
+    return { ok: r.ok, status: r.status };
+  } catch (/** @type {any} */ err) {
+    return { ok: false, error: err.message || String(err) };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+/**
+ * Collect a redacted diagnostic snapshot for bug reports.
+ * @returns {Promise<object>}
+ */
+export async function collectDiagnostics() {
+  const cfg = await loadConfig();
+  const snap = await createRouter().snapshot();
+  return {
+    timestamp: new Date().toISOString(),
+    config: { ...cfg, apiKey: cfg.apiKey ? '***' : '' },
+    snapshot: snap,
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a',
+  };
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
-  const serverUrlInput = document.getElementById('serverUrl');
-  const apiKeyInput = document.getElementById('apiKey');
-  const saveServerBtn = document.getElementById('saveServerBtn');
-  const newContactInput = document.getElementById('newContact');
-  const addContactBtn = document.getElementById('addContactBtn');
-  const whitelistItems = document.getElementById('whitelistItems');
-  const enabledToggle = document.getElementById('enabledToggle');
+  const serverUrlInput = /** @type {HTMLInputElement} */ (document.getElementById('serverUrl'));
+  const apiKeyInput = /** @type {HTMLInputElement} */ (document.getElementById('apiKey'));
+  const saveServerBtn = /** @type {HTMLButtonElement} */ (document.getElementById('saveServerBtn'));
+  const newContactInput = /** @type {HTMLInputElement} */ (document.getElementById('newContact'));
+  const addContactBtn = /** @type {HTMLButtonElement} */ (document.getElementById('addContactBtn'));
+  const whitelistItems = /** @type {HTMLElement} */ (document.getElementById('whitelistItems'));
+  const enabledToggle = /** @type {HTMLInputElement} */ (document.getElementById('enabledToggle'));
 
   // Load saved config
-  const data = await chrome.storage.local.get(['serverUrl', 'apiKey', 'whitelist', 'enabled']);
-  serverUrlInput.value = data.serverUrl || '';
-  apiKeyInput.value = data.apiKey || '';
-  enabledToggle.checked = data.enabled !== false;
-  renderWhitelist(data.whitelist || []);
+  const cfg = await loadConfig();
+  serverUrlInput.value = cfg.serverUrl || '';
+  apiKeyInput.value = cfg.apiKey || '';
+  enabledToggle.checked = cfg.enabled !== false;
+  el('eventVersion').textContent = String(cfg.eventVersion ?? 1);
+  renderWhitelist(cfg.whitelist || []);
 
-  // Save server config
+  // Save server config + health probe
   saveServerBtn.addEventListener('click', async () => {
-    await chrome.storage.local.set({
-      serverUrl: serverUrlInput.value.trim().replace(/\/$/, ''),
-      apiKey: apiKeyInput.value.trim()
-    });
-    notifyConfigUpdated();
-    showSaved(saveServerBtn);
+    try {
+      await applyServerForm({ serverUrl: serverUrlInput.value, apiKey: apiKeyInput.value });
+      showSaved(saveServerBtn);
+      const savedCfg = await loadConfig();
+      const probe = await probeHealth(savedCfg);
+      el('healthDot').className = `status-dot ${probe.ok ? 'success' : 'error'}`;
+      el('healthText').textContent = probe.ok
+        ? 'OK (200)'
+        : (probe.status ? `Server ${probe.status}` : 'Network error');
+    } catch (/** @type {any} */ err) {
+      setStatus('error', err.message || 'Invalid URL');
+    }
   });
 
   // Add contact to whitelist
   async function addContact() {
     const name = newContactInput.value.trim();
     if (!name) return;
-
-    const current = await chrome.storage.local.get(['whitelist']);
+    const current = await loadConfig();
     const list = current.whitelist || [];
-    if (!list.some(w => w.toLowerCase() === name.toLowerCase())) {
-      list.push(name);
-      await chrome.storage.local.set({ whitelist: list });
+    if (!list.some((w) => w.toLowerCase() === name.toLowerCase())) {
+      await saveConfig({ whitelist: [...list, name] });
       notifyConfigUpdated();
     }
     newContactInput.value = '';
-    renderWhitelist(list);
+    const updated = await loadConfig();
+    renderWhitelist(updated.whitelist || []);
   }
 
   addContactBtn.addEventListener('click', addContact);
@@ -49,8 +107,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Toggle enabled
   enabledToggle.addEventListener('change', async () => {
-    await chrome.storage.local.set({ enabled: enabledToggle.checked });
+    await saveConfig({ enabled: enabledToggle.checked });
     notifyConfigUpdated();
+  });
+
+  // Diagnostic export
+  el('diagBtn').addEventListener('click', async () => {
+    const diag = await collectDiagnostics();
+    const blob = new Blob([JSON.stringify(diag, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `whatsorga-diag-${diag.timestamp}.json`;
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 0);
   });
 
   // Refresh status
@@ -65,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       whitelistItems.innerHTML = '<li class="empty">No contacts added yet</li>';
       return;
     }
-    list.forEach(name => {
+    list.forEach((name) => {
       const li = document.createElement('li');
       li.className = 'whitelist-entry';
 
@@ -76,9 +149,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       removeBtn.textContent = 'x';
       removeBtn.className = 'btn-remove';
       removeBtn.addEventListener('click', async () => {
-        const current = await chrome.storage.local.get(['whitelist']);
-        const updated = (current.whitelist || []).filter(w => w !== name);
-        await chrome.storage.local.set({ whitelist: updated });
+        const current = await loadConfig();
+        const updated = (current.whitelist || []).filter((w) => w !== name);
+        await saveConfig({ whitelist: updated });
         notifyConfigUpdated();
         renderWhitelist(updated);
       });
@@ -93,16 +166,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Content script status
     try {
       const tabs = await chrome.tabs.query({ url: '*://web.whatsapp.com/*' });
-      if (tabs.length > 0) {
-        const response = await chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_STATUS' });
+      if (tabs.length > 0 && tabs[0].id !== undefined && tabs[0].id !== null) {
+        const response = /** @type {any} */ (
+          await chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_STATUS' })
+        );
         if (response) {
-          document.getElementById('extEnabled').textContent = response.enabled ? 'Active' : 'Paused';
-          document.getElementById('currentChat').textContent = response.currentChat?.name || '--';
-          document.getElementById('isWhitelisted').textContent = response.isWhitelisted ? 'Yes' : 'No';
-          document.getElementById('sentCount').textContent = response.sentCount || 0;
+          el('extEnabled').textContent = response.enabled ? 'Active' : 'Paused';
+          el('currentChat').textContent = response.currentChat?.name || '--';
+          el('isWhitelisted').textContent = response.isWhitelisted ? 'Yes' : 'No';
+          el('sentCount').textContent = response.sentCount || 0;
 
-          // Observer status
-          const obsEl = document.getElementById('observerStatus');
+          const obsEl = el('observerStatus');
           if (response.observerActive) {
             const reconLabel = response.reconnectCount > 0 ? ` (${response.reconnectCount}x)` : '';
             obsEl.textContent = `Active${reconLabel}`;
@@ -116,13 +190,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
 
           setStatus(response.enabled ? 'success' : 'warning',
-                    response.enabled ? 'Capturing' : 'Paused');
+            response.enabled ? 'Capturing' : 'Paused');
         }
       } else {
         setStatus('warning', 'Open WhatsApp Web');
-        document.getElementById('extEnabled').textContent = '--';
-        document.getElementById('currentChat').textContent = '--';
-        document.getElementById('isWhitelisted').textContent = '--';
+        el('extEnabled').textContent = '--';
+        el('currentChat').textContent = '--';
+        el('isWhitelisted').textContent = '--';
       }
     } catch {
       setStatus('warning', 'Connecting...');
@@ -130,9 +204,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Background status
     try {
-      const bgStatus = await chrome.runtime.sendMessage({ type: 'GET_STATUS' });
+      const bgStatus = /** @type {any} */ (
+        await chrome.runtime.sendMessage({ type: 'GET_STATUS' })
+      );
       if (bgStatus) {
-        document.getElementById('queueSize').textContent = bgStatus.queueSize || 0;
+        el('queueSize').textContent = bgStatus.queueSize || 0;
+        if (bgStatus.droppedCount !== undefined) {
+          el('droppedCount').textContent = String(bgStatus.droppedCount);
+        }
         if (!bgStatus.configured) {
           setStatus('error', 'Server not configured');
         }
@@ -140,15 +219,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch { /* ignore */ }
   }
 
+  /** @param {string} id @returns {HTMLElement} */
+  function el(id) {
+    return /** @type {HTMLElement} */ (document.getElementById(id));
+  }
+
+  /** @param {string} type @param {string|number} text */
   function setStatus(type, text) {
-    document.getElementById('statusDot').className = `status-dot ${type}`;
-    document.getElementById('statusText').textContent = text;
+    el('statusDot').className = `status-dot ${type}`;
+    el('statusText').textContent = String(text);
   }
 
   function notifyConfigUpdated() {
     chrome.runtime.sendMessage({ type: 'CONFIG_UPDATED' }).catch(() => {});
   }
 
+  /** @param {HTMLElement} btn */
   function showSaved(btn) {
     const original = btn.textContent;
     btn.textContent = 'Saved!';

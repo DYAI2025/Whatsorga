@@ -21,8 +21,7 @@
     "tests/**/*.js",
     "background.js",
     "popup.js",
-    "content.js",
-    "queue-manager.js"
+    "content.js"
   ],
   "exclude": ["node_modules", "coverage", "dist"]
 }
