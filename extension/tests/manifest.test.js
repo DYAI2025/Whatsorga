@@ -23,11 +23,24 @@ describe('manifest invariants', () => {
   });
 
   it('declares the minimum permissions only', () => {
-    expect([...manifest.permissions].sort()).toEqual(['activeTab', 'alarms', 'storage'].sort());
+    expect([...manifest.permissions].sort()).toEqual(['alarms', 'storage'].sort());
   });
 
   it('declares minimum_chrome_version >= 122 (content script modules)', () => {
     const min = parseInt(manifest.minimum_chrome_version || '0', 10);
     expect(min).toBeGreaterThanOrEqual(122);
+  });
+
+  it('host_permissions does not include the https wildcard', () => {
+    expect(manifest.host_permissions).not.toContain('https://*/*');
+    // No catch-all wildcards at all.
+    for (const h of manifest.host_permissions) {
+      expect(h).not.toMatch(/\*:\/\/\*\/\*/);
+      expect(h).not.toMatch(/^https?:\/\/\*\/\*$/);
+    }
+  });
+
+  it('does not request activeTab (auto-injected content script does not need it)', () => {
+    expect(manifest.permissions).not.toContain('activeTab');
   });
 });

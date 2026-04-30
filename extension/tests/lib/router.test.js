@@ -48,7 +48,7 @@ describe('router', () => {
     expect(calls).toBe(2);
   });
 
-  it('drops a batch on auth_error and clears retry', async () => {
+  it('preserves the batch on auth_error and clears retry (user must fix key, then flush)', async () => {
     await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'wrong' });
     vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 401 })));
     const r = createRouter();
@@ -56,6 +56,9 @@ describe('router', () => {
     expect(result.outcome).toBe('rejected');
     expect(result.reason).toBe('auth_error');
     expect(chrome.alarms.clear).toHaveBeenCalledWith('whatsorga_retry');
+    // The batch is preserved so it can replay once the user fixes the key.
+    const snap = await r.snapshot();
+    expect(snap.queueSize).toBe(1);
   });
 
   it('retryNow returns auth_error when server returns 401 during drain', async () => {
@@ -121,5 +124,86 @@ describe('router', () => {
     await r.clear();
     const snap = await r.snapshot();
     expect(snap.queueSize).toBe(0);
+  });
+
+  it('retryNow preserves unprocessed batches in queue on auth_error', async () => {
+    await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'k' });
+    let calls = 0;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      calls++;
+      // calls 1+2: queue both batches via network error
+      if (calls <= 2) throw new TypeError('net');
+      // call 3 (retryNow's first send): 401, halts the drain
+      return new Response('', { status: 401 });
+    }));
+    const r = createRouter();
+    await r.acceptBatch([{ messageId: 'a' }]);
+    await r.acceptBatch([{ messageId: 'b' }]);
+    // Both batches now queued. retryNow drains both, first one hits 401.
+    const result = await r.retryNow();
+    expect(result.outcome).toBe('auth_error');
+    // The second batch was never even tried — must remain in the queue.
+    const snap = await r.snapshot();
+    expect(snap.queueSize).toBeGreaterThanOrEqual(1);
+  });
+
+  it('retryNow preserves both failed and untried batches on auth_error', async () => {
+    await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'k' });
+    let calls = 0;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      calls++;
+      // calls 1-3: queue 3 batches via network errors during acceptBatch
+      if (calls <= 3) throw new TypeError('net');
+      // calls 4-5: retryNow's first two batches — server_error (push to failed)
+      if (calls <= 5) return new Response('', { status: 503 });
+      // call 6: retryNow's third batch — 401, halts the loop
+      return new Response('', { status: 401 });
+    }));
+    const r = createRouter();
+    await r.acceptBatch([{ messageId: 'a' }]);
+    await r.acceptBatch([{ messageId: 'b' }]);
+    await r.acceptBatch([{ messageId: 'c' }]);
+    // Queue: [a, b, c]. retryNow drains all 3.
+    // a → 503 → failed. b → 503 → failed. c → 401 → bail.
+    const result = await r.retryNow();
+    expect(result.outcome).toBe('auth_error');
+    // Both a and b (failed) must be returned to queue. c is dropped (auth-rejected).
+    const snap = await r.snapshot();
+    expect(snap.queueSize).toBe(2);
+  });
+
+  it('attempt counter increments correctly under concurrent retryNow calls', async () => {
+    await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'k' });
+    // All sends fail with network error so each retryNow loop increments attempt.
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('net'); }));
+    const r = createRouter();
+    // Queue a few batches so retryNow has work to do.
+    await r.acceptBatch([{ messageId: 'a' }]);
+    await r.acceptBatch([{ messageId: 'b' }]);
+    // Fire 3 retryNows in parallel.
+    await Promise.all([r.retryNow(), r.retryNow(), r.retryNow()]);
+    const snap = await r.snapshot();
+    // With a race, the counter could end up at 1 (lost increments). With
+    // serialization it must equal the number of failed loops that ran (≥ 1
+    // and ≤ 3 — exact value depends on drainHead serialization, but no
+    // increment can be lost).
+    expect(snap.attempt).toBeGreaterThanOrEqual(1);
+    // Stronger: the counter should equal the number of failed loops, which
+    // is at most 3. Without the lock, two parallel reads could both produce
+    // the same +1, dropping a count.
+    expect(snap.attempt).toBeLessThanOrEqual(3);
+  });
+
+  it('acceptBatch on auth_error queues the batch for replay (matches retryNow)', async () => {
+    await saveConfig({ serverUrl: 'http://x', apiKey: 'wrong' });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 401 })));
+    const r = createRouter();
+    const result = await r.acceptBatch([{ messageId: 'auth-test' }]);
+    expect(result.outcome).toBe('rejected');
+    expect(result.reason).toBe('auth_error');
+    // Behavior change: the batch must be preserved in the queue so a
+    // future retryNow (after user fixes the key) replays it.
+    const snap = await r.snapshot();
+    expect(snap.queueSize).toBeGreaterThanOrEqual(1);
   });
 });

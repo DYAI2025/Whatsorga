@@ -113,17 +113,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Diagnostic export
   el('diagBtn').addEventListener('click', async () => {
-    const diag = await collectDiagnostics();
-    const blob = new Blob([JSON.stringify(diag, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `whatsorga-diag-${diag.timestamp}.json`;
-    a.click();
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-      a.remove();
-    }, 0);
+    try {
+      const diag = await collectDiagnostics();
+      const blob = new Blob([JSON.stringify(diag, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `whatsorga-diag-${diag.timestamp}.json`;
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 0);
+    } catch (/** @type {any} */ err) {
+      setStatus('error', `Diagnostic export failed: ${err.message || err}`);
+    }
   });
 
   // Refresh status

@@ -2,9 +2,11 @@ import { loadConfig, isConfigured } from './config.js';
 import { createQueue } from './queue.js';
 import { sendBatch } from './transport.js';
 import { backoffMinutes, scheduleRetry, clearRetry } from './retry.js';
+import { createMutex } from './mutex.js';
 
 const QUEUE_KEY = 'whatsorga_send_queue';
 const QUEUE_MAX = 200;
+const QUEUE_MAX_BYTES = 8 * 1024 * 1024; // 8 MB — leaves 2 MB headroom under chrome.storage.session's 10 MB quota
 const ATTEMPT_KEY = 'whatsorga_retry_attempt';
 
 /**
@@ -15,7 +17,25 @@ const ATTEMPT_KEY = 'whatsorga_retry_attempt';
  */
 
 export function createRouter() {
-  const queue = createQueue(QUEUE_KEY, { maxSize: QUEUE_MAX });
+  const queue = createQueue(QUEUE_KEY, { maxSize: QUEUE_MAX, maxBytes: QUEUE_MAX_BYTES });
+  const attemptMutex = createMutex();
+
+  async function getAttempt() {
+    const out = await chrome.storage.session.get([ATTEMPT_KEY]);
+    return out[ATTEMPT_KEY] ?? 0;
+  }
+  function incrementAttempt() {
+    return attemptMutex.run(async () => {
+      const a = (await getAttempt()) + 1;
+      await chrome.storage.session.set({ [ATTEMPT_KEY]: a });
+      return a;
+    });
+  }
+  function resetAttempt() {
+    return attemptMutex.run(async () => {
+      await chrome.storage.session.set({ [ATTEMPT_KEY]: 0 });
+    });
+  }
 
   return {
     /**
@@ -36,6 +56,11 @@ export function createRouter() {
       });
       if (result.outcome === 'ok') return { outcome: 'ok' };
       if (result.outcome === 'auth_error') {
+        // Auth is non-retriable until the user fixes the key. Clear the
+        // retry alarm so we don't keep banging the server, but preserve
+        // the batch in the queue so a manual flush after the fix replays
+        // it. Matches retryNow's auth_error contract.
+        await queue.enqueue(messages);
         await clearRetry();
         return { outcome: 'rejected', reason: 'auth_error' };
       }
@@ -56,16 +81,22 @@ export function createRouter() {
         return { outcome: 'idle' };
       }
       const failed = [];
-      for (const batch of head) {
+      for (let i = 0; i < head.length; i++) {
+        const batch = head[i];
         const r = await sendBatch({
           serverUrl: cfg.serverUrl, apiKey: cfg.apiKey, messages: batch, eventVersion: cfg.eventVersion,
         });
-        if (r.outcome !== 'ok') failed.push(batch);
         if (r.outcome === 'auth_error') {
+          // The current batch is rejected (auth is non-retriable, matching
+          // acceptBatch's contract). Put back any earlier-failed and any
+          // not-yet-tried batches so they retry once the user fixes the key.
+          const toReturn = [...failed, ...head.slice(i + 1)];
+          if (toReturn.length > 0) await queue.returnHead(toReturn);
           await clearRetry();
           await resetAttempt();
           return { outcome: 'auth_error' };
         }
+        if (r.outcome !== 'ok') failed.push(batch);
       }
       if (failed.length > 0) {
         await queue.returnHead(failed);
@@ -99,15 +130,3 @@ export function createRouter() {
   };
 }
 
-async function getAttempt() {
-  const out = await chrome.storage.session.get([ATTEMPT_KEY]);
-  return out[ATTEMPT_KEY] ?? 0;
-}
-async function incrementAttempt() {
-  const a = (await getAttempt()) + 1;
-  await chrome.storage.session.set({ [ATTEMPT_KEY]: a });
-  return a;
-}
-async function resetAttempt() {
-  await chrome.storage.session.set({ [ATTEMPT_KEY]: 0 });
-}
