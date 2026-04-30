@@ -13,9 +13,11 @@ import { createRouter } from './src/lib/router.js';
 import { ALARM_NAME } from './src/lib/retry.js';
 import { runHeartbeat } from './src/lib/heartbeat.js';
 import { loadConfig } from './src/lib/config.js';
+import { createMutex } from './src/lib/mutex.js';
 
 const HEARTBEAT_ALARM = 'whatsorga_heartbeat';
 const HEARTBEAT_COUNTS_KEY = 'heartbeatCounts';
+const heartbeatMutex = createMutex();
 
 console.log('[Radar] Background service worker started');
 
@@ -52,12 +54,14 @@ async function forwardToContentScripts(msg) {
   }
 }
 
-async function bumpHeartbeatCount(chatId) {
-  if (!chatId) return;
-  const out = await chrome.storage.local.get([HEARTBEAT_COUNTS_KEY]);
-  const counts = out[HEARTBEAT_COUNTS_KEY] || {};
-  counts[chatId] = (counts[chatId] || 0) + 1;
-  await chrome.storage.local.set({ [HEARTBEAT_COUNTS_KEY]: counts });
+function bumpHeartbeatCount(chatId) {
+  if (!chatId) return Promise.resolve();
+  return heartbeatMutex.run(async () => {
+    const out = await chrome.storage.local.get([HEARTBEAT_COUNTS_KEY]);
+    const counts = out[HEARTBEAT_COUNTS_KEY] || {};
+    counts[chatId] = (counts[chatId] || 0) + 1;
+    await chrome.storage.local.set({ [HEARTBEAT_COUNTS_KEY]: counts });
+  });
 }
 
 // ---- runtime wiring (only in extension; guarded so tests can import this file safely) ----
@@ -87,14 +91,22 @@ if (
       await handler({ type: 'FLUSH_QUEUE' });
     } else if (alarm.name === HEARTBEAT_ALARM) {
       const cfg = await loadConfig();
-      const out = await chrome.storage.local.get([HEARTBEAT_COUNTS_KEY]);
-      const counts = out[HEARTBEAT_COUNTS_KEY] || {};
       const router = createRouter();
       const snap = await router.snapshot();
-      const result = await runHeartbeat({
-        serverUrl: cfg.serverUrl, apiKey: cfg.apiKey, counts, queueSize: snap.queueSize,
+      // Lock around the read-runHeartbeat-write chain so concurrent
+      // bumpHeartbeatCount calls cannot have their increments stomped
+      // when we write back result.remaining.
+      await heartbeatMutex.run(async () => {
+        const out = await chrome.storage.local.get([HEARTBEAT_COUNTS_KEY]);
+        const counts = out[HEARTBEAT_COUNTS_KEY] || {};
+        const result = await runHeartbeat({
+          serverUrl: cfg.serverUrl, apiKey: cfg.apiKey, counts, queueSize: snap.queueSize,
+        });
+        // Re-merge: any new bumps that arrived during runHeartbeat (none can,
+        // because they're queued behind the mutex) — but ALSO preserve any
+        // counts that runHeartbeat couldn't reset because the send failed.
+        await chrome.storage.local.set({ [HEARTBEAT_COUNTS_KEY]: result.remaining });
       });
-      await chrome.storage.local.set({ [HEARTBEAT_COUNTS_KEY]: result.remaining });
     }
   });
 }
