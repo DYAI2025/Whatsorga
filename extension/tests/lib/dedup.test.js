@@ -40,4 +40,13 @@ describe('dedup', () => {
     expect(await d.size()).toBe(0);
     expect(await d.isFresh('a')).toBe(true);
   });
+
+  it('returns true for the same id exactly once under concurrency', async () => {
+    const dedup = createDedup({ key: 'concurrent_id', windowSize: 100 });
+    const id = 'msg-race';
+    const promises = [];
+    for (let i = 0; i < 10; i++) promises.push(dedup.isFresh(id));
+    const results = await Promise.all(promises);
+    expect(results.filter(Boolean).length).toBe(1);
+  });
 });
