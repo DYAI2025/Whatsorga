@@ -1,7 +1,9 @@
 import { createStorage } from './storage.js';
 import { isValidServerUrl, normalizeServerUrl } from './url.js';
+import { createMutex } from './mutex.js';
 
 const KEY = 'whatsorga_config_v1';
+const saveMutex = createMutex();
 
 /**
  * @typedef {object} Config
@@ -28,37 +30,39 @@ export async function loadConfig() {
  * @param {Partial<Config>} patch
  * @returns {Promise<Config>}
  */
-export async function saveConfig(patch) {
-  const store = createStorage('local');
-  const current = await loadConfig();
-  const next = { ...current, ...patch };
+export function saveConfig(patch) {
+  return saveMutex.run(async () => {
+    const store = createStorage('local');
+    const current = await loadConfig();
+    const next = { ...current, ...patch };
 
-  if (patch.serverUrl !== undefined) {
-    const trimmed = String(patch.serverUrl).trim();
-    if (trimmed && !isValidServerUrl(trimmed)) {
-      throw new Error(`Invalid server URL: ${trimmed}`);
+    if (patch.serverUrl !== undefined) {
+      const trimmed = String(patch.serverUrl).trim();
+      if (trimmed && !isValidServerUrl(trimmed)) {
+        throw new Error(`Invalid server URL: ${trimmed}`);
+      }
+      next.serverUrl = normalizeServerUrl(trimmed);
     }
-    next.serverUrl = normalizeServerUrl(trimmed);
-  }
-  if (patch.apiKey !== undefined) {
-    next.apiKey = String(patch.apiKey).trim();
-  }
-  if (patch.whitelist !== undefined) {
-    const seen = new Set();
-    next.whitelist = (patch.whitelist || [])
-      .map((s) => String(s).trim())
-      .filter((s) => {
-        if (!s) return false;
-        const lower = s.toLowerCase();
-        if (seen.has(lower)) return false;
-        seen.add(lower);
-        return true;
-      });
-  }
-  if (patch.enabled !== undefined) next.enabled = Boolean(patch.enabled);
+    if (patch.apiKey !== undefined) {
+      next.apiKey = String(patch.apiKey).trim();
+    }
+    if (patch.whitelist !== undefined) {
+      const seen = new Set();
+      next.whitelist = (patch.whitelist || [])
+        .map((s) => String(s).trim())
+        .filter((s) => {
+          if (!s) return false;
+          const lower = s.toLowerCase();
+          if (seen.has(lower)) return false;
+          seen.add(lower);
+          return true;
+        });
+    }
+    if (patch.enabled !== undefined) next.enabled = Boolean(patch.enabled);
 
-  await store.set(KEY, next);
-  return next;
+    await store.set(KEY, next);
+    return next;
+  });
 }
 
 /**
