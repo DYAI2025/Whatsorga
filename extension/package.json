@@ -1,0 +1,29 @@
+{
+  "name": "whatsorga-extension",
+  "version": "0.4.0",
+  "description": "WhatsApp Web capture extension for the WhatsOrga radar-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint --no-error-on-unmatched-pattern src tests scripts *.js",
+    "typecheck": "tsc --noEmit --allowJs --checkJs",
+    "lint:manifest": "node scripts/validate-manifest.mjs",
+    "package": "web-ext build --source-dir=. --artifacts-dir=./dist --overwrite-dest --ignore-files='node_modules/**' 'tests/**' 'coverage/**' 'package*.json' 'tsconfig.json' 'eslint.config.js' 'vitest.config.js' 'docs/**'",
+    "ci": "npm run lint && npm run typecheck && npm run lint:manifest && npm run test:coverage"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.10.0",
+    "@types/chrome": "^0.0.270",
+    "@types/node": "^20.16.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "eslint": "^9.10.0",
+    "globals": "^15.9.0",
+    "jsdom": "^25.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "web-ext": "^8.3.0"
+  }
+}

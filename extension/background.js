@@ -1,3 +1,4 @@
+// @ts-nocheck — to be removed in Phase 3 module migration
 // WhatsOrga Background Service Worker
 // Receives messages from content.js, forwards to server with retry queue
 console.log('[Radar] Background service worker started');
