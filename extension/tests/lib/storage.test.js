@@ -53,6 +53,7 @@ describe('storage facade', () => {
   });
 
   it('throws on unknown storage area', () => {
+    // @ts-expect-error — intentionally invalid area to verify the runtime guard
     expect(() => createStorage('bogus')).toThrow(/chrome\.storage\.bogus unavailable/);
   });
 });
