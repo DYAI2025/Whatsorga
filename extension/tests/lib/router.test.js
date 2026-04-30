@@ -143,4 +143,29 @@ describe('router', () => {
     const snap = await r.snapshot();
     expect(snap.queueSize).toBeGreaterThanOrEqual(1);
   });
+
+  it('retryNow preserves both failed and untried batches on auth_error', async () => {
+    await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'k' });
+    let calls = 0;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      calls++;
+      // calls 1-3: queue 3 batches via network errors during acceptBatch
+      if (calls <= 3) throw new TypeError('net');
+      // calls 4-5: retryNow's first two batches — server_error (push to failed)
+      if (calls <= 5) return new Response('', { status: 503 });
+      // call 6: retryNow's third batch — 401, halts the loop
+      return new Response('', { status: 401 });
+    }));
+    const r = createRouter();
+    await r.acceptBatch([{ messageId: 'a' }]);
+    await r.acceptBatch([{ messageId: 'b' }]);
+    await r.acceptBatch([{ messageId: 'c' }]);
+    // Queue: [a, b, c]. retryNow drains all 3.
+    // a → 503 → failed. b → 503 → failed. c → 401 → bail.
+    const result = await r.retryNow();
+    expect(result.outcome).toBe('auth_error');
+    // Both a and b (failed) must be returned to queue. c is dropped (auth-rejected).
+    const snap = await r.snapshot();
+    expect(snap.queueSize).toBe(2);
+  });
 });

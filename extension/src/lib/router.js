@@ -62,10 +62,11 @@ export function createRouter() {
           serverUrl: cfg.serverUrl, apiKey: cfg.apiKey, messages: batch, eventVersion: cfg.eventVersion,
         });
         if (r.outcome === 'auth_error') {
-          // The current batch is rejected (auth is non-retriable). Put back
-          // anything we hadn't tried yet so it isn't silently lost.
-          const untried = head.slice(i + 1);
-          if (untried.length > 0) await queue.returnHead(untried);
+          // The current batch is rejected (auth is non-retriable, matching
+          // acceptBatch's contract). Put back any earlier-failed and any
+          // not-yet-tried batches so they retry once the user fixes the key.
+          const toReturn = [...failed, ...head.slice(i + 1)];
+          if (toReturn.length > 0) await queue.returnHead(toReturn);
           await clearRetry();
           await resetAttempt();
           return { outcome: 'auth_error' };
