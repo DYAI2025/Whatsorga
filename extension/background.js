@@ -10,9 +10,11 @@ let serverUrl = '';
 let apiKey = '';
 let retryQueue = [];
 let retryTimer = null;
+let droppedCount = 0;
 
 // Load config on startup
 loadServerConfig();
+loadDroppedCount();
 
 // Use chrome.alarms for heartbeat (survives MV3 service worker suspension)
 chrome.alarms.create('heartbeat', { periodInMinutes: 1 });
@@ -27,7 +29,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sendResponse({
         serverUrl: serverUrl || '',
         queueSize: retryQueue.length,
-        configured: !!(serverUrl && apiKey)
+        configured: !!(serverUrl && apiKey),
+        droppedCount
       });
       break;
 
@@ -45,8 +48,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     case 'CLEAR_QUEUE':
       retryQueue = [];
-      sendResponse({ ok: true });
-      break;
+      resetDroppedCount().then(() => sendResponse({ ok: true }));
+      return true;
 
     case 'MESSAGE_CAPTURED':
       // Track messages for heartbeat (persisted to survive worker restarts)
@@ -68,6 +71,22 @@ async function loadServerConfig() {
   console.log(`[Radar] Config loaded: server=${serverUrl ? 'set' : 'empty'}`);
 }
 
+
+
+async function loadDroppedCount() {
+  const data = await chrome.storage.local.get(['droppedCount']);
+  droppedCount = Number.isFinite(data.droppedCount) ? data.droppedCount : 0;
+}
+
+async function incrementDroppedCount(by = 1) {
+  droppedCount += by;
+  await chrome.storage.local.set({ droppedCount });
+}
+
+async function resetDroppedCount() {
+  droppedCount = 0;
+  await chrome.storage.local.set({ droppedCount });
+}
 function forwardToContentScript(msg) {
   chrome.tabs.query({ url: '*://web.whatsapp.com/*' }, (tabs) => {
     for (const tab of tabs) {
@@ -129,6 +148,7 @@ function enqueue(messages) {
   // Trim queue if too large (drop oldest)
   while (retryQueue.length > MAX_QUEUE_SIZE) {
     retryQueue.shift();
+    incrementDroppedCount().catch(() => {});
   }
 
   scheduleRetry();
@@ -163,6 +183,7 @@ async function processRetryQueue() {
         failed.push(item);
       } else {
         console.warn(`[Radar] Dropping ${item.messages.length} messages after ${item.attempts} retries`);
+        await incrementDroppedCount(item.messages.length);
       }
     }
   }
