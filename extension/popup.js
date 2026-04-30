@@ -13,14 +13,20 @@ export async function applyServerForm(input) {
 /**
  * Probe /health to confirm the saved config actually reaches the server.
  * @param {{ serverUrl:string, apiKey:string }} cfg
- * @returns {Promise<{ ok:boolean, status?:number, error?:string }>}
+ * @returns {Promise<{ ok:boolean, status?:number, error?:string, skipped?:string }>}
  */
 export async function probeHealth(cfg) {
+  const serverUrl = (cfg.serverUrl || '').trim();
+  const apiKey = (cfg.apiKey || '').trim();
+  if (!serverUrl || !apiKey) {
+    return { ok: false, error: 'not_configured', skipped: 'not_configured' };
+  }
+
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 5000);
   try {
-    const r = await fetch(`${cfg.serverUrl}/health`, {
-      headers: { Authorization: `Bearer ${cfg.apiKey}` },
+    const r = await fetch(`${serverUrl}/health`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
       signal: ctrl.signal,
     });
     return { ok: r.ok, status: r.status };
