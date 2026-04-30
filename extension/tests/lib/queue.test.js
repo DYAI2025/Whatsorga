@@ -47,4 +47,21 @@ describe('queue', () => {
     expect(await q.size()).toBe(0);
     expect(await q.droppedCount()).toBe(1);
   });
+
+  it('enqueues concurrently without losing items', async () => {
+    const q = createQueue('q_concurrent', { maxSize: 1000 });
+    const N = 100;
+    const promises = [];
+    for (let i = 0; i < N; i++) promises.push(q.enqueue({ id: i }));
+    await Promise.all(promises);
+    expect(await q.size()).toBe(N);
+  });
+
+  it('drains and returns concurrently without item loss', async () => {
+    const q = createQueue('q_drain_concurrent', { maxSize: 1000 });
+    for (let i = 0; i < 10; i++) await q.enqueue({ id: i });
+    const [a, b] = await Promise.all([q.drainHead(5), q.drainHead(5)]);
+    expect(a.length + b.length).toBe(10);
+    expect(await q.size()).toBe(0);
+  });
 });
