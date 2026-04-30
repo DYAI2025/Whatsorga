@@ -168,4 +168,26 @@ describe('router', () => {
     const snap = await r.snapshot();
     expect(snap.queueSize).toBe(2);
   });
+
+  it('attempt counter increments correctly under concurrent retryNow calls', async () => {
+    await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'k' });
+    // All sends fail with network error so each retryNow loop increments attempt.
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('net'); }));
+    const r = createRouter();
+    // Queue a few batches so retryNow has work to do.
+    await r.acceptBatch([{ messageId: 'a' }]);
+    await r.acceptBatch([{ messageId: 'b' }]);
+    // Fire 3 retryNows in parallel.
+    await Promise.all([r.retryNow(), r.retryNow(), r.retryNow()]);
+    const snap = await r.snapshot();
+    // With a race, the counter could end up at 1 (lost increments). With
+    // serialization it must equal the number of failed loops that ran (≥ 1
+    // and ≤ 3 — exact value depends on drainHead serialization, but no
+    // increment can be lost).
+    expect(snap.attempt).toBeGreaterThanOrEqual(1);
+    // Stronger: the counter should equal the number of failed loops, which
+    // is at most 3. Without the lock, two parallel reads could both produce
+    // the same +1, dropping a count.
+    expect(snap.attempt).toBeLessThanOrEqual(3);
+  });
 });

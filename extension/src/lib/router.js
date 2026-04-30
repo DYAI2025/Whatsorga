@@ -2,6 +2,7 @@ import { loadConfig, isConfigured } from './config.js';
 import { createQueue } from './queue.js';
 import { sendBatch } from './transport.js';
 import { backoffMinutes, scheduleRetry, clearRetry } from './retry.js';
+import { createMutex } from './mutex.js';
 
 const QUEUE_KEY = 'whatsorga_send_queue';
 const QUEUE_MAX = 200;
@@ -17,6 +18,24 @@ const ATTEMPT_KEY = 'whatsorga_retry_attempt';
 
 export function createRouter() {
   const queue = createQueue(QUEUE_KEY, { maxSize: QUEUE_MAX, maxBytes: QUEUE_MAX_BYTES });
+  const attemptMutex = createMutex();
+
+  async function getAttempt() {
+    const out = await chrome.storage.session.get([ATTEMPT_KEY]);
+    return out[ATTEMPT_KEY] ?? 0;
+  }
+  function incrementAttempt() {
+    return attemptMutex.run(async () => {
+      const a = (await getAttempt()) + 1;
+      await chrome.storage.session.set({ [ATTEMPT_KEY]: a });
+      return a;
+    });
+  }
+  function resetAttempt() {
+    return attemptMutex.run(async () => {
+      await chrome.storage.session.set({ [ATTEMPT_KEY]: 0 });
+    });
+  }
 
   return {
     /**
@@ -106,15 +125,3 @@ export function createRouter() {
   };
 }
 
-async function getAttempt() {
-  const out = await chrome.storage.session.get([ATTEMPT_KEY]);
-  return out[ATTEMPT_KEY] ?? 0;
-}
-async function incrementAttempt() {
-  const a = (await getAttempt()) + 1;
-  await chrome.storage.session.set({ [ATTEMPT_KEY]: a });
-  return a;
-}
-async function resetAttempt() {
-  await chrome.storage.session.set({ [ATTEMPT_KEY]: 0 });
-}
