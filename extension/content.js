@@ -1,4 +1,3 @@
-// @ts-nocheck — DOM/chrome API null-checks deferred to Task 3.6
 // WhatsOrga Content Script
 // Forked from What's That!? v2.7 — keeps DOM scanning, adds whitelist + server forwarding
 import { createDedup } from './src/lib/dedup.js';
@@ -137,7 +136,7 @@ class RadarTracker {
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (!(node instanceof HTMLElement)) continue;
-          const audioEls = node.tagName === 'AUDIO' ? [node] : node.querySelectorAll?.('audio') || [];
+          const audioEls = /** @type {HTMLAudioElement[]} */ (node.tagName === 'AUDIO' ? [node] : [...(node.querySelectorAll?.('audio') || [])]);
           for (const audioEl of audioEls) {
             if (audioEl.src) {
               this._captureBlobImmediately(audioEl);
@@ -199,7 +198,7 @@ class RadarTracker {
       const base64 = btoa(binary);
       this._audioBlobCache.set(src, base64);
       console.log(`[Radar] Audio blob captured: ${bytes.length} bytes`);
-    } catch (e) {
+    } catch (/** @type {any} */ e) {
       console.log(`[Radar] Audio blob capture failed: ${e.message}`);
     }
   }
@@ -224,13 +223,13 @@ class RadarTracker {
     // Strategy 2: header with title attribute
     const headerTitle = document.querySelector('#main header span[title]');
     if (headerTitle) {
-      const name = headerTitle.getAttribute('title');
+      const name = headerTitle.getAttribute('title') ?? 'Unknown';
       return { id: name, name };
     }
     // Strategy 3: conversation-header testid
     const convHeader = document.querySelector('[data-testid="conversation-header"] span[title]');
     if (convHeader) {
-      const name = convHeader.getAttribute('title');
+      const name = convHeader.getAttribute('title') ?? 'Unknown';
       return { id: name, name };
     }
     // Strategy 4: span with dir="auto" in #main header (2026 WhatsApp Web)
@@ -467,4 +466,4 @@ class RadarTracker {
 }
 
 // Start tracker
-window.radarTracker = new RadarTracker();
+/** @type {any} */ (window).radarTracker = new RadarTracker();

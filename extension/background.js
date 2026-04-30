@@ -1,4 +1,3 @@
-// @ts-nocheck — DOM/chrome API null-checks deferred to Task 3.6
 // MV3 service worker — thin, stateless dispatcher backed by src/lib modules.
 // All durability lives in chrome.storage.session (queue + attempt counter).
 //
@@ -48,6 +47,7 @@ export function createMessageHandler() {
 async function forwardToContentScripts(msg) {
   const tabs = await chrome.tabs.query({ url: '*://web.whatsapp.com/*' });
   for (const tab of tabs) {
+    if (tab.id === undefined || tab.id === null) continue;
     try { await chrome.tabs.sendMessage(tab.id, msg); } catch { /* tab may be closing */ }
   }
 }
