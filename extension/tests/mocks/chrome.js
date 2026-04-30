@@ -11,24 +11,30 @@ export function createChromeMock() {
   const listeners = { onMessage: [], onAlarm: [] };
   const alarms = new Map();
 
+  // Real chrome.storage is IPC-bridged and structured-clones on both sides.
+  // Mock the same fidelity so caller-side mutations cannot leak into stored
+  // values (or vice versa) — that aliasing is the exact bug class the queue
+  // persistence work in Phase 2 needs to be tested against.
   const makeStorage = (key) => ({
     get: vi.fn(async (keys) => {
       const map = stores[key];
       if (keys === null || keys === undefined) {
-        return Object.fromEntries(map);
+        return Object.fromEntries(
+          Array.from(map.entries()).map(([k, v]) => [k, structuredClone(v)])
+        );
       }
       const arr = Array.isArray(keys) ? keys : typeof keys === 'string' ? [keys] : Object.keys(keys);
       const out = {};
       for (const k of arr) {
-        if (map.has(k)) out[k] = map.get(k);
+        if (map.has(k)) out[k] = structuredClone(map.get(k));
         else if (typeof keys === 'object' && !Array.isArray(keys) && keys !== null) {
-          out[k] = keys[k]; // default value from defaults object
+          out[k] = structuredClone(keys[k]); // default value from defaults object
         }
       }
       return out;
     }),
     set: vi.fn(async (obj) => {
-      for (const [k, v] of Object.entries(obj)) stores[key].set(k, v);
+      for (const [k, v] of Object.entries(obj)) stores[key].set(k, structuredClone(v));
     }),
     remove: vi.fn(async (keys) => {
       const arr = Array.isArray(keys) ? keys : [keys];
