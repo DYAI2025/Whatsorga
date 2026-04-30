@@ -13,8 +13,9 @@ export function normalizeServerUrl(raw) {
     const url = new URL(trimmed);
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
     if (!url.host) return '';
-    const path = url.pathname.replace(/\/+$/, '').replace(/\/api$/i, '');
-    return `${url.protocol}//${url.host}${path}`.toLowerCase().replace(/\/$/, '');
+    const pathname = url.pathname || '/';
+    if (pathname !== '/' && !/^\/api\/*$/i.test(pathname)) return '';
+    return url.origin.toLowerCase();
   } catch {
     return '';
   }
