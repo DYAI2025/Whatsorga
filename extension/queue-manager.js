@@ -1,3 +1,4 @@
+// @ts-nocheck — to be removed in Phase 2 when queue is rewritten as ESM module
 // Message Queue Manager for reliable message capture
 class MessageQueue {
   constructor() {
