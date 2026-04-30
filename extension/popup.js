@@ -1,4 +1,5 @@
 import { loadConfig, saveConfig } from './src/lib/config.js';
+import { createRouter } from './src/lib/router.js';
 
 /**
  * Pure handler used by the Save button. Exposed for testing.
@@ -30,6 +31,21 @@ export async function probeHealth(cfg) {
   }
 }
 
+/**
+ * Collect a redacted diagnostic snapshot for bug reports.
+ * @returns {Promise<object>}
+ */
+export async function collectDiagnostics() {
+  const cfg = await loadConfig();
+  const snap = await createRouter().snapshot();
+  return {
+    timestamp: new Date().toISOString(),
+    config: { ...cfg, apiKey: cfg.apiKey ? '***' : '' },
+    snapshot: snap,
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a',
+  };
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const serverUrlInput = /** @type {HTMLInputElement} */ (document.getElementById('serverUrl'));
   const apiKeyInput = /** @type {HTMLInputElement} */ (document.getElementById('apiKey'));
@@ -44,13 +60,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   serverUrlInput.value = cfg.serverUrl || '';
   apiKeyInput.value = cfg.apiKey || '';
   enabledToggle.checked = cfg.enabled !== false;
+  el('eventVersion').textContent = String(cfg.eventVersion ?? 1);
   renderWhitelist(cfg.whitelist || []);
 
-  // Save server config
+  // Save server config + health probe
   saveServerBtn.addEventListener('click', async () => {
     try {
       await applyServerForm({ serverUrl: serverUrlInput.value, apiKey: apiKeyInput.value });
       showSaved(saveServerBtn);
+      const savedCfg = await loadConfig();
+      const probe = await probeHealth(savedCfg);
+      el('healthDot').className = `status-dot ${probe.ok ? 'success' : 'error'}`;
+      el('healthText').textContent = probe.ok
+        ? 'OK (200)'
+        : (probe.status ? `Server ${probe.status}` : 'Network error');
     } catch (/** @type {any} */ err) {
       setStatus('error', err.message || 'Invalid URL');
     }
@@ -80,6 +103,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   enabledToggle.addEventListener('change', async () => {
     await saveConfig({ enabled: enabledToggle.checked });
     notifyConfigUpdated();
+  });
+
+  // Diagnostic export
+  el('diagBtn').addEventListener('click', async () => {
+    const diag = await collectDiagnostics();
+    const blob = new Blob([JSON.stringify(diag, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `whatsorga-diag-${diag.timestamp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   });
 
   // Refresh status
@@ -165,6 +200,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       );
       if (bgStatus) {
         el('queueSize').textContent = bgStatus.queueSize || 0;
+        if (bgStatus.droppedCount !== undefined) {
+          el('droppedCount').textContent = String(bgStatus.droppedCount);
+        }
         if (!bgStatus.configured) {
           setStatus('error', 'Server not configured');
         }
