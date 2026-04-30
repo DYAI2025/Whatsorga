@@ -1,3 +1,4 @@
+// @ts-nocheck — to be removed in Phase 3 module migration
 // WhatsOrga Popup Script
 document.addEventListener('DOMContentLoaded', async () => {
   const serverUrlInput = document.getElementById('serverUrl');
