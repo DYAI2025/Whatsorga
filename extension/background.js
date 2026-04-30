@@ -4,7 +4,7 @@
 // Public message types (handled by createMessageHandler):
 //   NEW_MESSAGES     - { data: object[] }       -> RouterResult
 //   GET_STATUS       - {}                       -> Snapshot
-//   CONFIG_UPDATED   - {}                       -> { ok: true } (after reload)
+//   CONFIG_UPDATED   - {}                       -> { ok: true } (forwards update to content scripts)
 //   FLUSH_QUEUE      - {}                       -> RetryResult
 //   CLEAR_QUEUE      - {}                       -> { ok: true }
 //   MESSAGE_CAPTURED - { chatId: string }       -> { ok: true }
