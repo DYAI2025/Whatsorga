@@ -56,4 +56,69 @@ describe('router', () => {
     expect(result.reason).toBe('auth_error');
     expect(chrome.alarms.clear).toHaveBeenCalledWith('whatsorga_retry');
   });
+
+  it('retryNow returns auth_error when server returns 401 during drain', async () => {
+    await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'k' });
+    // First call (acceptBatch) fails with network error, queuing the batch
+    let calls = 0;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      calls++;
+      if (calls === 1) throw new TypeError('net');
+      return new Response('', { status: 401 });
+    }));
+    const r = createRouter();
+    await r.acceptBatch([{ messageId: 'x' }]);
+    const result = await r.retryNow();
+    expect(result.outcome).toBe('auth_error');
+  });
+
+  it('retryNow returns partial when some batches fail', async () => {
+    await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'k' });
+    let calls = 0;
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      calls++;
+      // First: queue the batch (network error during acceptBatch)
+      if (calls === 1) throw new TypeError('net');
+      // Second: queue another batch
+      if (calls === 2) throw new TypeError('net');
+      // retryNow: first batch ok, second batch server_error
+      if (calls === 3) return new Response('{}', { status: 200 });
+      return new Response('', { status: 503 });
+    }));
+    const r = createRouter();
+    await r.acceptBatch([{ messageId: 'b1' }]);
+    await r.acceptBatch([{ messageId: 'b2' }]);
+    const result = await r.retryNow();
+    expect(result.outcome).toBe('partial');
+    expect(result.sent).toBe(1);
+    expect(result.failed).toBe(1);
+  });
+
+  it('retryNow returns idle when queue is empty', async () => {
+    await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'k' });
+    vi.stubGlobal('fetch', vi.fn());
+    const r = createRouter();
+    const result = await r.retryNow();
+    expect(result.outcome).toBe('idle');
+  });
+
+  it('snapshot returns queue stats and config info', async () => {
+    await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'k', whitelist: ['Alice', 'Bob'] });
+    const r = createRouter();
+    const snap = await r.snapshot();
+    expect(snap.configured).toBe(true);
+    expect(snap.serverUrl).toBe('http://localhost:8900');
+    expect(snap.whitelistSize).toBe(2);
+    expect(typeof snap.queueSize).toBe('number');
+  });
+
+  it('clear empties the queue', async () => {
+    await saveConfig({ serverUrl: 'http://localhost:8900', apiKey: 'k' });
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('net'); }));
+    const r = createRouter();
+    await r.acceptBatch([{ messageId: 'z' }]);
+    await r.clear();
+    const snap = await r.snapshot();
+    expect(snap.queueSize).toBe(0);
+  });
 });

@@ -24,4 +24,20 @@ describe('dedup', () => {
     expect(await d.isFresh('a')).toBe(true);
     expect(await d.isFresh('d')).toBe(false);
   });
+
+  it('size returns current entry count', async () => {
+    const d = createDedup({ key: 'd1', windowSize: 100 });
+    expect(await d.size()).toBe(0);
+    await d.isFresh('a');
+    await d.isFresh('b');
+    expect(await d.size()).toBe(2);
+  });
+
+  it('clear resets to empty', async () => {
+    const d = createDedup({ key: 'd1', windowSize: 100 });
+    await d.isFresh('a');
+    await d.clear();
+    expect(await d.size()).toBe(0);
+    expect(await d.isFresh('a')).toBe(true);
+  });
 });
