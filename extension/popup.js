@@ -120,7 +120,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     a.href = url;
     a.download = `whatsorga-diag-${diag.timestamp}.json`;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 0);
   });
 
   // Refresh status
