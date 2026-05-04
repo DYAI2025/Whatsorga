@@ -16,6 +16,21 @@ describe('popup form handlers', () => {
     await expect(applyServerForm({ serverUrl: 'not a url', apiKey: 'k' })).rejects.toThrow();
   });
 
+
+
+  it('applyServerForm requests host permission for non-default HTTPS origins', async () => {
+    chrome.permissions.contains.mockResolvedValue(false);
+    await applyServerForm({ serverUrl: 'https://radar.example.com', apiKey: 'k' });
+    expect(chrome.permissions.request).toHaveBeenCalledWith({ origins: ['https://radar.example.com/*'] });
+  });
+
+  it('applyServerForm fails when host permission is denied', async () => {
+    chrome.permissions.contains.mockResolvedValue(false);
+    chrome.permissions.request.mockResolvedValue(false);
+    await expect(applyServerForm({ serverUrl: 'https://radar.example.com', apiKey: 'k' }))
+      .rejects.toThrow(/host permission/i);
+  });
+
   it('outgoing payload contains eventVersion', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
