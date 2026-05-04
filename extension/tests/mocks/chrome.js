@@ -63,6 +63,10 @@ export function createChromeMock() {
         },
       },
     },
+    permissions: {
+      contains: vi.fn(async ({ origins }) => origins.every((origin) => origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1') || origin.startsWith('https://web.whatsapp.com'))),
+      request: vi.fn(async () => true),
+    },
     tabs: {
       query: vi.fn(async () => []),
       sendMessage: vi.fn(async () => undefined),
