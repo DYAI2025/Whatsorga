@@ -158,18 +158,18 @@ async def recall(
     if not query or not query.strip():
         return ctx
 
-    # Step 1: Episode retrieval (conversation history, events)
+    # Step 1: Episode retrieval — all participants in the group, no user_id filter.
+    # Passing user_id here would AND-filter to only one sender, missing cross-participant context.
     episodes = await _retrieve(
         query=query,
         group_id=chat_id,
-        user_id=user_id,
         data_source="episode",
         mode=mode,
         top_k=top_k,
     )
     ctx.episodes = episodes
 
-    # Step 2: Profile retrieval (person knowledge, relationships)
+    # Step 2: Profile retrieval — person-specific knowledge, user_id is meaningful here.
     profiles = await _retrieve(
         query=query,
         group_id=chat_id,
@@ -180,11 +180,10 @@ async def recall(
     )
     ctx.profiles = profiles
 
-    # Step 3: Semantic memory (facts, dates, preferences)
+    # Step 3: Semantic memory — facts scoped to the group, not a single sender.
     facts = await _retrieve(
         query=query,
         group_id=chat_id,
-        user_id=user_id,
         data_source="semantic_memory",
         mode=mode,
         top_k=5,
@@ -257,23 +256,22 @@ async def _retrieve(
 ) -> list[dict]:
     """Low-level retrieval call to EverMemOS."""
 
+    # Scope: "group" when group_id is available (most precise), "all" as fallback.
+    # "all" ignores group boundaries which causes retrieval noise.
+    scope = "group" if group_id else "all"
+
     payload = {
         "query": query,
         "data_source": data_source,
         "retrieval_mode": mode,
         "top_k": top_k,
-        "memory_scope": "all",
+        "memory_scope": scope,
     }
 
     if group_id:
         payload["group_id"] = group_id
     if user_id:
         payload["user_id"] = user_id
-
-    # Profile queries need both IDs
-    if data_source == "profile":
-        if not group_id or not user_id:
-            payload["memory_scope"] = "group" if group_id else "personal"
 
     try:
         client = _get_client()

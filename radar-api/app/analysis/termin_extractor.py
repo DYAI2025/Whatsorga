@@ -82,13 +82,16 @@ Du MUSST jede Nachricht durch diese 7 Dimensionen bewerten bevor du entscheidest
   • NUR eigenständige Tasks OHNE Bezug zu einem bestehenden Termin → separater Eintrag
 
 🔄 DIMENSION 4 — KONTEXT, DUPLIKATE & UPDATES
-- Wurde dasselbe Thema in den vorherigen Nachrichten schon besprochen?
-- Existiert der Termin bereits in der DB-Liste? → Prüfe ob UPDATE oder DUPLIKAT:
+PFLICHT-SCHRITT: Prüfe ZUERST die EXISTIERENDE-TERMINE-LISTE bevor du etwas erstellst!
+
+- Existiert der Termin bereits in der DB-Liste?
   • DUPLIKAT: Gleicher Termin, keine neuen Infos → NICHT nochmal extrahieren, leeres Array []
   • UPDATE: Gleicher Termin, ABER neue/geänderte Infos (neue Uhrzeit, Absage, Ort) → action="update" mit updates_termin_id
   • ABSAGE: Termin fällt aus / wird abgesagt → action="cancel" mit updates_termin_id
-- Wird das gleiche Event mehrfach erwähnt? → Nur EINMAL extrahieren
-- WICHTIG: Bei Updates/Absagen die ID aus der EXISTIERENDE-TERMINE-Liste verwenden!
+- Ähnliche Titel = Duplikat! "Enno Wettkampf" und "Schwimmturnier Enno" am gleichen Tag sind DASSELBE EVENT.
+  → Wähle action="update" mit der ID des Bestehenden (besserer Titel), NICHT action="create"!
+- WICHTIG: Bei Updates/Absagen IMMER die ID aus der EXISTIERENDE-TERMINE-Liste verwenden!
+- Wurde dasselbe Thema bereits in den vorherigen Nachrichten besprochen? → Dann wahrscheinlich schon extrahiert!
 
 ═══ NACHRICHTEN-ÜBERGREIFENDE TERMIN-ERKENNUNG ═══
 WICHTIG: Termine entstehen oft aus MEHREREN Nachrichten im Dialog!
@@ -117,6 +120,13 @@ REGELN:
 - "Kind hat morgen Training" → Termin (Zukunft)
 - "Wollen wir mal wieder essen gehen?" → KEIN Termin (vage Idee)
 - "Lass uns Freitag essen gehen" → Termin (konkretes Datum)
+
+STATUSMELDUNGEN = KEIN TERMIN (auch wenn Uhrzeit erkennbar!):
+- Echtzeit-Bewegungen: "fährt los", "bin unterwegs", "fahre jetzt", "ist gerade losgefahren"
+- Ankunftsmeldungen: "bin da", "bin angekommen", "ist da", "sind schon dort"
+- Laufende Aktionen: "läuft gerade", "macht gerade", "ist gerade beim"
+- Kurze Statusupdates ohne eigenen Termincharakter
+GRUND: Diese Nachrichten beschreiben eine bereits laufende Handlung, keinen zukünftigen Termin.
 
 📍 DIMENSION 7 — ORT (WOHIN?)
 PFLICHT bei Bewegungs-Wörtern! Wenn eines dieser Wörter vorkommt, MUSS du den Ort bestimmen:
@@ -622,7 +632,12 @@ async def _extract_via_gemini(
                 json={
                     "system_instruction": {"parts": [{"text": system_prompt}]},
                     "contents": [{"parts": [{"text": user_prompt}]}],
-                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 4096},
+                    "generationConfig": {
+                        "temperature": 0.2,
+                        "maxOutputTokens": 4096,
+                        # Force JSON output — prevents Gemini from responding with reasoning-only text.
+                        "responseMimeType": "application/json",
+                    },
                 },
             )
 
