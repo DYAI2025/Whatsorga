@@ -126,7 +126,11 @@ The extension runs on `web.whatsapp.com` and captures messages exclusively from 
 | `manifest.json` | Manifest V3 — permissions, content scripts, service worker |
 | `content.js` | DOM scraping of WhatsApp Web UI (`RadarTracker` class) |
 | `background.js` | Service worker — retry queue, heartbeat, message forwarding |
-| `queue-manager.js` | Persistent message queue in `localStorage` |
+| `src/lib/queue.js` | Durable FIFO queue backed by `chrome.storage.session` |
+| `src/lib/router.js` | Orchestrates queue, transport, retry |
+| `src/lib/transport.js` | HTTP outcome classifier (`ok`, `auth_error`, `server_error`, …) |
+| `src/lib/retry.js` | Exponential backoff via `chrome.alarms` (survives SW suspension) |
+| `src/lib/dedup.js` | Message deduplication — rolling 5000-ID window |
 | `popup.html/js/css` | Configuration UI (server URL, API key, whitelist, status) |
 
 **How `content.js` works:**
@@ -315,6 +319,8 @@ After analysis, the message is stored in EverMemOS for persistent context memory
 | Endpoint | Method | Description |
 |---|---|---|
 | `/api/context/init` | POST | Seed EverMemOS from WhatsApp chat export |
+| `/api/context/status` | GET | EverMemOS health + memory counts |
+| `/api/context/recall` | GET | Manual memory recall query for debugging |
 
 ### Dashboard & Analysis
 
@@ -395,7 +401,7 @@ The extension only captures messages from whitelisted contacts. This is a privac
 - Messages are batched (groups of 10) and sent to the backend via `POST /api/ingest`
 - Audio messages are detected, fetched as blobs, base64-encoded, and included in the payload
 - A persistent retry queue handles network failures with exponential backoff (5s → 15s → 1min → 5min)
-- The queue survives browser restarts (persisted in `localStorage`)
+- The queue is persisted in `chrome.storage.session` — survives Manifest V3 service-worker suspension but **not** full browser restarts
 - Heartbeats are sent periodically so the backend can monitor extension health
 
 ### Troubleshooting
@@ -533,6 +539,23 @@ Stored in Chrome's `chrome.storage.local` (configured via popup UI):
 | **API Key** | Bearer token matching `RADAR_API_KEY` |
 | **Whitelist** | Array of contact/group names to capture |
 | **Capture Enabled** | Boolean toggle for activation/deactivation |
+
+---
+
+## Known Issues
+
+| ID | Severity | Summary | Status |
+|---|---|---|---|
+| BUG-005 | HIGH | Duplicate termine despite LLM dedup prompt | Mitigated (improved `_is_duplicate()` + stronger prompt) |
+| BUG-007 | HIGH | Past appointments extracted | Fixed (24h post-filter in `extract_termine_with_context`) |
+| BUG-008 | MEDIUM | EverMemOS recall returns 0 items | Fixed (removed `user_id` from episode/facts retrieval) |
+| BUG-009 | MEDIUM | Marker registry missing on VPS | Open — compile locally, see Development section |
+| BUG-010 | MEDIUM | Gemini fallback JSON parse failures | Fixed (`responseMimeType: application/json`) |
+| BUG-012 | MEDIUM | YAML merge conflicts from Reflection Agent | Open — auto-commit on VPS recommended |
+| BUG-014 | LOW | Status messages ("fährt los") as appointments | Fixed (Dimension 6 status-message exclusion rule) |
+| BUG-015 | LOW | Unknown persons extracted without validation | Open — low-confidence workaround only |
+
+See `docs/bugs2102.md` for detailed root-cause analysis of each issue.
 
 ---
 

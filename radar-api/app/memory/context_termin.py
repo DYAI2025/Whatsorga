@@ -153,13 +153,24 @@ async def _get_recent_feedback(session: AsyncSession, limit: int = 10) -> str:
         return ""
 
 
+_STOP_WORDS = frozenset(["der", "die", "das", "den", "dem", "des", "ein", "eine", "einem",
+                          "einen", "und", "oder", "bei", "am", "um", "ab", "bis", "im", "in",
+                          "an", "auf", "von", "mit", "für", "zu", "vom", "zur", "zum"])
+
+
 async def _is_duplicate(
     session: AsyncSession,
     title: str,
     dt: datetime,
     chat_id: str,
 ) -> bool:
-    """Check if a similar termin already exists in DB (same title pattern + same day)."""
+    """Check if a similar termin already exists in DB (same title pattern + same day).
+
+    Uses two-tier matching:
+    1. Same-day window: compares title word overlap (German stop-words excluded)
+    2. ±2h window: stricter match — any overlap of significant words is a duplicate
+       (catches "Enno Wettkampf" vs "Schwimmturnier Enno" on same timestamp)
+    """
     try:
         day_start = dt.replace(hour=0, minute=0, second=0, microsecond=0)
         day_end = day_start + timedelta(days=1)
@@ -181,15 +192,32 @@ async def _is_duplicate(
         if not existing:
             return False
 
-        # Simple title similarity: check if core words overlap
-        title_words = set(title.lower().split())
+        # Remove stop words for meaningful comparison
+        def significant_words(text: str) -> set[str]:
+            return {w for w in text.lower().split() if w not in _STOP_WORDS and len(w) > 2}
+
+        title_words = significant_words(title)
+        if not title_words:
+            return False
+
+        within_2h_start = dt - timedelta(hours=2)
+        within_2h_end = dt + timedelta(hours=2)
+
         for t in existing:
-            existing_words = set(t.title.lower().split())
+            existing_words = significant_words(t.title)
             overlap = title_words & existing_words
-            # If >50% of words match, consider it a duplicate
-            if len(overlap) >= max(1, len(title_words) * 0.5):
-                logger.info(f"Duplicate detected: '{title}' matches existing '{t.title}' on {dt.date()}")
+            overlap_ratio = len(overlap) / len(title_words)
+
+            # Tier 1: same day, >65% word overlap → duplicate
+            if overlap_ratio >= 0.65:
+                logger.info(f"Duplicate detected (day+title): '{title}' ≈ '{t.title}' on {dt.date()}")
                 return True
+
+            # Tier 2: ±2h window, any significant overlap → likely same event
+            if t.datetime_ and within_2h_start <= t.datetime_ <= within_2h_end:
+                if overlap_ratio >= 0.3:
+                    logger.info(f"Duplicate detected (±2h+overlap): '{title}' ≈ '{t.title}' @ {dt}")
+                    return True
 
         return False
 
@@ -265,14 +293,16 @@ async def extract_termine_with_context(
     # 6. Post-filter and validation
     if session and results:
         filtered = []
+        now = datetime.utcnow()
+        past_cutoff = now - timedelta(hours=24)
+
         for t in results:
             try:
                 # For update/cancel: validate that the referenced termin exists
                 if t.action in ("update", "cancel") and t.updates_termin_id:
-                    existing = await session.get(Termin, t.updates_termin_id)
-                    if not existing:
+                    existing_t = await session.get(Termin, t.updates_termin_id)
+                    if not existing_t:
                         logger.warning(f"Update/cancel references non-existent termin ID: {t.updates_termin_id}")
-                        # Treat as create if update target doesn't exist
                         if t.action == "update":
                             t.action = "create"
                             t.updates_termin_id = None
@@ -282,8 +312,17 @@ async def extract_termine_with_context(
                         filtered.append(t)
                         continue
 
-                # For create: check for duplicates
+                # For create: reject past appointments (LLM sometimes ignores DIMENSION 6)
                 termin_dt = datetime.fromisoformat(t.datetime_str) if t.datetime_str else None
+                if termin_dt and t.action == "create" and t.category == "appointment":
+                    if termin_dt < past_cutoff:
+                        logger.info(
+                            f"Post-filter dropped past appointment: '{t.title}' @ {t.datetime_str} "
+                            f"(more than 24h in the past)"
+                        )
+                        continue
+
+                # For create: check for duplicates
                 if termin_dt and t.action == "create" and await _is_duplicate(session, t.title, termin_dt, chat_id):
                     logger.info(f"Post-filter removed duplicate: '{t.title}' @ {t.datetime_str}")
                     continue

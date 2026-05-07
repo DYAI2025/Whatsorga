@@ -258,7 +258,9 @@ def _parse_timestamp(ts_str: str | None) -> datetime:
         except ValueError:
             continue
 
-    # Fallback
+    # Silent fallback would store wrong timestamps — log a warning so it's diagnosable.
+    logger.warning(f"Unrecognized timestamp format '{ts_str}', falling back to utcnow(). "
+                   "Check extension timestamp format.")
     return datetime.utcnow()
 
 
