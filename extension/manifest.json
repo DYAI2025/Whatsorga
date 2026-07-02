@@ -15,8 +15,12 @@
   ],
   "content_scripts": [
     {
-      "matches": ["*://web.whatsapp.com/*"],
-      "js": ["content.js"],
+      "matches": [
+        "*://web.whatsapp.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle",
       "all_frames": false,
       "type": "module"
@@ -41,5 +45,8 @@
     "32": "icon-32.png",
     "48": "icon-48.png",
     "128": "icon-128.png"
-  }
+  },
+  "optional_host_permissions": [
+    "https://*/*"
+  ]
 }

@@ -5,7 +5,26 @@ import { createRouter } from './src/lib/router.js';
  * Pure handler used by the Save button. Exposed for testing.
  * @param {{ serverUrl:string, apiKey:string }} input
  */
+
+/**
+ * @param {string} serverUrl
+ * @returns {Promise<void>}
+ */
+async function ensureHostPermission(serverUrl) {
+  const trimmed = String(serverUrl || '').trim();
+  if (!trimmed) return;
+  const u = new URL(trimmed);
+  const pattern = `${u.origin}/*`;
+  const has = await chrome.permissions.contains({ origins: [pattern] });
+  if (has) return;
+  const granted = await chrome.permissions.request({ origins: [pattern] });
+  if (!granted) {
+    throw new Error(`Host permission was not granted for ${u.origin}`);
+  }
+}
+
 export async function applyServerForm(input) {
+  await ensureHostPermission(input.serverUrl);
   await saveConfig({ serverUrl: input.serverUrl, apiKey: input.apiKey });
   await chrome.runtime.sendMessage({ type: 'CONFIG_UPDATED' }).catch(() => {});
 }
